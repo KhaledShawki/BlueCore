@@ -1,0 +1,21 @@
+# Generated output
+out/**
+generated/**
+build/generated/**
+
+# IDE and local metadata
+.git/**
+.vs/**
+.idea/**
+
+# External/vendor code
+thirdparty/**
+third_party/**
+external/**
+
+# Tool binaries and external distributions
+tools/premake/**
+tools/clang-format/**
+
+# Archives and copied package payloads
+*.zip

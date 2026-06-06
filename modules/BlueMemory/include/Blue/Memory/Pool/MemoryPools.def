@@ -1,0 +1,7 @@
+// PoolId, DisplayName, BudgetBytes, AllocatorKind token, MetricsMode token, EnableOomReports
+BLUE_MEMORY_POOL(System, "System", BLUE_MB(64), Default, Counters, true)
+BLUE_MEMORY_POOL(Renderer, "Renderer", BLUE_MB(300), Default, ThreadCounters, true)
+BLUE_MEMORY_POOL(Resources, "Resources", BLUE_MB(128), Default, ThreadCounters, true)
+BLUE_MEMORY_POOL(JobSystem, "JobSystem", BLUE_MB(32), Default, Counters, true)
+BLUE_MEMORY_POOL(Temporary, "Temporary", BLUE_MB(64), Default, Counters, false)
+BLUE_MEMORY_POOL(Test, "Test", BLUE_MB(16), Default, FullDiagnostics, true)

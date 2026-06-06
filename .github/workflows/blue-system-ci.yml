@@ -1,0 +1,106 @@
+name: BlueSystem CI
+
+on:
+  push:
+    paths:
+      - "modules/BlueSystem/**"
+      - ".github/workflows/blue-system-ci.yml"
+  pull_request:
+    paths:
+      - "modules/BlueSystem/**"
+      - ".github/workflows/blue-system-ci.yml"
+
+jobs:
+  posix:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux GCC
+            os: ubuntu-latest
+            cxx: g++
+            platform_sources: "src/Platform/Linux/Debug_Linux.cpp src/Platform/Linux/Processor_Linux.cpp src/Platform/Linux/Thread_Linux.cpp"
+            linker_flags: "-pthread -ldl -lrt -latomic"
+          - name: Linux Clang
+            os: ubuntu-latest
+            cxx: clang++
+            platform_sources: "src/Platform/Linux/Debug_Linux.cpp src/Platform/Linux/Processor_Linux.cpp src/Platform/Linux/Thread_Linux.cpp"
+            linker_flags: "-pthread -ldl -lrt -latomic"
+          - name: macOS Clang
+            os: macos-latest
+            cxx: clang++
+            platform_sources: "src/Platform/MacOS/Debug_MacOS.cpp src/Platform/MacOS/Processor_MacOS.cpp src/Platform/MacOS/Thread_MacOS.cpp"
+            linker_flags: "-pthread"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run all tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd modules/BlueSystem
+          mkdir -p build/ci-tests
+
+          common_sources="src/Assert.cpp src/Log/Logger.cpp src/Processor.cpp src/Result.cpp src/Time.cpp"
+          posix_sources="src/Platform/POSIX/POSIX_Synchronization.cpp src/Platform/POSIX/Mutex_POSIX.cpp src/Platform/POSIX/Semaphore_POSIX.cpp src/Platform/POSIX/Event_POSIX.cpp src/Platform/POSIX/ConditionVariable_POSIX.cpp src/Platform/POSIX/Thread_POSIX.cpp"
+
+          for test in tests/BlueSystem*.cpp; do
+            exe="build/ci-tests/$(basename "${test}" .cpp)"
+            ${{ matrix.cxx }} -std=c++20 -Wall -Wextra -Werror -pedantic \
+              -Iinclude "${test}" ${common_sources} ${posix_sources} ${{ matrix.platform_sources }} \
+              ${{ matrix.linker_flags }} -o "${exe}"
+            "${exe}"
+          done
+
+  linux-sanitizers:
+    name: Linux GCC ASAN/UBSAN
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run synchronization stress test with sanitizers
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd modules/BlueSystem
+          mkdir -p build/ci-tests
+
+          common_sources="src/Assert.cpp src/Log/Logger.cpp src/Processor.cpp src/Result.cpp src/Time.cpp"
+          posix_sources="src/Platform/POSIX/POSIX_Synchronization.cpp src/Platform/POSIX/Mutex_POSIX.cpp src/Platform/POSIX/Semaphore_POSIX.cpp src/Platform/POSIX/Event_POSIX.cpp src/Platform/POSIX/ConditionVariable_POSIX.cpp src/Platform/POSIX/Thread_POSIX.cpp"
+          linux_sources="src/Platform/Linux/Debug_Linux.cpp src/Platform/Linux/Processor_Linux.cpp src/Platform/Linux/Thread_Linux.cpp"
+
+          g++ -std=c++20 -Wall -Wextra -Werror -pedantic \
+            -fsanitize=address,undefined -fno-omit-frame-pointer \
+            -Iinclude tests/BlueSystemSynchronizationStressTests.cpp \
+            ${common_sources} ${posix_sources} ${linux_sources} \
+            -pthread -ldl -lrt -latomic -o build/ci-tests/BlueSystemSynchronizationStressTestsSanitized
+          build/ci-tests/BlueSystemSynchronizationStressTestsSanitized
+
+  windows-msvc:
+    name: Windows MSVC
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build and run all tests
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          Set-Location modules\BlueSystem
+          New-Item -ItemType Directory -Force build\ci-tests | Out-Null
+
+          $commonSources = @(
+            "src\Assert.cpp",
+            "src\Log\Logger.cpp",
+            "src\Processor.cpp",
+            "src\Result.cpp",
+            "src\Time.cpp"
+          ) + (Get-ChildItem "src\Platform\Windows\*.cpp" | ForEach-Object { $_.FullName })
+
+          foreach ($test in Get-ChildItem "tests\BlueSystem*.cpp") {
+            $exe = "build\ci-tests\$($test.BaseName).exe"
+            cl /nologo /std:c++20 /EHsc /W4 /WX /I include $test.FullName $commonSources /Fe:$exe
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            & $exe
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }

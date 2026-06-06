@@ -1,0 +1,114 @@
+# Build output
+out/
+build-out/
+bin/
+obj/
+lib/
+dist/
+release/
+debug/
+
+# Premake / generated project files
+*.sln
+*.slnx
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.csproj
+*.make
+Makefile
+*.mk
+compile_commands.json
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.opensdf
+*.sdf
+*.ipch
+*.VC.db
+*.VC.VC.opendb
+
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# JetBrains IDEs
+.idea/
+cmake-build-*/
+
+# CMake / Ninja, if used locally
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+build.ninja
+.ninja_deps
+.ninja_log
+
+# Object files and native binaries
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.map
+
+# Test and coverage output
+Testing/
+coverage/
+coverage.xml
+*.gcda
+*.gcno
+*.gcov
+*.profraw
+*.profdata
+
+# Logs and reports
+*.log
+logs/
+reports/
+test-results/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python/cache files sometimes created by helper scripts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Archives generated for sharing/review
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+
+# Keep repository placeholders
+!.gitkeep

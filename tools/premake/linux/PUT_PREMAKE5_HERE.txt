@@ -1,0 +1,1 @@
+Place the Linux Premake 5 executable in this folder as `premake5`.

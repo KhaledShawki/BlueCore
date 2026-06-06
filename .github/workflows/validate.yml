@@ -1,0 +1,21 @@
+name: Validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Build static and shared Premake configurations
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x tools/premake/linux/premake5
+          ./tools/premake/linux/premake5 gmake2 --blue-platforms=linux --blue-startup=BlueRunTests
+          make -C out/build/gmake config=debug_x64 BlueRunTests BlueTests -j2
+          make -C out/build/gmake config=debug_x64_dll BlueRunTests BlueTests -j2
