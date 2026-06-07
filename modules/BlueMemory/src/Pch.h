@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Blue/Memory.h>
-#include <Blue/System.h>
+#include "BlueMemoryPrivate.h"
 
 #include <stddef.h>
 #include <stdint.h>

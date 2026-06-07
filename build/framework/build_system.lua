@@ -52,7 +52,9 @@ local function command_argument(value)
     return text
 end
 
-local function build_option_arguments()
+local function build_option_arguments(options)
+    options = options or {}
+
     local args = {}
 
     local function add(name, value)
@@ -61,20 +63,31 @@ local function build_option_arguments()
         end
     end
 
+    local function add_flag(name)
+        table.insert(args, "--" .. name)
+    end
+
     add("toolchain", option_value("toolchain", "default"))
     add("blue-platforms", option_value("blue-platforms", "auto"))
     add("memory-backend", option_value("memory-backend", "system"))
     add("blue-startup", option_value("blue-startup", (bb.registry.workspace and bb.registry.workspace.startproject) or ""))
-    add("clion-config", option_value("clion-config", "default"))
-    add("clion-platform", option_value("clion-platform", "default"))
-    add("clion-idea", option_value("clion-idea", "on"))
-    add("clion-run-targets", option_value("clion-run-targets", "default"))
-    add("clion-build-targets", option_value("clion-build-targets", "default"))
     add("msvc-toolset", _OPTIONS["msvc-toolset"])
     add("msvc-tools-version", _OPTIONS["msvc-tools-version"])
 
+    if options.include_clion_options == true then
+        add("clion-config", option_value("clion-config", "default"))
+        add("clion-platform", option_value("clion-platform", "default"))
+        add("clion-idea", option_value("clion-idea", "on"))
+        add("clion-run-targets", option_value("clion-run-targets", "default"))
+        add("clion-build-targets", option_value("clion-build-targets", "default"))
+    end
+
     if _OPTIONS["strict"] then
-        table.insert(args, "--strict")
+        add_flag("strict")
+    end
+
+    if _OPTIONS["blue-scaffold"] or options.force_scaffold == true then
+        add_flag("blue-scaffold")
     end
 
     return table.concat(args, " ")
@@ -88,8 +101,13 @@ local function command_for_script(scriptName, extra)
     return command
 end
 
-local function premake_action_command(actionName)
-    local optionArgs = build_option_arguments()
+local function premake_action_command(actionName, options)
+    options = options or {}
+    if actionName == "clion" then
+        options.include_clion_options = true
+    end
+
+    local optionArgs = build_option_arguments(options)
     local args = actionName
     if optionArgs ~= "" then
         args = optionArgs .. " " .. actionName
@@ -102,10 +120,10 @@ local function premake_action_command(actionName)
     }
 end
 
-local function regenerate_command()
+local function regenerate_command(options)
     local actionName = _ACTION or "vs2022"
     local args = actionName
-    local optionArgs = build_option_arguments()
+    local optionArgs = build_option_arguments(options)
     if optionArgs ~= "" then
         args = args .. " " .. optionArgs
     end
@@ -186,6 +204,24 @@ function bb.emit_build_system_projects()
     }
 
     bb.project {
+        name = "BlueScaffoldSolution",
+        kind = "Utility",
+        root = ".",
+        group = "Build System",
+        default_files = false,
+        files = {
+            "premake5.lua",
+            "build.lua",
+            "build/framework/**/*.lua",
+            "modules/**/project.lua",
+            "apps/**/project.lua",
+            "tests/**/project.lua",
+            "scripts/regenerate-*",
+        },
+        platform = platform_postbuild(regenerate_command({ force_scaffold = true })),
+    }
+
+    bb.project {
         name = "BlueValidateBuildGraph",
         kind = "Utility",
         root = ".",
@@ -200,22 +236,7 @@ function bb.emit_build_system_projects()
         platform = platform_postbuild(premake_action_command("validate")),
     }
 
-    bb.project {
-        name = "BlueGenerateClionProject",
-        kind = "Utility",
-        root = ".",
-        group = "Build System",
-        default_files = false,
-        files = {
-            "premake5.lua",
-            "build.lua",
-            "build/framework/**/*.lua",
-            "modules/**/project.lua",
-            "apps/**/project.lua",
-            "tests/**/project.lua",
-        },
-        platform = platform_postbuild(premake_action_command("clion")),
-    }
+
 
     bb.project {
         name = "BlueListTests",

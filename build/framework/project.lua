@@ -1,7 +1,6 @@
 local function normalize(desc)
     assert(type(desc) == "table", "project expects table")
     assert(desc.name, "project requires name")
-    assert(desc.kind, "project requires kind")
 
     desc.root = desc.root or ("modules/" .. desc.name)
     desc.include_dirs = desc.include_dirs or {}
@@ -13,7 +12,8 @@ local function normalize(desc)
     desc.link_options = desc.link_options or {}
     desc.deps = desc.deps or {}
 
-    desc.files = bb.table.as_list(desc.files)
+    bb.files.prepare_project_files(desc)
+
     desc.remove_files = bb.table.as_list(desc.remove_files)
     desc.dependson = bb.table.as_list(desc.dependson)
     desc.prebuildcommands = bb.table.as_list(desc.prebuildcommands)
@@ -51,12 +51,13 @@ local function emit_default_files(desc)
 end
 
 local function emit_project_files(desc)
-    if desc.default_files ~= false then
+    if desc.default_files ~= false and not bb.files.is_structured(desc) then
         emit_default_files(desc)
     end
 
-    if #desc.files > 0 then
-        files(bb.path.to_root_paths(desc.files))
+    local projectFiles = bb.files.project_files(desc)
+    if #projectFiles > 0 then
+        files(bb.path.to_root_paths(projectFiles))
     end
 
     if #desc.remove_files > 0 then
@@ -90,7 +91,9 @@ local function emit_project_commands(desc)
     end
 end
 
-local function emit_platform_rule(rule)
+local function emit_platform_rule(desc, platformName, rule)
+    local platformFiles = bb.files.platform_files(desc, platformName)
+    if #platformFiles > 0 then files(bb.path.to_root_paths(platformFiles)) end
     if rule.files then files(bb.path.to_root_paths(rule.files)) end
     if rule.remove_files then removefiles(bb.path.to_root_paths(rule.remove_files)) end
     if rule.defines then defines(rule.defines) end
@@ -157,8 +160,23 @@ local function emit_project_pch(desc)
     pchsource(path.join(BLUE_ROOT, pch.source))
 end
 
+local function apply_library_linkage_kind(desc)
+    if bb.supports_shared_linkage(desc) then
+        filter "platforms:x64_DLL"
+            kind "SharedLib"
+            defines {
+                bb.get_module_build_define(desc.name) .. "=1",
+                bb.get_module_export_define(desc.name) .. "=1",
+            }
+        filter "platforms:not x64_DLL"
+            kind "StaticLib"
+        filter {}
+    end
+end
+
 function bb.project(desc)
     desc = normalize(desc)
+    assert(desc.kind, "project requires kind")
     bb.registry_add_project(desc)
 
     if desc.group then
@@ -167,17 +185,7 @@ function bb.project(desc)
 
     project(desc.name)
         kind(desc.kind)
-        if bb.supports_shared_linkage(desc) then
-            filter "platforms:x64_DLL"
-                kind "SharedLib"
-                defines {
-                    bb.get_module_build_define(desc.name) .. "=1",
-                    bb.get_module_export_define(desc.name) .. "=1",
-                }
-            filter "platforms:x64"
-                kind "StaticLib"
-            filter {}
-        end
+        apply_library_linkage_kind(desc)
         language "C++"
         location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. desc.name))
 
@@ -192,9 +200,10 @@ function bb.project(desc)
     -- Platform rules must be emitted in project scope, before usage scopes.
     for platformName, filterName in pairs({ windows = "system:windows", linux = "system:linux", macosx = "system:macosx" }) do
         local rule = desc.platform and desc.platform[platformName]
-        if rule then
+        local hasFiles = #bb.files.platform_files(desc, platformName) > 0
+        if rule or hasFiles then
             filter(filterName)
-            emit_platform_rule(rule)
+            emit_platform_rule(desc, platformName, rule or {})
         end
     end
 
@@ -220,17 +229,71 @@ function bb.project(desc)
     end
 end
 
-function bb.static_library(desc)
-    desc.kind = "StaticLib"
+local function configure_module_kind(desc)
+    desc.type = desc.type or "library"
+
+    if desc.type == "library" then
+        desc.linkage = desc.linkage or "auto"
+        if desc.linkage == "auto" or desc.linkage == "build_platform" then
+            desc.kind = "StaticLib"
+            desc.shared = true
+        elseif desc.linkage == "static" then
+            desc.kind = "StaticLib"
+            desc.shared = false
+        elseif desc.linkage == "shared" then
+            desc.kind = "SharedLib"
+            desc.shared = false
+        else
+            error("Unknown library linkage for '" .. tostring(desc.name) .. "': " .. tostring(desc.linkage))
+        end
+        return
+    end
+
+    if desc.type == "executable" or desc.type == "tool" or desc.type == "test" then
+        desc.kind = desc.kind or "ConsoleApp"
+        return
+    end
+
+    if desc.type == "utility" then
+        desc.kind = "Utility"
+        return
+    end
+
+    if desc.type == "header_only" then
+        desc.kind = "Utility"
+        desc.pch = false
+        return
+    end
+
+    error("Unknown module type for '" .. tostring(desc.name) .. "': " .. tostring(desc.type))
+end
+
+function bb.module(desc)
+    assert(type(desc) == "table", "bb.module expects table")
+    configure_module_kind(desc)
     bb.project(desc)
+end
+
+function bb.library(desc)
+    assert(type(desc) == "table", "bb.library expects table")
+    desc.type = "library"
+    desc.linkage = desc.linkage or "auto"
+    bb.module(desc)
+end
+
+function bb.static_library(desc)
+    desc.type = "library"
+    desc.linkage = "static"
+    bb.module(desc)
 end
 
 function bb.shared_library(desc)
-    desc.kind = "SharedLib"
-    bb.project(desc)
+    desc.type = "library"
+    desc.linkage = "shared"
+    bb.module(desc)
 end
 
 function bb.executable(desc)
-    desc.kind = desc.kind or "ConsoleApp"
-    bb.project(desc)
+    desc.type = desc.type or "executable"
+    bb.module(desc)
 end

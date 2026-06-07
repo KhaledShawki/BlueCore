@@ -437,14 +437,15 @@ end
 local function collect_project_sources(desc, context)
     local result = {}
 
-    if desc.default_files ~= false then
+    if desc.default_files ~= false and not bb.files.is_structured(desc) then
         collect_default_sources(desc, result)
     end
 
-    add_source_patterns(result, desc.files)
+    add_source_patterns(result, bb.files.project_files(desc))
     remove_source_patterns(result, desc.remove_files)
 
     local platformRule = desc.platform and desc.platform[context.system]
+    add_source_patterns(result, bb.files.platform_files(desc, context.system))
     if platformRule then
         add_source_patterns(result, platformRule.files)
         remove_source_patterns(result, platformRule.remove_files)

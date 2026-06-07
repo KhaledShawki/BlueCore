@@ -19,6 +19,8 @@ bb.import("build/framework/options.lua")
 bb.import("build/framework/platforms.lua")
 bb.import("build/framework/profiles.lua")
 bb.import("build/framework/linkage.lua")
+bb.import("build/framework/scaffold.lua")
+bb.import("build/framework/files.lua")
 bb.import("build/framework/visual_studio.lua")
 bb.import("build/framework/toolchains.lua")
 bb.import("build/framework/usage.lua")
@@ -43,7 +45,10 @@ function bb.include_files(files)
 end
 
 function bb.include_projects(files)
-    bb.include_files(files)
+    assert(type(files) == "table", "expected table")
+    for _, projectFile in ipairs(files) do
+        include(path.join(BLUE_ROOT, bb.scaffold.ensure_included_project(projectFile)))
+    end
 end
 
 function bb.include_dependencies(files)

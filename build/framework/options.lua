@@ -44,6 +44,11 @@ function bb.load_options()
     }
 
     newoption {
+        trigger = "blue-scaffold",
+        description = "Create missing included projects and missing strict manifest files from Blue templates. Normal generation validates and fails instead."
+    }
+
+    newoption {
         trigger = "memory-backend",
         value = "BACKEND",
         description = "Select BlueMemory low-level backend",

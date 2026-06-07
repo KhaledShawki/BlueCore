@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Blue/System.h>
+#include "BlueSystemPrivate.h"
 
 #include <stddef.h>
 #include <stdint.h>

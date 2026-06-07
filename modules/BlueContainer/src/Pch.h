@@ -1,8 +1,6 @@
 #pragma once
 
-#include <Blue/Container.h>
-#include <Blue/Memory.h>
-#include <Blue/System.h>
+#include "BlueContainerPrivate.h"
 
 #include <stddef.h>
 #include <stdint.h>
