@@ -58,6 +58,23 @@ chmod +x tools/premake/macos/premake5 scripts/*.sh
 ./scripts/premake-macos.sh xcode4 --toolchain=clang --blue-platforms=macos --blue-startup=BlueRunTests
 ```
 
+## CLion
+
+Generate compilation databases for CLion:
+
+```cmd
+scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
+```
+
+Linux and macOS use the matching wrapper:
+
+```bash
+./scripts/premake-linux.sh clion --toolchain=clang --blue-platforms=linux
+./scripts/premake-macos.sh clion --toolchain=clang --blue-platforms=macos
+```
+
+CLion output is written under `out/ide/clion/<target-os>/<platform>/<configuration>/`. The default command generates `Debug` / `x64`, a root `compile_commands.json`, a workspace custom target, and run configurations derived from executable Premake projects. Use `--clion-build-targets=all` to expose every buildable project in CLion. Use `--clion-platform=all --clion-config=all` for the full matrix. See `docs/CLION.md` for details.
+
 ## Generated output
 
 Generated files are written under `out/` and should not be committed.
@@ -66,6 +83,7 @@ Generated files are written under `out/` and should not be committed.
 out/build/    Generated project files
 out/bin/      Executables and libraries
 out/obj/      Object files and intermediate output
+out/ide/      Generated IDE helper files such as CLion compilation databases
 ```
 
 ## Memory backend

@@ -67,6 +67,60 @@ function bb.load_options()
         description = "Override the generated solution startup project. Use BlueRunTests to run all tests from Visual Studio/IDE."
     }
 
+    newoption {
+        trigger = "clion-config",
+        value = "CONFIG",
+        description = "Select configuration for CLion generation. Defaults to Debug; use all to generate every configuration.",
+        default = "default",
+        allowed = {
+            { "all", "Generate every Blue configuration" },
+            { "default", "Generate the default Debug configuration" },
+            { "Debug", "Generate Debug only" },
+            { "Release", "Generate Release only" },
+            { "Profile", "Generate Profile only" },
+            { "Shipping", "Generate Shipping only" },
+        }
+    }
+
+    newoption {
+        trigger = "clion-platform",
+        value = "PLATFORM",
+        description = "Select build platform for CLion generation. Defaults to x64; use all to generate every build platform.",
+        default = "default",
+        allowed = {
+            { "all", "Generate every Blue build platform" },
+            { "default", "Generate the default x64 platform" },
+            { "x64", "Generate x64 only" },
+            { "x64_DLL", "Generate x64_DLL only" },
+        }
+    }
+
+    newoption {
+        trigger = "clion-idea",
+        value = "MODE",
+        description = "Generate local CLion .idea custom build targets and run configurations.",
+        default = "on",
+        allowed = {
+            { "on", "Generate local CLion run/debug integration files" },
+            { "off", "Generate only compilation databases" },
+        }
+    }
+
+    newoption {
+        trigger = "clion-run-targets",
+        value = "TARGETS",
+        description = "Select CLion run targets: default, all, none, or comma-separated executable project names.",
+        default = "default",
+    }
+
+
+    newoption {
+        trigger = "clion-build-targets",
+        value = "TARGETS",
+        description = "Select CLion build targets: default, workspace, all, none, or comma-separated buildable project names.",
+        default = "default",
+    }
+
 
     newoption {
         trigger = "regen-action",

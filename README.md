@@ -73,6 +73,14 @@ chmod +x tools/premake/macos/premake5 scripts/*.sh
 ./scripts/run-tests-macos.sh
 ```
 
+CLion:
+
+```cmd
+scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
+```
+
+Linux/macOS use `premake-linux.sh` or `premake-macos.sh` with the same `clion` action. The default CLion export is `Debug` / `x64` and includes a workspace custom target with build configurations derived from the Premake workspace/project graph. Pass `--clion-build-targets=all` to expose every buildable project in CLion, and pass `--clion-platform=all --clion-config=all` only when the full platform/configuration matrix is needed.
+
 ## Formatting
 
 Format supported C/C++ files:
@@ -98,6 +106,7 @@ Start with these documents:
 | `docs/ARCHITECTURE.md` | Module layering and dependency rules. |
 | `docs/BUILDING.md` | Build setup and platform-specific commands. |
 | `docs/FORMATTING.md` | Formatting policy and formatter scripts. |
+| `docs/CLION.md` | CLion compilation database generation. |
 | `docs/TESTING.md` | Test layout, registration, and execution. |
 | `docs/LINKAGE.md` | Static/shared linkage model and output layout. |
 | `docs/MEMORY_SYSTEM.md` | BlueMemory overview. |

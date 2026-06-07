@@ -49,6 +49,14 @@ function bb.load_actions()
     }
 
     newaction {
+        trigger = "clion",
+        description = "Generate CLion compilation databases",
+        execute = function()
+            bb.clion.generate()
+        end
+    }
+
+    newaction {
         trigger = "graph",
         description = "Generate dependency graph",
         execute = function()

@@ -32,6 +32,7 @@ bb.import("build/framework/validation.lua")
 bb.import("build/framework/graph.lua")
 bb.import("build/framework/metadata.lua")
 bb.import("build/framework/formatting.lua")
+bb.import("build/framework/clion.lua")
 bb.import("build/framework/actions.lua")
 
 function bb.include_files(files)

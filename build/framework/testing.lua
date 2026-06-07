@@ -233,5 +233,10 @@ function bb.emit_test_runner_project()
         dependson = testNames,
         debugdir = BLUE_ROOT,
         platform = platformRules,
+        ide = {
+            run = {
+                enabled = false,
+            },
+        },
     }
 end

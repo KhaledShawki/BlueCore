@@ -1,3 +1,31 @@
+
+local function sanitize_project_name(value)
+    local text = tostring(value or "")
+    text = text:gsub("[^%w%._%-]+", "")
+    if text == "" then
+        return "Workspace"
+    end
+    return text
+end
+
+function bb.get_workspace_build_target_name()
+    local workspaceDesc = bb.registry.workspace or {}
+    return sanitize_project_name(tostring(workspaceDesc.name or "Workspace") .. "Workspace")
+end
+
+local function collect_workspace_build_dependencies()
+    local dependencies = {}
+
+    for _, desc in pairs(bb.registry.projects or {}) do
+        if desc.kind ~= "Utility" then
+            table.insert(dependencies, desc.name)
+        end
+    end
+
+    table.sort(dependencies)
+    return dependencies
+end
+
 local function quote(value)
     return '"' .. tostring(value or "") .. '"'
 end
@@ -37,6 +65,11 @@ local function build_option_arguments()
     add("blue-platforms", option_value("blue-platforms", "auto"))
     add("memory-backend", option_value("memory-backend", "system"))
     add("blue-startup", option_value("blue-startup", (bb.registry.workspace and bb.registry.workspace.startproject) or ""))
+    add("clion-config", option_value("clion-config", "default"))
+    add("clion-platform", option_value("clion-platform", "default"))
+    add("clion-idea", option_value("clion-idea", "on"))
+    add("clion-run-targets", option_value("clion-run-targets", "default"))
+    add("clion-build-targets", option_value("clion-build-targets", "default"))
     add("msvc-toolset", _OPTIONS["msvc-toolset"])
     add("msvc-tools-version", _OPTIONS["msvc-tools-version"])
 
@@ -100,6 +133,19 @@ function bb.emit_build_system_projects()
     bb.registry.build_system_projects_emitted = true
 
     bb.project {
+        name = bb.get_workspace_build_target_name(),
+        kind = "Utility",
+        root = ".",
+        group = "Build System",
+        default_files = false,
+        files = {
+            "premake5.lua",
+            "build.lua",
+        },
+        dependson = collect_workspace_build_dependencies(),
+    }
+
+    bb.project {
         name = "BlueBuildSystemFiles",
         kind = "Utility",
         root = ".",
@@ -152,6 +198,23 @@ function bb.emit_build_system_projects()
             "tests/**/project.lua",
         },
         platform = platform_postbuild(premake_action_command("validate")),
+    }
+
+    bb.project {
+        name = "BlueGenerateClionProject",
+        kind = "Utility",
+        root = ".",
+        group = "Build System",
+        default_files = false,
+        files = {
+            "premake5.lua",
+            "build.lua",
+            "build/framework/**/*.lua",
+            "modules/**/project.lua",
+            "apps/**/project.lua",
+            "tests/**/project.lua",
+        },
+        platform = platform_postbuild(premake_action_command("clion")),
     }
 
     bb.project {
