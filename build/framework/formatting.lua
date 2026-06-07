@@ -96,3 +96,58 @@ end
 function bb.run_clang_format(checkOnly)
     bb.run_format_action(checkOnly and "check" or "format")
 end
+
+
+local function collect_build_system_files()
+    local patterns = {
+        ".clang-format",
+        ".clang-format-ignore",
+        ".editorconfig",
+        ".vscode/settings.json",
+        ".vscode/extensions.json",
+        "build/**/*.lua",
+        "scripts/format-*.cmd",
+        "scripts/format-*.ps1",
+        "scripts/format-*.sh",
+        "scripts/list-format-files-*.cmd",
+        "scripts/list-format-files-*.sh",
+        "docs/FORMATTING.md",
+        "docs/IDE_FORMAT_ON_SAVE.md",
+    }
+
+    local files = {}
+    for _, pattern in ipairs(patterns) do
+        for _, file in ipairs(os.matchfiles(path.join(BLUE_ROOT, pattern))) do
+            table.insert(files, file)
+        end
+    end
+
+    return files
+end
+
+local function emit_format_utility_project(name, mode, description)
+    group("Build System/Formatting")
+
+    project(name)
+        kind "Utility"
+        location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. name))
+        files(collect_build_system_files())
+        postbuildmessage(description)
+        postbuildcommands {
+            make_format_command(mode),
+        }
+
+    group("")
+end
+
+function bb.emit_formatting_projects()
+    if bb.registry.formatting_projects_emitted then
+        return
+    end
+
+    bb.registry.formatting_projects_emitted = true
+
+    emit_format_utility_project("BlueFormat", "format", "Formatting Blue C/C++ sources")
+    emit_format_utility_project("BlueFormatCheck", "check", "Checking Blue C/C++ formatting")
+    emit_format_utility_project("BlueListFormatFiles", "list", "Listing Blue C/C++ format files")
+end
