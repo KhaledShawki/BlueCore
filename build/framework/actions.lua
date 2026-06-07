@@ -22,6 +22,38 @@ end
 
 function bb.load_actions()
     newaction {
+        trigger = "blue-add-file",
+        description = "Add a file to a Blue project manifest and create it from the correct template unless --blue-no-create is used",
+        execute = function()
+            bb.commands.add_file()
+        end
+    }
+
+    newaction {
+        trigger = "blue-remove-file",
+        description = "Remove a file from a Blue project manifest. Use --blue-delete-file to also delete it from disk",
+        execute = function()
+            bb.commands.remove_file()
+        end
+    }
+
+    newaction {
+        trigger = "blue-rename-file",
+        description = "Rename a file in a Blue project manifest and on disk unless --blue-no-create is used",
+        execute = function()
+            bb.commands.rename_file()
+        end
+    }
+
+    newaction {
+        trigger = "blue-add-project",
+        description = "Add a project to build.lua and create its module/application template unless --blue-no-create is used",
+        execute = function()
+            bb.commands.add_project()
+        end
+    }
+
+    newaction {
         trigger = "validate",
         description = "Validate Blue build graph",
         execute = function()

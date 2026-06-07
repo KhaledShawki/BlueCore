@@ -247,6 +247,76 @@ local function create_project_files(projectName, root, projectType)
     end
 end
 
+local function manifest_file_content(projectName, projectRelativeFile)
+    local fileName = basename(projectRelativeFile)
+
+    if fileName == projectName .. "Api.h" then
+        return api_header_content(projectName)
+    end
+
+    if fileName == projectName .. ".h" then
+        return public_header_content(projectName)
+    end
+
+    if fileName == projectName .. "Private.h" then
+        return private_header_content(projectName)
+    end
+
+    if fileName == "Pch.h" then
+        return pch_header_content(projectName)
+    end
+
+    if fileName == "Pch.cpp" then
+        return pch_source_content()
+    end
+
+    if projectRelativeFile:match("%.c$") or projectRelativeFile:match("%.cpp$") or projectRelativeFile:match("%.cxx$") or projectRelativeFile:match("%.cc$") then
+        return cpp_source_content()
+    end
+
+    if projectRelativeFile:match("%.h$") or projectRelativeFile:match("%.hpp$") or projectRelativeFile:match("%.inl$") then
+        return plain_header_content()
+    end
+
+    return license_header()
+end
+
+function bb.scaffold.create_authored_file(desc, rootRelativeFile, projectRelativeFile, category)
+    local absolute = path.join(BLUE_ROOT, rootRelativeFile)
+    if os.isfile(absolute) then
+        return false
+    end
+
+    bb.fs.write_file(absolute, manifest_file_content(desc.name, projectRelativeFile))
+    bb.log.info("Created " .. rootRelativeFile .. " from " .. tostring(category) .. " template")
+    return true
+end
+
+function bb.scaffold.create_project(projectName, root, projectType, linkage)
+    projectName = tostring(projectName or "")
+    root = normalize_path(root)
+    projectType = projectType or detect_project_type(root)
+    linkage = linkage or "auto"
+
+    local projectFile = path.join(root, "project.lua")
+    local absoluteProjectFile = path.join(BLUE_ROOT, projectFile)
+
+    if os.isfile(absoluteProjectFile) then
+        bb.log.info("Project file already exists: " .. projectFile)
+        return false
+    end
+
+    if os.isdir(path.join(BLUE_ROOT, root)) and not is_empty_directory(root) then
+        error("Cannot scaffold project into non-empty directory without project.lua: " .. root)
+    end
+
+    bb.log.info("Scaffolding missing " .. projectType .. " project: " .. root)
+    create_project_files(projectName, root, projectType)
+    bb.fs.write_file(absoluteProjectFile, project_template(projectName, root, projectType):gsub('linkage = "auto"', 'linkage = "' .. linkage .. '"'))
+    bb.log.info("Created " .. projectFile)
+    return true
+end
+
 function bb.scaffold.is_enabled()
     return _OPTIONS["blue-scaffold"] ~= nil
 end
@@ -270,11 +340,7 @@ function bb.scaffold.ensure_included_project(reference)
     local projectName = basename(root)
     local projectType = detect_project_type(root)
 
-    bb.log.info("Scaffolding missing " .. projectType .. " project: " .. root)
-    create_project_files(projectName, root, projectType)
-    bb.fs.write_file(absoluteProjectFile, project_template(projectName, root, projectType))
-    bb.log.info("Created " .. projectFile)
-
+    bb.scaffold.create_project(projectName, root, projectType, "auto")
     return projectFile
 end
 
@@ -288,31 +354,7 @@ function bb.scaffold.create_manifest_file(desc, rootRelativeFile, projectRelativ
         error("Project '" .. desc.name .. "' lists missing file: " .. rootRelativeFile .. "\nRun with --blue-scaffold to create missing listed files from Blue templates.")
     end
 
-    local projectName = desc.name
-    local fileName = basename(projectRelativeFile)
-    local content
-
-    if fileName == projectName .. "Api.h" then
-        content = api_header_content(projectName)
-    elseif fileName == projectName .. ".h" then
-        content = public_header_content(projectName)
-    elseif fileName == projectName .. "Private.h" then
-        content = private_header_content(projectName)
-    elseif fileName == "Pch.h" then
-        content = pch_header_content(projectName)
-    elseif fileName == "Pch.cpp" then
-        content = pch_source_content()
-    elseif projectRelativeFile:match("%.c$") or projectRelativeFile:match("%.cpp$") or projectRelativeFile:match("%.cxx$") or projectRelativeFile:match("%.cc$") then
-        content = cpp_source_content()
-    elseif projectRelativeFile:match("%.h$") or projectRelativeFile:match("%.hpp$") or projectRelativeFile:match("%.inl$") then
-        content = plain_header_content()
-    else
-        content = license_header()
-    end
-
-    bb.fs.write_file(absolute, content)
-    bb.log.info("Created " .. rootRelativeFile .. " from " .. tostring(category) .. " template")
-    return true
+    return bb.scaffold.create_authored_file(desc, rootRelativeFile, projectRelativeFile, category)
 end
 
 function bb.scaffold.validate_manifest_path(desc, projectRelativeFile, category)

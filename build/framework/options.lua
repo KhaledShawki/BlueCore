@@ -49,6 +49,69 @@ function bb.load_options()
     }
 
     newoption {
+        trigger = "blue-project",
+        value = "PROJECT",
+        description = "Project name used by Blue project-edit commands."
+    }
+
+    newoption {
+        trigger = "blue-kind",
+        value = "KIND",
+        description = "File kind used by Blue file commands: source, public-header, private-header, windows-source, linux-source, macos-source, or posix-source."
+    }
+
+    newoption {
+        trigger = "blue-path",
+        value = "PATH",
+        description = "File path used by Blue add/remove commands. Paths are project-relative or kind-relative."
+    }
+
+    newoption {
+        trigger = "blue-from",
+        value = "PATH",
+        description = "Source path used by Blue rename commands."
+    }
+
+    newoption {
+        trigger = "blue-to",
+        value = "PATH",
+        description = "Destination path used by Blue rename commands."
+    }
+
+    newoption {
+        trigger = "blue-type",
+        value = "TYPE",
+        description = "Project type used by Blue add-project. Supported values: library, executable.",
+        default = "library",
+        allowed = {
+            { "library", "Create a module library under modules/." },
+            { "executable", "Create an executable project under apps/." },
+        }
+    }
+
+    newoption {
+        trigger = "blue-linkage",
+        value = "LINKAGE",
+        description = "Library linkage used by Blue add-project.",
+        default = "auto",
+        allowed = {
+            { "auto", "Use platform-selected linkage." },
+            { "static", "Always generate a static library." },
+            { "shared", "Always generate a shared library." },
+        }
+    }
+
+    newoption {
+        trigger = "blue-no-create",
+        description = "Update project manifests without creating or renaming physical files."
+    }
+
+    newoption {
+        trigger = "blue-delete-file",
+        description = "Delete the physical file when running blue-remove-file. The default removes from the manifest only."
+    }
+
+    newoption {
         trigger = "memory-backend",
         value = "BACKEND",
         description = "Select BlueMemory low-level backend",
