@@ -50,7 +50,7 @@ public:
 
 		AllocationResult result =
 		    Blue::Allocate( m_Allocator,
-		                    BLUE_ALLOCATION_REQUEST( sizeof( T ) * capacity, alignof( T ), AllocationTag::Container ) );
+			                BLUE_ALLOCATION_REQUEST( sizeof( T ) * capacity, alignof( T ), AllocationTag::Container ) );
 
 		if ( !result.Pointer )
 		{

@@ -69,6 +69,7 @@ local function build_option_arguments(options)
 
     add("toolchain", option_value("toolchain", "default"))
     add("blue-platforms", option_value("blue-platforms", "auto"))
+    add("blue-build-platforms", option_value("blue-build-platforms", "default"))
     add("memory-backend", option_value("memory-backend", "system"))
     add("blue-startup", option_value("blue-startup", (bb.registry.workspace and bb.registry.workspace.startproject) or ""))
     add("msvc-toolset", _OPTIONS["msvc-toolset"])
@@ -149,6 +150,13 @@ function bb.emit_build_system_projects()
     end
 
     bb.registry.build_system_projects_emitted = true
+
+    -- Ninja is used as a fast command-line backend. Visual Studio-style utility
+    -- projects generate warnings and are not useful there; keep helper commands
+    -- as Premake actions/scripts for Ninja and emit only real build targets.
+    if _ACTION == "ninja" then
+        return
+    end
 
     bb.project {
         name = bb.get_workspace_build_target_name(),

@@ -1,5 +1,8 @@
 #pragma once
 
+// BlueMemory import/export annotations for static and shared builds.
+// Shared builds are enabled by the build platform through BLUE_SHARED_LIBRARY.
+// BLUE_BUILD_BLUE_MEMORY / BLUE_EXPORT_BlueMemory marks this module as the exporter.
 #include <Blue/System/Api.h>
 
 #if defined( BLUE_SHARED_LIBRARY )

@@ -36,8 +36,8 @@ struct AtomicPrimitive< TStorage, 1, Kind >
 	{
 		const char result =
 		    _InterlockedCompareExchange8( reinterpret_cast< volatile char* >( const_cast< TStorage* >( value ) ),
-		                                  0,
-		                                  0 );
+			                              0,
+			                              0 );
 		return static_cast< TStorage >( result );
 	}
 
@@ -72,8 +72,8 @@ struct AtomicPrimitive< TStorage, 2, Kind >
 	{
 		const short result =
 		    _InterlockedCompareExchange16( reinterpret_cast< volatile short* >( const_cast< TStorage* >( value ) ),
-		                                   0,
-		                                   0 );
+			                               0,
+			                               0 );
 		return static_cast< TStorage >( result );
 	}
 
@@ -118,8 +118,8 @@ struct AtomicPrimitive< TStorage, 4, Kind >
 		{
 			const long result =
 			    _InterlockedCompareExchange( reinterpret_cast< volatile long* >( const_cast< TStorage* >( value ) ),
-			                                 0,
-			                                 0 );
+				                             0,
+				                             0 );
 			return static_cast< TStorage >( result );
 		}
 	}

@@ -20,7 +20,7 @@ normalize_premake_arguments() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --toolchain|--blue-platforms|--memory-backend|--blue-startup|--msvc-toolset|--msvc-tools-version)
+            --toolchain|--blue-platforms|--blue-build-platforms|--memory-backend|--blue-startup|--msvc-toolset|--msvc-tools-version)
                 if [[ $# -lt 2 ]]; then
                     echo "[BlueBuild] Missing value for option $1." >&2
                     exit 1
@@ -28,7 +28,7 @@ normalize_premake_arguments() {
                 output_ref+=("$1=$2")
                 shift 2
                 ;;
-            --toolchain=*|--blue-platforms=*|--memory-backend=*|--blue-startup=*|--msvc-toolset=*|--msvc-tools-version=*)
+            --toolchain=*|--blue-platforms=*|--blue-build-platforms=*|--memory-backend=*|--blue-startup=*|--msvc-toolset=*|--msvc-tools-version=*)
                 output_ref+=("$1")
                 shift
                 ;;

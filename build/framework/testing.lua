@@ -213,10 +213,17 @@ function bb.emit_test_runner_project()
         local extension = get_executable_extension_for_platform(platformName)
         platformRules[platformName] = {
             debugargs = make_runner_arguments(extension),
-            postbuildcommands = {
-                make_runner_command(extension),
-            },
         }
+
+        -- Visual Studio/gmake can use post-build execution for IDE convenience.
+        -- Ninja is driven by run-tests-*.sh scripts that build the runner target
+        -- and then execute out/bin/.../BlueRunTests explicitly. This avoids
+        -- generator-specific relative-path issues in post-build commands.
+        if _ACTION ~= "ninja" then
+            platformRules[platformName].postbuildcommands = {
+                make_runner_command(extension),
+            }
+        end
     end
 
     bb.executable {

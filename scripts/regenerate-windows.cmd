@@ -28,6 +28,7 @@ set "NEXT_ARG=%~2"
 
 if /i "%CURRENT_ARG:~0,12%"=="--toolchain=" goto append_equals
 if /i "%CURRENT_ARG:~0,17%"=="--blue-platforms=" goto append_equals
+if /i "%CURRENT_ARG:~0,23%"=="--blue-build-platforms=" goto append_equals
 if /i "%CURRENT_ARG:~0,17%"=="--memory-backend=" goto append_equals
 if /i "%CURRENT_ARG:~0,15%"=="--blue-startup=" goto append_equals
 if /i "%CURRENT_ARG:~0,14%"=="--msvc-toolset=" goto append_equals
@@ -35,6 +36,7 @@ if /i "%CURRENT_ARG:~0,21%"=="--msvc-tools-version=" goto append_equals
 
 if /i "%CURRENT_ARG%"=="--toolchain" goto append_split_value
 if /i "%CURRENT_ARG%"=="--blue-platforms" goto append_split_value
+if /i "%CURRENT_ARG%"=="--blue-build-platforms" goto append_split_value
 if /i "%CURRENT_ARG%"=="--memory-backend" goto append_split_value
 if /i "%CURRENT_ARG%"=="--blue-startup" goto append_split_value
 if /i "%CURRENT_ARG%"=="--msvc-toolset" goto append_split_value

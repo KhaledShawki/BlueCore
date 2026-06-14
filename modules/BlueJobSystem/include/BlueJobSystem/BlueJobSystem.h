@@ -2,5 +2,5 @@
 
 #pragma once
 
-#include <BlueJobSystem/BlueJobSystemApi.h>
 #include <Blue/JobSystem.h>
+#include <BlueJobSystem/BlueJobSystemApi.h>

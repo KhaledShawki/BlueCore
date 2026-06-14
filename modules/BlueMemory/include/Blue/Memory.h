@@ -6,6 +6,7 @@
 #include <Blue/Memory/AllocationFlags.h>
 #include <Blue/Memory/AllocationTag.h>
 #include <Blue/Memory/Allocator.h>
+#include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/AllocatorInvoker.h>
 #include <Blue/Memory/AllocatorKind.h>
 #include <Blue/Memory/Api.h>

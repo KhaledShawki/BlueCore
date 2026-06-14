@@ -155,6 +155,16 @@ local function emit_project_pch(desc)
         path.join(BLUE_ROOT, pch.source),
     }
     includedirs { path.join(BLUE_ROOT, pch.include_dir) }
+
+    -- Premake's Ninja exporter currently emits inconsistent relative paths for
+    -- PCH inputs when projects are generated below out/build/ninja/<project>.
+    -- Keep Pch.cpp/Pch.h visible and compilable, but do not enable forced PCH
+    -- for Ninja. This preserves deterministic command-line builds while Visual
+    -- Studio/gmake retain normal precompiled-header support.
+    if _ACTION == "ninja" then
+        return
+    end
+
     forceincludes { "Pch.h" }
     pchheader "Pch.h"
     pchsource(path.join(BLUE_ROOT, pch.source))

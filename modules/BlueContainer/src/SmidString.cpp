@@ -134,7 +134,7 @@ bool SmidString::Reserve( Size newCapacity )
 
 	AllocationResult result =
 	    Blue::Allocate( m_Allocator,
-	                    BLUE_ALLOCATION_REQUEST( newCapacity + 1, alignof( char ), AllocationTag::String ) );
+		                BLUE_ALLOCATION_REQUEST( newCapacity + 1, alignof( char ), AllocationTag::String ) );
 
 	if ( !result.Pointer )
 	{

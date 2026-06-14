@@ -39,7 +39,7 @@ bool PoolAllocator::Initialize( const PoolAllocatorDesc& desc )
 
 	AllocationResult result =
 	    Blue::Allocate( m_BackingAllocator,
-	                    BLUE_ALLOCATION_REQUEST( m_ObjectStride * m_Capacity, m_ObjectAlignment, desc.Tag ) );
+		                BLUE_ALLOCATION_REQUEST( m_ObjectStride * m_Capacity, m_ObjectAlignment, desc.Tag ) );
 
 	if ( !result.Pointer )
 	{

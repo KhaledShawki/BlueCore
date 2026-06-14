@@ -147,6 +147,12 @@ function bb.emit_formatting_projects()
 
     bb.registry.formatting_projects_emitted = true
 
+    -- Ninja should not emit IDE utility projects. Formatting remains available
+    -- through `premake format`, `premake check-format`, and platform scripts.
+    if _ACTION == "ninja" then
+        return
+    end
+
     emit_format_utility_project("BlueFormat", "format", "Formatting Blue C/C++ sources")
     emit_format_utility_project("BlueFormatCheck", "check", "Checking Blue C/C++ formatting")
     emit_format_utility_project("BlueListFormatFiles", "list", "Listing Blue C/C++ format files")

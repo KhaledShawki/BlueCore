@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Blue/Memory/AllocationFailurePolicy.h>
+#include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/Api.h>
 #include <Blue/Memory/Backend/SystemMemoryBackend.h>
 #include <Blue/Memory/Metrics/MetricsProxy.h>
@@ -44,7 +45,9 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
 			return nullptr;
 		}
 
-		void* pointer = SystemMemoryBackend::Allocate( size, alignment );
+		void* pointer = IsSmallBlockAllocationSupported( size, alignment )
+		                  ? AllocateSmallBlock( size, alignment )
+		                  : SystemMemoryBackend::Allocate( size, alignment );
 		if ( !pointer )
 		{
 			registry.CancelReservation( Pool, size );
@@ -75,7 +78,14 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
 			return;
 		}
 
-		SystemMemoryBackend::Free( pointer, size, alignment );
+		if ( IsSmallBlockAllocationSupported( size, alignment ) )
+		{
+			FreeSmallBlock( pointer, size, alignment );
+		}
+		else
+		{
+			SystemMemoryBackend::Free( pointer, size, alignment );
+		}
 		GetMemoryPoolRegistry( ).RecordFree( Pool, size );
 		Metrics::RecordFree( Pool, AllocatorKind::Default, size );
 	}

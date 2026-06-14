@@ -1,54 +1,53 @@
 #include <Blue/Memory/MemoryMetrics.h>
-
-#include <atomic>
+#include <Blue/System/Threading/Atomic.h>
 
 namespace Blue
 {
 struct MemoryMetricsState
 {
-	std::atomic< Uint64 > TotalAllocatedBytes;
-	std::atomic< Uint64 > TotalFreedBytes;
-	std::atomic< Uint64 > CurrentLiveBytes;
-	std::atomic< Uint64 > PeakLiveBytes;
-	std::atomic< Uint64 > AllocationCount;
-	std::atomic< Uint64 > FreeCount;
-	std::atomic< Uint64 > ReallocationCount;
+	AtomicUint64 TotalAllocatedBytes = AtomicUint64( 0 );
+	AtomicUint64 TotalFreedBytes = AtomicUint64( 0 );
+	AtomicUint64 CurrentLiveBytes = AtomicUint64( 0 );
+	AtomicUint64 PeakLiveBytes = AtomicUint64( 0 );
+	AtomicUint64 AllocationCount = AtomicUint64( 0 );
+	AtomicUint64 FreeCount = AtomicUint64( 0 );
+	AtomicUint64 ReallocationCount = AtomicUint64( 0 );
 };
 
 static MemoryMetricsState s_Metrics = { };
 
-void ResetMemoryMetrics( )
+static void UpdatePeak( AtomicUint64& peakCounter, Uint64 value ) noexcept
 {
-	s_Metrics.TotalAllocatedBytes.store( 0 );
-	s_Metrics.TotalFreedBytes.store( 0 );
-	s_Metrics.CurrentLiveBytes.store( 0 );
-	s_Metrics.PeakLiveBytes.store( 0 );
-	s_Metrics.AllocationCount.store( 0 );
-	s_Metrics.FreeCount.store( 0 );
-	s_Metrics.ReallocationCount.store( 0 );
-}
-
-static void UpdatePeak( Uint64 current )
-{
-	Uint64 peak = s_Metrics.PeakLiveBytes.load( );
-	while ( current > peak && !s_Metrics.PeakLiveBytes.compare_exchange_weak( peak, current ) )
+	Uint64 peak = peakCounter.Load( MemoryOrder::Relaxed );
+	while ( value > peak && !peakCounter.CompareExchange( peak, value, MemoryOrder::AcquireRelease ) )
 	{
 	}
 }
 
+void ResetMemoryMetrics( )
+{
+	s_Metrics.TotalAllocatedBytes.Store( 0, MemoryOrder::Release );
+	s_Metrics.TotalFreedBytes.Store( 0, MemoryOrder::Release );
+	s_Metrics.CurrentLiveBytes.Store( 0, MemoryOrder::Release );
+	s_Metrics.PeakLiveBytes.Store( 0, MemoryOrder::Release );
+	s_Metrics.AllocationCount.Store( 0, MemoryOrder::Release );
+	s_Metrics.FreeCount.Store( 0, MemoryOrder::Release );
+	s_Metrics.ReallocationCount.Store( 0, MemoryOrder::Release );
+}
+
 void RecordMemoryAllocation( Size size )
 {
-	s_Metrics.TotalAllocatedBytes.fetch_add( size );
-	const Uint64 current = s_Metrics.CurrentLiveBytes.fetch_add( size ) + size;
-	s_Metrics.AllocationCount.fetch_add( 1 );
-	UpdatePeak( current );
+	s_Metrics.TotalAllocatedBytes.FetchAdd( size, MemoryOrder::Relaxed );
+	const Uint64 current = s_Metrics.CurrentLiveBytes.FetchAdd( size, MemoryOrder::Relaxed ) + size;
+	s_Metrics.AllocationCount.FetchAdd( 1, MemoryOrder::Relaxed );
+	UpdatePeak( s_Metrics.PeakLiveBytes, current );
 }
 
 void RecordMemoryFree( Size size )
 {
-	s_Metrics.TotalFreedBytes.fetch_add( size );
-	s_Metrics.CurrentLiveBytes.fetch_sub( size );
-	s_Metrics.FreeCount.fetch_add( 1 );
+	s_Metrics.TotalFreedBytes.FetchAdd( size, MemoryOrder::Relaxed );
+	s_Metrics.CurrentLiveBytes.FetchSub( size, MemoryOrder::Relaxed );
+	s_Metrics.FreeCount.FetchAdd( 1, MemoryOrder::Relaxed );
 }
 
 void RecordMemoryReallocation( Size oldSize, Size newSize )
@@ -61,19 +60,19 @@ void RecordMemoryReallocation( Size oldSize, Size newSize )
 	{
 		RecordMemoryFree( oldSize - newSize );
 	}
-	s_Metrics.ReallocationCount.fetch_add( 1 );
+	s_Metrics.ReallocationCount.FetchAdd( 1, MemoryOrder::Relaxed );
 }
 
 MemoryMetricsSnapshot GetMemoryMetricsSnapshot( )
 {
 	MemoryMetricsSnapshot snapshot = { };
-	snapshot.TotalAllocatedBytes = s_Metrics.TotalAllocatedBytes.load( );
-	snapshot.TotalFreedBytes = s_Metrics.TotalFreedBytes.load( );
-	snapshot.CurrentLiveBytes = s_Metrics.CurrentLiveBytes.load( );
-	snapshot.PeakLiveBytes = s_Metrics.PeakLiveBytes.load( );
-	snapshot.AllocationCount = s_Metrics.AllocationCount.load( );
-	snapshot.FreeCount = s_Metrics.FreeCount.load( );
-	snapshot.ReallocationCount = s_Metrics.ReallocationCount.load( );
+	snapshot.TotalAllocatedBytes = s_Metrics.TotalAllocatedBytes.Load( MemoryOrder::Acquire );
+	snapshot.TotalFreedBytes = s_Metrics.TotalFreedBytes.Load( MemoryOrder::Acquire );
+	snapshot.CurrentLiveBytes = s_Metrics.CurrentLiveBytes.Load( MemoryOrder::Acquire );
+	snapshot.PeakLiveBytes = s_Metrics.PeakLiveBytes.Load( MemoryOrder::Acquire );
+	snapshot.AllocationCount = s_Metrics.AllocationCount.Load( MemoryOrder::Acquire );
+	snapshot.FreeCount = s_Metrics.FreeCount.Load( MemoryOrder::Acquire );
+	snapshot.ReallocationCount = s_Metrics.ReallocationCount.Load( MemoryOrder::Acquire );
 	return snapshot;
 }
 } // namespace Blue

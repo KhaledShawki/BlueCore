@@ -14,6 +14,7 @@ function Convert-PremakeArguments {
     $valueOptions = @{
         "--toolchain" = $true
         "--blue-platforms" = $true
+        "--blue-build-platforms" = $true
         "--memory-backend" = $true
         "--blue-startup" = $true
         "--msvc-toolset" = $true

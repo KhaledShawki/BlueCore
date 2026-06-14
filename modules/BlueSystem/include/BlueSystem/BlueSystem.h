@@ -2,5 +2,5 @@
 
 #pragma once
 
-#include <BlueSystem/BlueSystemApi.h>
 #include <Blue/System.h>
+#include <BlueSystem/BlueSystemApi.h>

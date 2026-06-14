@@ -1,3 +1,4 @@
+#include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/AllocatorInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Metrics/MemoryThreadContext.h>
@@ -36,6 +37,12 @@ Result InitializeMemorySystem( const MemorySystemDesc& desc )
 	}
 
 	RegisterMemoryThread( "Main" );
+	if ( !InitializeSmallBlockAllocator( ) )
+	{
+		GetMemoryPoolRegistry( ).Shutdown( );
+		UnregisterMemoryThread( );
+		return Failure( ResultCode::UnknownFailure );
+	}
 
 	s_Memory.Heap = HeapAllocator( );
 	s_Memory.DefaultAllocator = AllocatorInvoker< HeapAllocator >::Make( s_Memory.Heap );
@@ -59,6 +66,7 @@ void ShutdownMemorySystem( )
 		BLUE_LOG_ERROR( LogMemory, "BlueMemory shutdown detected live allocations" );
 	}
 
+	ShutdownSmallBlockAllocator( );
 	GetMemoryPoolRegistry( ).Shutdown( );
 	ClearOomReports( );
 	UnregisterMemoryThread( );

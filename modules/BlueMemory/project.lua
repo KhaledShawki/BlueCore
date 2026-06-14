@@ -17,6 +17,7 @@ bb.module {
             "include/Blue/Memory/Allocator.h",
             "include/Blue/Memory/AllocatorInvoker.h",
             "include/Blue/Memory/AllocatorKind.h",
+            "include/Blue/Memory/Allocator/SmallBlockAllocator.h",
             "include/Blue/Memory/Api.h",
             "include/Blue/Memory/Backend/SystemMemoryBackend.h",
             "include/Blue/Memory/BlueNew.h",
@@ -65,6 +66,7 @@ bb.module {
 
         sources = {
             "src/AllocationFailure.cpp",
+            "src/Allocator/SmallBlockAllocator.cpp",
             "src/AllocatorKind.cpp",
             "src/Backend/MimallocBackend.cpp",
             "src/Backend/SystemMemoryBackend.cpp",
@@ -136,8 +138,10 @@ bb.module_tests {
     },
 
     tests = {
+        "BlueMemoryContractTests",
         "BlueMemoryPoolResolverTests",
         "BlueMemoryInvokerTests",
         "BlueMemoryRuntimeAllocationTests",
+        "BlueMemorySmallBlockAllocatorTests",
     },
 }

@@ -2,5 +2,5 @@
 
 #pragma once
 
-#include <BlueMemory/BlueMemoryApi.h>
 #include <Blue/Memory.h>
+#include <BlueMemory/BlueMemoryApi.h>

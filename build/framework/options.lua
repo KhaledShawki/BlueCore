@@ -27,6 +27,26 @@ function bb.load_options()
     }
 
     newoption {
+        trigger = "blue-build-platforms",
+        value = "SET",
+        description = "Select Blue build linkage platform set. Ninja currently supports x64 only; Visual Studio/gmake2 can generate x64 and x64_DLL.",
+        default = "default",
+        allowed = {
+            { "default", "Use backend defaults. Ninja uses x64; Visual Studio/gmake2 use the full platform set." },
+            { "all", "Generate every declared Blue build platform." },
+            { "x64", "Generate static x64 builds only." },
+            { "x64_DLL", "Generate shared-library x64 builds only where supported." },
+        }
+    }
+
+    newoption {
+        trigger = "macos-deployment-target",
+        value = "VERSION",
+        description = "Minimum macOS deployment target used by clang/Ninja builds.",
+        default = "11.0"
+    }
+
+    newoption {
         trigger = "msvc-toolset",
         value = "TOOLSET",
         description = "Explicitly override the Visual Studio MSVC platform toolset, for example v143, v145, msc-v143, or msc-v145. When omitted, Blue selects the default MSVC toolset for the requested Visual Studio generator."

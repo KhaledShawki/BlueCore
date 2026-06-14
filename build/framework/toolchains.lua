@@ -13,6 +13,75 @@ local VISUAL_STUDIO_MSVC_DEFAULTS = {
     },
 }
 
+
+local function trim(value)
+    return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
+end
+
+local function capture_command(command)
+    local pipe = io.popen(command, "r")
+    if not pipe then
+        return nil
+    end
+
+    local result = pipe:read("*a")
+    pipe:close()
+
+    result = trim(result)
+    if result == "" then
+        return nil
+    end
+
+    return result
+end
+
+local function get_macos_sdk_path()
+    if bb.registry.macos_sdk_path_resolved then
+        return bb.registry.macos_sdk_path
+    end
+
+    bb.registry.macos_sdk_path_resolved = true
+
+    if os.host() ~= "macosx" then
+        return nil
+    end
+
+    local sdkPath = capture_command("xcrun --sdk macosx --show-sdk-path 2>/dev/null")
+    if not sdkPath then
+        error("macOS SDK path could not be resolved. Install Xcode Command Line Tools with: xcode-select --install")
+    end
+
+    bb.registry.macos_sdk_path = sdkPath
+    return sdkPath
+end
+
+local function get_macos_deployment_target()
+    return _OPTIONS["macos-deployment-target"] or "11.0"
+end
+
+local function apply_macos_clang_sdk_policy()
+    local sdkPath = get_macos_sdk_path()
+    if not sdkPath then
+        return
+    end
+
+    local deploymentTarget = get_macos_deployment_target()
+
+    buildoptions {
+        "-isysroot " .. sdkPath,
+        "-stdlib=libc++",
+        "-mmacosx-version-min=" .. deploymentTarget,
+        "-pthread",
+    }
+
+    linkoptions {
+        "-isysroot " .. sdkPath,
+        "-stdlib=libc++",
+        "-mmacosx-version-min=" .. deploymentTarget,
+        "-pthread",
+    }
+end
+
 local function normalize_msvc_toolset(value)
     value = tostring(value or "")
     if value == "" or value == "auto" or value == "default" or value == "native" then
@@ -86,6 +155,9 @@ function bb.apply_toolchains()
         filter { "system:linux" }
             toolset "gcc"
     end
+
+    filter { "system:macosx" }
+        apply_macos_clang_sdk_policy()
 
     filter { "options:toolchain=msvc", "system:windows" }
         warnings "Extra"
