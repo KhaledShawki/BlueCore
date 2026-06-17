@@ -1,39 +1,39 @@
-# Build-System IDE Integration
+# Build System IDE Integration
 
-Blue exposes selected Premake build-system operations as generated utility targets.
+BlueCore exposes selected Premake build system operations as generated utility targets in IDE solutions.
 
-## Utility targets
+## Utility Targets
 
-- `BlueBuildSystemFiles` shows Lua build files, scripts, and build documentation.
-- `BlueRegenerateSolution` regenerates the current project files.
-- `BlueValidateBuildGraph` runs build-graph validation.
-- `BlueListTests` prints registered test executables.
+The following targets are generated and grouped under a `Build System` folder:
 
-These targets are grouped under `Build System` in generated IDE solutions.
+- `BlueBuildSystemFiles` — Shows Lua build files, scripts, and build documentation.
+- `BlueRegenerateSolution` — Regenerates the current project files.
+- `BlueValidateBuildGraph` — Runs build graph validation.
+- `BlueListTests` — Prints registered test executables.
 
-## Regeneration policy
+## Regeneration Policy
 
-Regeneration is explicit. Normal C++ builds do not silently regenerate project files.
+Regeneration is explicit. Normal C++ builds do not automatically regenerate project files.
 
-Windows:
+**Windows**
 
 ```cmd
 scripts\regenerate-windows.cmd vs2026 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
 ```
 
-Linux:
+**Linux**
 
 ```bash
 ./scripts/regenerate-linux.sh ninja --toolchain=clang --blue-platforms=linux --blue-startup=BlueRunTests
 ```
 
-macOS:
+**macOS**
 
 ```bash
 ./scripts/regenerate-macos.sh ninja --toolchain=clang --blue-platforms=macos --blue-startup=BlueRunTests
 ```
 
-## Build graph token
+## Build Graph Token
 
 Regeneration metadata is stored under:
 
@@ -41,4 +41,6 @@ Regeneration metadata is stored under:
 out/build/.blue/premake/
 ```
 
-The token tracks build scripts, project declarations, third-party declarations, generation options, and source/test file inventory. Editing the contents of an existing `.cpp` file does not require project regeneration; adding, removing, or renaming files does.
+This token records build scripts, project declarations, third-party declarations, generation options, and the current source/test file inventory.
+
+Editing the contents of an existing `.cpp` file does not require regeneration. Adding, removing, or renaming files does trigger regeneration.

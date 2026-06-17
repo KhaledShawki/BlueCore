@@ -1,6 +1,6 @@
 # Visual Studio 2026 Generation
 
-Blue can generate a Visual Studio 2026 `.slnx` workflow when the installed Premake version supports the `vs2026` action.
+BlueCore can generate Visual Studio 2026 `.slnx` workflow files when the installed Premake version supports the `vs2026` action.
 
 ## Generate
 
@@ -14,34 +14,38 @@ Equivalent explicit command:
 scripts\premake-windows.cmd vs2026 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
 ```
 
-Open:
+Open the solution at:
 
 ```text
 out/build/vs2026/Blue.slnx
 ```
 
-## Build axes
+## Build Axes
 
-```text
-Configuration: Debug / Release / Profile / Shipping
-Platform:      x64 / x64_DLL
-```
+- **Configuration**: `Debug` / `Release` / `Profile` / `Shipping`
+- **Platform**: `x64` / `x64_DLL`
 
-## Toolset selection
+## Toolset Selection
 
-When `--msvc-toolset` is omitted, the generator selects an installed x64 MSVC platform toolset it can verify. Pin a toolset only when the target environment requires it and the toolset is installed:
+When `--msvc-toolset` is omitted, the generator selects an installed x64 MSVC platform toolset that it can verify.
+
+Pin a specific toolset only when required by the target environment:
 
 ```cmd
 scripts\premake-windows.cmd vs2026 --toolchain=msvc --blue-platforms=windows --msvc-toolset=v143
 ```
 
-Pin an exact tool version only when that exact version is installed:
+Pin both the toolset and exact tool version only when that exact version is installed:
 
 ```cmd
-scripts\premake-windows.cmd vs2026 --toolchain=msvc --blue-platforms=windows --msvc-toolset=v145 --msvc-tools-version=14.50
+scripts\premake-windows.cmd vs2026 \
+    --toolchain=msvc \
+    --blue-platforms=windows \
+    --msvc-toolset=v145 \
+    --msvc-tools-version=14.50
 ```
 
-## VS2022 compatibility
+## VS2022 Compatibility
 
 Visual Studio 2022 project generation remains available:
 
@@ -49,10 +53,10 @@ Visual Studio 2022 project generation remains available:
 scripts\premake-windows.cmd vs2022 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
 ```
 
-## Blue project command layer
+## Project Command Layer
 
-Generated Visual Studio .vcxproj files are not the source of truth for project membership. They are disposable output produced from the Blue build definitions.
+Generated `.vcxproj` files are disposable output produced from the Blue build definitions. They are not the source of truth for project membership.
 
-Use the Blue project command layer for all automated project changes, including adding, removing, and renaming files or projects. The supported commands are documented in docs/BLUE_PROJECT_COMMANDS.md.
+Use the Blue project command layer for all automated changes to files and projects. The available commands are documented in `docs/BLUE_PROJECT_COMMANDS.md`.
 
-A Visual Studio extension may provide the user interface for these actions, but it must call scripts\blue.cmd to perform the actual changes and then regenerate the solution. The extension must not modify generated .vcxproj files directly.
+After making changes through the command layer, regenerate the solution so that the generated project files are updated.

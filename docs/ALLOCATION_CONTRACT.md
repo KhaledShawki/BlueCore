@@ -1,17 +1,21 @@
 # Allocation Contract
 
-This document defines the current BlueMemory allocation contract used by runtime modules.
+This document defines the allocation rules used by BlueMemory.
 
-## Core rules
+## Core Principles
 
-- Runtime allocation uses explicit request and free-request structures.
-- Typed allocations resolve their memory pool at compile time.
-- Allocation diagnostics must not allocate memory.
-- Out-of-memory reporting uses fixed-capacity storage.
-- Global `new` and `delete` overrides are not part of the current contract.
-- Array allocation and polymorphic base-pointer deletion are intentionally not supported by the typed allocation helpers.
+BlueMemory follows a strict allocation model with the following principles:
 
-## Typed allocation flow
+- All runtime allocations go through explicit request structures.
+- Typed allocations determine their memory pool at compile time.
+- Allocation diagnostics must not perform heap allocations.
+- Out-of-memory reporting uses fixed-size storage.
+- Global `operator new` and `operator delete` overrides are not supported.
+- Array allocation and polymorphic deletion are not provided by the typed allocation interface.
+
+## Typed Allocation Flow
+
+Typed allocations follow this path:
 
 ```text
 BlueNew<T>()
@@ -22,83 +26,103 @@ BlueNew<T>()
   -> backend
 ```
 
-`BlueDelete<T>()` requires `T` to be the exact allocated type.
+`BlueDelete<T>()` requires that `T` is exactly the type that was allocated. Mismatched delete calls are not supported.
 
-## Pool declaration
+## Pool Declaration
 
-Memory pools are declared in `MemoryPools.def`:
+Memory pools are declared using the `BLUE_MEMORY_POOL` macro in `MemoryPools.def`:
 
 ```cpp
 BLUE_MEMORY_POOL(Renderer, "Renderer", BLUE_MB(300), Default, ThreadCounters, true)
 ```
 
-The declaration generates:
+Each declaration generates:
+- A corresponding `MemoryPoolId` enum value
+- A `MemoryPoolPolicy<Pool>` specialization
+- Default descriptors used by the pool registry
 
-- `MemoryPoolId`
-- `MemoryPoolPolicy<Pool>`
-- default pool descriptors used by the registry
+## Using Pools with Classes
 
-## Class pool metadata
+Classes can declare which pool they should be allocated from:
 
 ```cpp
 class RenderMesh
 {
-	BLUE_USE_MEMORY_POOL(Renderer)
+    BLUE_USE_MEMORY_POOL(Renderer)
 
 public:
-	RenderMesh() noexcept;
-	~RenderMesh() noexcept;
+    RenderMesh() noexcept;
+    ~RenderMesh() noexcept;
 };
 ```
 
 Usage:
 
 ```cpp
-RenderMesh* mesh = Blue::BlueNew< RenderMesh >();
+RenderMesh* mesh = Blue::BlueNew<RenderMesh>();
 Blue::BlueDelete(mesh);
 ```
 
-## Explicit pool allocation
+## Explicit Pool Allocation
+
+Objects can be allocated into a specific pool at runtime:
 
 ```cpp
-auto* object = Blue::BlueNewInPool< Blue::MemoryPoolId::Resources, ResourceObject >();
-Blue::BlueDeleteFromPool< Blue::MemoryPoolId::Resources >(object);
+auto* object = Blue::BlueNewInPool<
+    Blue::MemoryPoolId::Resources, ResourceObject
+>();
+
+Blue::BlueDeleteFromPool<
+    Blue::MemoryPoolId::Resources
+>(object);
 ```
 
-An object allocated with an explicit pool must be released with the matching explicit-pool delete function.
+An object allocated into an explicit pool must be freed using the matching pool-specific delete function.
 
-## Runtime allocation
+## Runtime Allocation
+
+For cases where typed allocation is not suitable, raw runtime allocation is available:
 
 ```cpp
 Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST(
-	byteSize,
-	alignment,
-	Blue::AllocationTag::ResourceBuffer,
-	Blue::MemoryPoolId::Resources);
+    byteSize,
+    alignment,
+    Blue::AllocationTag::ResourceBuffer,
+    Blue::MemoryPoolId::Resources
+);
 
 void* data = Blue::BlueTryAllocate(request);
 
 Blue::BlueFree(Blue::AllocationFreeRequest{
-	data,
-	byteSize,
-	alignment,
-	Blue::MemoryPoolId::Resources,
-	Blue::AllocationTag::ResourceBuffer});
+    data,
+    byteSize,
+    alignment,
+    Blue::MemoryPoolId::Resources,
+    Blue::AllocationTag::ResourceBuffer
+});
 ```
 
-Runtime free requires exact metadata: pointer, size, alignment, pool, and tag.
+When using runtime allocation, the exact size, alignment, pool, and tag must be provided on deallocation.
 
-## Metrics
+## Metrics and Diagnostics
 
-BlueMemory records pool usage, allocation counts, free counts, failure counts, peak usage, and optional per-thread counters depending on the pool configuration.
+BlueMemory tracks the following information per pool:
 
-## Current exclusions
+- Current and peak memory usage
+- Total allocated and freed bytes
+- Allocation and free counts
+- Failed allocation counts
+- Optional per-thread counters (depending on pool configuration)
 
-These features are outside the current allocation contract:
+## Current Limitations
+
+The following features are intentionally not part of the current allocation contract:
 
 - TLSF allocator
-- global allocation override
-- array allocation helpers
-- polymorphic deletion helpers
-- JSON export
-- full allocation tracking table
+- Global `new`/`delete` overrides
+- Array allocation support
+- Polymorphic deletion helpers
+- JSON export of allocation data
+- Full allocation tracking tables
+
+These may be considered in future revisions of the memory system.

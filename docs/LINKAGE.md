@@ -1,28 +1,26 @@
 # Linkage Model
 
-Blue uses two build axes:
+BlueCore uses two independent build axes:
 
-```text
-Configurations: Debug / Release / Profile / Shipping
-Platforms:      x64 / x64_DLL
+- **Configurations**: `Debug` / `Release` / `Profile` / `Shipping`
+- **Platforms**: `x64` / `x64_DLL`
+
+Configurations control optimization level and debug information. Platforms control linkage type (static vs shared).
+
+## Linkage Platforms
+
+| Platform   | Description                  |
+|------------|------------------------------|
+| `x64`      | Static libraries             |
+| `x64_DLL`  | Shared libraries / DLLs      |
+
+The target operating system is selected separately using `--blue-platforms`.
+
+## Generated Build Names
+
+**Visual Studio**
+
 ```
-
-Configurations describe optimization and debug policy. Platforms describe the linkage variant.
-
-## Linkage platforms
-
-```text
-x64      Static libraries
-x64_DLL  Shared libraries / DLLs
-```
-
-The target operating system is selected separately with `--blue-platforms`.
-
-## Generated names
-
-Visual Studio exposes:
-
-```text
 Debug   | x64
 Debug   | x64_DLL
 Release | x64
@@ -33,68 +31,60 @@ Shipping| x64
 Shipping| x64_DLL
 ```
 
-GNU Make and Ninja expose combined lowercase names such as:
+**GNU Make / Ninja**
 
-```text
+```
 debug_x64
 debug_x64_dll
 release_x64
 release_x64_dll
+profile_x64
+profile_x64_dll
+shipping_x64
+shipping_x64_dll
 ```
 
-## Output layout
+## Output Layout
 
-Binaries are emitted to a common per-linkage directory so executables can locate sibling shared libraries at runtime:
+Binaries are placed in a shared per-linkage directory so that executables can locate sibling shared libraries at runtime:
 
 ```text
 out/bin/<system>/<platform>/<configuration>/
 ```
 
-Object files remain project-isolated:
+Object files remain isolated per project:
 
 ```text
 out/obj/<system>/<platform>/<configuration>/<project>/
 ```
 
-## Public preprocessor contract
+## Public Preprocessor Definitions
 
-Premake defines `BLUE_SHARED_LIBRARY=1` for the `x64_DLL` platform.
+When building for the `x64_DLL` platform, Premake defines:
 
-While compiling a module as a shared library, Premake also defines a private module build macro:
+```cpp
+BLUE_SHARED_LIBRARY=1
+```
 
-```text
+Additionally, each module receives a private build macro:
+
+```cpp
 BLUE_BUILD_BLUE_SYSTEM=1
 BLUE_BUILD_BLUE_MEMORY=1
 BLUE_BUILD_BLUE_CONTAINER=1
 BLUE_BUILD_BLUE_JOB_SYSTEM=1
 ```
 
-Public API headers translate these definitions into import/export attributes:
+Public API headers use these definitions to apply the correct `dllexport` / `dllimport` attributes.
 
-```cpp
-#include <Blue/System/Api.h>
-#include <Blue/Memory/Api.h>
-#include <Blue/Container/Api.h>
-#include <Blue/JobSystem/Api.h>
-```
+## Precompiled Headers
 
-## Precompiled headers
+A project uses a precompiled header if one of the following pairs exists:
 
-A project uses a precompiled header when one of these pairs exists:
+- `<project-root>/src/Pch.h` + `<project-root>/src/Pch.cpp`
+- `<project-root>/Pch.h` + `<project-root>/Pch.cpp`
 
-```text
-<project-root>/src/Pch.h
-<project-root>/src/Pch.cpp
-```
-
-or:
-
-```text
-<project-root>/Pch.h
-<project-root>/Pch.cpp
-```
-
-A project can opt out with:
+A project can disable precompiled headers with:
 
 ```lua
 pch = false

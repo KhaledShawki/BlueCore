@@ -1,128 +1,84 @@
-# CLion
+# CLion Integration
 
-Blue supports CLion through generated compilation databases and generated local IDE integration files. The exporter is driven by the Premake workspace and project graph. It does not depend on Bear, CMake, or CLion-specific project metadata.
+BlueCore supports CLion through generated compilation databases and local IDE integration files. The integration is driven by the Premake workspace and project graph. It does not rely on Bear, CMake, or CLion-specific metadata.
 
-## Generate CLion files
+## Generating CLion Files
 
-Windows:
+**Windows**
 
 ```cmd
 scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
 ```
 
-Linux:
+**Linux**
 
 ```bash
 ./scripts/premake-linux.sh clion --toolchain=clang --blue-platforms=linux
 ```
 
-macOS:
+**macOS**
 
 ```bash
 ./scripts/premake-macos.sh clion --toolchain=clang --blue-platforms=macos
 ```
 
-The default command writes the daily development view only: `Debug` / `x64`. It exposes the workspace build plus the default executable run target. Use `--clion-build-targets=all` to expose every buildable Premake project in CLion. Use `--clion-platform=all --clion-config=all` only when the full platform/configuration matrix is needed.
+By default, the command generates the daily development view (`Debug` / `x64`). This includes the workspace build and the default executable run target.
 
-Generated databases are written under:
+Use the following flags when more comprehensive output is needed:
+
+- `--clion-build-targets=all` — Expose every buildable Premake project
+- `--clion-platform=all --clion-config=all` — Generate the full platform/configuration matrix
+
+Generated compilation databases are written to:
 
 ```text
 out/ide/clion/<target-os>/<platform>/<configuration>/compile_commands.json
 ```
 
-The root `compile_commands.json` is copied from the generated default database so CLion can index the repository root directly.
+A root `compile_commands.json` is also created so CLion can index the repository from the root directory.
 
-## Build integration
+## Build Integration
 
-The `clion` action also generates local CLion build files under `.idea/` unless disabled:
+The `clion` action can also generate local CLion build files under `.idea/` (unless disabled with `--clion-idea=off`):
 
 ```text
 .idea/customTargets.xml
 .idea/tools/External Tools.xml
 ```
 
-The exporter creates one stable CLion custom target named after the Premake workspace, for example:
+It creates one stable custom target named after the Premake workspace (for example `Blue`). This target contains build configurations derived from the workspace and project graph.
 
-```text
-Blue
-```
+Use CLion’s normal build actions after opening the project:
 
-That target contains build configurations generated from the workspace and project graph:
+- **Build → Build Project**
+- **Build → Rebuild Project**
+- **Build → Clean**
 
-```text
-Blue Workspace Debug x64
-BlueTests Debug x64
-BlueSystem Debug x64
-BlueMemory Debug x64
-```
+`Build Project` uses the first generated build configuration (typically the workspace build).
 
-Default generation includes the workspace configuration and any build configuration needed by the selected run targets. Generate build configurations for every buildable Premake project with:
+## Run Integration
 
-```bash
-./scripts/premake-linux.sh clion --clion-build-targets=all
-```
+Run configurations are generated only for Premake executable projects (`ConsoleApp` or `WindowedApp`).
 
-Use CLion's normal build actions after opening the repository:
+Default run target selection follows this order:
 
-```text
-Build -> Build Project
-Build -> Rebuild Project
-Build -> Clean
-```
+1. Use the workspace `startproject` (if it is an executable)
+2. If there is exactly one executable project in the workspace, use it
+3. Otherwise, generate no default run configuration
 
-`Build Project` uses the first generated build configuration, which is the workspace build. Run/debug configurations reference the same stable custom target and the executable project's matching build configuration.
-
-Disable `.idea` generation when only the compilation database is needed:
-
-```bash
-./scripts/premake-linux.sh clion --clion-idea=off
-```
-
-## Run integration
-
-Run configurations are generated only for Premake executable projects:
-
-```lua
-kind "ConsoleApp"
-kind "WindowedApp"
-```
-
-Default run target selection is deterministic:
-
-1. Use the workspace `startproject` when it is an executable project.
-2. If there is no executable `startproject` and the workspace contains exactly one executable project, use that project.
-3. Otherwise generate no default run configuration until the target is selected explicitly.
-
-Generate all runnable executables:
+To control run configuration generation:
 
 ```bash
 ./scripts/premake-linux.sh clion --clion-run-targets=all
-```
-
-Generate specific executable projects:
-
-```bash
 ./scripts/premake-linux.sh clion --clion-run-targets=BlueTests,BlueBenchmarks
-```
-
-Disable run configurations:
-
-```bash
 ./scripts/premake-linux.sh clion --clion-run-targets=none
 ```
 
-## Build target selection
+## Build Target Selection
 
-Build configurations are generated from buildable Premake projects:
+Build configurations are generated from buildable Premake projects (`StaticLib`, `SharedLib`, `ConsoleApp`, `WindowedApp`).
 
-```lua
-kind "StaticLib"
-kind "SharedLib"
-kind "ConsoleApp"
-kind "WindowedApp"
-```
-
-Supported build target modes:
+Supported modes:
 
 ```text
 --clion-build-targets=default
@@ -132,16 +88,18 @@ Supported build target modes:
 --clion-build-targets=ProjectA,ProjectB
 ```
 
-`default` generates the workspace build and the build configurations required by the selected run targets. `all` is useful when you want to build individual libraries and executables directly from CLion.
+The `default` mode generates the workspace build plus any configurations required by selected run targets. Use `all` when you want to build individual libraries and executables directly from CLion.
 
-The exporter does not read or require `ide` or `clion` fields in project declarations. Use standard Premake data: workspace `startproject`, project `kind`, source files, dependencies, include directories, defines, filters, and debug arguments.
+## Generating a Specific Database
 
-## Generate a specific database
-
-Use `--clion-platform` and `--clion-config` when a build view other than the default `Debug` / `x64` view is needed:
+To generate a compilation database for a specific platform and configuration:
 
 ```cmd
-scripts\premake-windows.cmd clion --blue-platforms=windows --toolchain=msvc --clion-platform=x64_DLL --clion-config=Release
+scripts\premake-windows.cmd clion \
+    --blue-platforms=windows \
+    --toolchain=msvc \
+    --clion-platform=x64_DLL \
+    --clion-config=Release
 ```
 
 Supported values:
@@ -151,11 +109,9 @@ Supported values:
 --clion-config=default|all|Debug|Release|Profile|Shipping
 ```
 
-`default` means `x64` for the platform and `Debug` for the configuration.
+## Build Wrapper Behavior
 
-## Build wrapper behavior
-
-Generated CLion build targets call repository scripts instead of duplicating build logic in XML:
+Generated CLion build targets invoke repository scripts rather than duplicating build logic:
 
 ```text
 scripts/clion-build-windows.cmd
@@ -164,22 +120,15 @@ scripts/clion-build-unix.sh
 scripts/clion-clean-unix.sh
 ```
 
-The wrappers regenerate the native backend before building:
+These wrappers regenerate the native backend before building.
 
-- Windows uses the configured Visual Studio action and MSBuild.
-- Linux and macOS use the generated GNU Make backend.
+## Regeneration Policy
 
-The workspace build configuration calls the generated aggregate target, for example `BlueWorkspace`. Project build configurations call their normal Premake project targets.
+Regenerate CLion files after changing any of the following:
 
-## Regeneration policy
-
-Regenerate CLion files after changing:
-
-- workspace name, platforms, configurations, or start project
-- project kind or target name
-- module dependencies
-- include directories
-- compiler definitions
-- source file lists
-- platform/configuration filters
+- Workspace name, platforms, configurations, or start project
+- Project kind or target name
+- Module dependencies
+- Include directories or compiler definitions
+- Source file lists or platform/configuration filters
 - Premake project declarations

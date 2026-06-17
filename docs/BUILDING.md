@@ -1,13 +1,15 @@
 # Building
 
+This document describes how to build BlueCore.
+
 ## Requirements
 
-- C++20 compiler
-- Premake 5
-- Optional: `clang-format`
-- Optional: Graphviz for dependency graph rendering
+- A C++20 compatible compiler
+- [Premake 5](https://premake.github.io/)
+- Optional: `clang-format` for code formatting
+- Optional: Graphviz for visualizing build dependencies
 
-Place Premake in the OS-specific tool folder:
+Place the Premake executable in the platform-specific directory:
 
 ```text
 tools/premake/windows/premake5.exe
@@ -17,25 +19,25 @@ tools/premake/macos/premake5
 
 ## Windows
 
-Validate the build graph:
+### Validate the build graph
 
 ```cmd
 scripts\premake-windows.cmd validate
 ```
 
-Generate Visual Studio 2022 projects:
+### Generate Visual Studio projects
 
 ```cmd
 scripts\premake-windows.cmd vs2022 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
 ```
 
-Build:
+### Build
 
 ```cmd
 msbuild out\build\vs2022\Blue.sln /p:Configuration=Debug /p:Platform=Win64
 ```
 
-Generate the Visual Studio 2026 `.slnx` workflow when supported by the installed Premake generator:
+A helper script is also available to generate Visual Studio 2026 projects when supported:
 
 ```cmd
 scripts\generate-vs-windows.cmd
@@ -45,8 +47,10 @@ scripts\generate-vs-windows.cmd
 
 ```bash
 chmod +x tools/premake/linux/premake5 scripts/*.sh
+
 ./scripts/premake-linux.sh validate
 ./scripts/premake-linux.sh gmake2 --toolchain=gcc --blue-platforms=linux --blue-startup=BlueRunTests
+
 make -C out/build/gmake2 config=debug_x64
 ```
 
@@ -54,6 +58,7 @@ make -C out/build/gmake2 config=debug_x64
 
 ```bash
 chmod +x tools/premake/macos/premake5 scripts/*.sh
+
 ./scripts/premake-macos.sh validate
 ./scripts/premake-macos.sh xcode4 --toolchain=clang --blue-platforms=macos --blue-startup=BlueRunTests
 ```
@@ -66,35 +71,30 @@ Generate compilation databases for CLion:
 scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
 ```
 
-Linux and macOS use the matching wrapper:
+On Linux and macOS, use the corresponding wrapper scripts.
 
-```bash
-./scripts/premake-linux.sh clion --toolchain=clang --blue-platforms=linux
-./scripts/premake-macos.sh clion --toolchain=clang --blue-platforms=macos
+CLion output is written to `out/ide/clion/`. See `docs/CLION.md` for more details.
+
+## Generated Output
+
+All generated files are written under the `out/` directory and should not be committed to version control:
+
 ```
-
-CLion output is written under `out/ide/clion/<target-os>/<platform>/<configuration>/`. The default command generates `Debug` / `x64`, a root `compile_commands.json`, a workspace custom target, and run configurations derived from executable Premake projects. Use `--clion-build-targets=all` to expose every buildable project in CLion. Use `--clion-platform=all --clion-config=all` for the full matrix. See `docs/CLION.md` for details.
-
-## Generated output
-
-Generated files are written under `out/` and should not be committed.
-
-```text
 out/build/    Generated project files
 out/bin/      Executables and libraries
-out/obj/      Object files and intermediate output
-out/ide/      Generated IDE helper files such as CLion compilation databases
+out/obj/      Object files
+out/ide/      IDE helper files (e.g. CLion compile_commands.json)
 ```
 
-## Memory backend
+## Memory Backend Selection
 
-The default backend is the system allocator:
+The default memory backend is the system allocator:
 
 ```text
 --memory-backend=system
 ```
 
-mimalloc can be selected when the dependency is available under `third_party/mimalloc`:
+To use mimalloc instead, place the dependency under `third_party/mimalloc` and generate with:
 
 ```text
 --memory-backend=mimalloc

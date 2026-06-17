@@ -1,55 +1,58 @@
 # BlueMemory
 
-BlueMemory is the allocation layer used by the Blue runtime modules.
+BlueMemory is the memory management layer used by BlueCore. It provides the allocation infrastructure for the rest of the system.
 
 ## Responsibilities
 
-- Allocator interface
-- Heap, linear, and pool allocators
-- Allocation request and free-request structures
-- Pool registry and pool descriptors
-- Allocation tags
-- Runtime metrics
-- Tracking and leak-detection hooks
-- Memory blocks and virtual memory blocks
-- Optional mimalloc backend integration
+BlueMemory handles the following areas:
 
-## Allocator model
+- Allocator interface and invocation mechanism
+- Multiple allocator types (heap, linear, pool)
+- Allocation request structures
+- Memory pool registry and descriptors
+- Allocation tagging and categorization
+- Runtime metrics and diagnostics
+- Allocation tracking and leak detection
+- Memory block abstractions
+- Optional integration with external allocators (such as mimalloc)
 
-Blue uses a small runtime allocator handle:
+## Allocator Model
+
+BlueCore uses a lightweight, non-virtual allocator handle:
 
 ```cpp
 struct Allocator
 {
-	void* Context;
-	AllocateFn Allocate;
-	ReallocateFn Reallocate;
-	FreeFn Free;
+    void*        Context;
+    AllocateFn   Allocate;
+    ReallocateFn Reallocate;
+    FreeFn       Free;
 };
 ```
 
-Allocator implementations are adapted through `AllocatorInvoker<TAllocator>`. This avoids virtual functions and keeps allocator implementations explicit and testable.
+Allocator implementations are adapted using `AllocatorInvoker<TAllocator>`. This approach avoids virtual function overhead while keeping allocator implementations explicit and easily testable.
 
-## Blocks
+## Memory Blocks
 
-`MemoryBlock` represents an owned memory range.
+BlueMemory defines two main block types:
 
-`VirtualMemoryBlock` represents OS-reserved and committed virtual memory.
+- `MemoryBlock` — Represents an owned contiguous memory range.
+- `VirtualMemoryBlock` — Represents memory that has been reserved and committed from the operating system.
 
-These types are used by allocator implementations, tracking, diagnostics, and future profiling tools.
+These abstractions are used internally by allocators, tracking systems, and diagnostics.
 
-## mimalloc
+## Backend Support
 
-mimalloc is hidden behind the BlueMemory backend layer. Public Blue headers do not include `mimalloc.h`.
-
-Enable it during generation when the dependency is available:
+By default, BlueMemory uses the system allocator. An optional `mimalloc` backend can be enabled during project generation using:
 
 ```text
 --memory-backend=mimalloc
 ```
 
-The project does not redistribute mimalloc binaries.
+When using mimalloc, the dependency must be provided externally. BlueCore does not redistribute mimalloc binaries, and public headers do not expose `mimalloc.h`.
 
-## Allocation contract
+## Further Reading
 
-Typed allocations, explicit pool allocation, runtime allocation metadata, and current exclusions are documented in `docs/ALLOCATION_CONTRACT.md`.
+Detailed information about allocation rules, typed allocation, pool usage, and runtime allocation is available in:
+
+- [Allocation Contract](ALLOCATION_CONTRACT.md)

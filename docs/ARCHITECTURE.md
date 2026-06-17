@@ -1,6 +1,6 @@
 # Architecture
 
-Blue is split into small modules with strict dependency direction. Lower layers must not depend on higher layers.
+BlueCore follows a strict layered architecture. Each layer depends only on the layers below it. This is a fundamental design decision that shapes the entire project.
 
 ```text
 BlueSystem
@@ -12,37 +12,55 @@ BlueContainer
 BlueJobSystem
 ```
 
-## Dependency rules
+## Layering Principles
 
-- `BlueSystem` has no dependency on other Blue runtime modules.
-- `BlueMemory` may depend on `BlueSystem` only.
-- `BlueContainer` may depend on `BlueSystem` and `BlueMemory`.
-- `BlueJobSystem` may depend on `BlueSystem`, `BlueMemory`, and `BlueContainer`.
+The strict layering approach provides several important benefits:
 
-These rules keep platform code, allocation code, containers, and job execution independent enough to test and replace in isolation.
+- **Clear boundaries** — Code in a given layer can only use types and functions from lower layers.
+- **Improved testability** — Each layer can be tested independently.
+- **Easier maintenance** — Changes in higher layers cannot accidentally break lower layers.
+- **Better reasoning** — When working in a layer, the available dependencies are limited and predictable.
 
-## Repository ownership
+## Dependency Rules
 
-```text
-modules/    Reusable runtime libraries
-apps/       Executables, benchmarks, demos, and tools that are shipped or run directly
-tests/      Shared test runner and integration-level test support
-tools/      Developer tooling used by the repository workflow
-build/      Premake framework and dependency declarations
-scripts/    Thin command wrappers for common workflows
-docs/       Repository-level documentation
-```
+| Module            | Allowed Dependencies                     | Forbidden Dependencies          |
+|-------------------|------------------------------------------|---------------------------------|
+| `BlueSystem`      | None (within Blue runtime modules)       | `BlueMemory`, `BlueContainer`, `BlueJobSystem` |
+| `BlueMemory`      | `BlueSystem`                             | `BlueContainer`, `BlueJobSystem` |
+| `BlueContainer`   | `BlueSystem`, `BlueMemory`               | `BlueJobSystem`                 |
+| `BlueJobSystem`   | `BlueSystem`, `BlueMemory`, `BlueContainer` | —                            |
 
-Module-specific documentation belongs under the owning module, for example `modules/BlueSystem/docs/`.
+These rules are treated as part of the architecture contract.
 
-## Allocation ownership
+## Repository Layout
 
-Runtime allocations should go through `Blue::Allocator` or a higher-level BlueMemory API. Direct `malloc`, `free`, `new`, and `delete` are reserved for backend implementations, platform adapters, test harnesses, or controlled override files.
+| Directory   | Purpose |
+|-------------|---------|
+| `modules/`  | Core runtime libraries |
+| `apps/`     | Applications and benchmarks |
+| `tests/`    | Shared test infrastructure |
+| `tools/`    | Build and development tools |
+| `build/`    | Premake build system |
+| `scripts/`  | Automation and helper scripts |
+| `docs/`     | Documentation |
 
-## Logging and allocation recursion
+Documentation specific to a module is placed inside that module’s directory.
 
-Logging belongs to `BlueSystem` because allocator and platform code need diagnostics. The logger must therefore be able to emit messages without heap allocation on its hot path.
+## Memory Allocation Rules
 
-## Public header policy
+All allocations performed by BlueCore code should go through the `BlueMemory` layer. Direct use of `malloc`, `free`, `new`, and `delete` is restricted to:
 
-Public headers should avoid leaking platform headers such as `windows.h` and `pthread.h`. Native handles are wrapped in Blue types, and platform-specific implementation details stay in source files.
+- Memory backend implementations
+- Platform adapter code
+- Test infrastructure
+- Controlled override mechanisms
+
+This restriction exists to keep memory tracking, metrics, and diagnostics centralized.
+
+## Logging
+
+The logging system resides in `BlueSystem`. This placement is intentional, as both the memory allocator and platform layers require diagnostic capabilities. The logger is designed to operate without heap allocations on its hot path.
+
+## Public API Constraints
+
+Public headers must not include platform-specific headers such as `windows.h` or `pthread.h`. Operating system handles are wrapped in Blue types, and platform-specific implementation details remain in source files. This keeps the public interface portable and clean.

@@ -1,45 +1,50 @@
 # BlueMemory Small Block Allocator
 
-BlueMemory routes typed and runtime default allocations of 512 bytes or less through a small block allocator.
+BlueMemory routes typed and runtime default allocations of 512 bytes or less through a dedicated small block allocator.
 
-## Design goals
+## Design Goals
+
+The small block allocator is designed to achieve the following:
 
 - Keep the typed allocation path predictable and branch-light.
-- Reuse memory aggressively for latency-sensitive allocations.
-- Avoid locks on the common allocation and free path.
+- Aggressively reuse memory for latency-sensitive allocations.
+- Avoid locks on the common allocation and free paths.
 - Avoid per-allocation heap metadata for small objects.
-- Keep diagnostics measurable through pool metrics, thread metrics, and allocator stats.
+- Keep diagnostics measurable through pool metrics, thread metrics, and allocator statistics.
 
 ## Architecture
 
-The allocator owns fixed-size slabs. Each slab is split into one size class:
+The allocator manages fixed-size slabs. Each slab is divided into blocks of a single size class:
 
 ```text
 16, 32, 64, 128, 256, 512 bytes
 ```
 
-Each thread owns a small thread-local cache containing one free list per class. Allocation pops one block from the current thread cache. If the cache is empty, the allocator allocates one 64 KiB slab, splits it, and refills the cache.
+Each thread maintains a small thread-local cache containing one free list per size class. 
 
-Free pushes the block into the current thread cache for the matching size class. The block itself stores the next pointer while it is free, so there is no external per-block metadata.
+- **Allocation**: Pops a block from the current thread’s cache for the appropriate size class. If the cache is empty, the allocator allocates a new 64 KiB slab, splits it into blocks, and refills the cache.
+- **Free**: Pushes the block back into the current thread’s cache for the matching size class.
+
+The freed block itself stores the next pointer (intrusive free list), so there is no external per-block metadata.
 
 ## Routing
 
-`AllocatorProxy<AllocatorKind::Default, Pool>` now routes:
+`AllocatorProxy<AllocatorKind::Default, Pool>` routes allocations as follows:
 
 ```text
-size <= 512 and alignment <= 512 and power-of-two alignment -> small block allocator
-otherwise                                                   -> system backend
+size <= 512 and alignment <= 512 and power-of-two alignment → small block allocator
+otherwise                                                   → system backend
 ```
 
-Pool metrics still account for the requested allocation size, not the internal size class. This keeps budgets meaningful and avoids exposing allocator implementation details to pool accounting.
+Pool metrics continue to track the originally requested size (not the internal size class). This preserves meaningful budget accounting and avoids leaking allocator implementation details.
 
 ## Shutdown
 
-Slabs are released on `ShutdownMemorySystem()`. A generation counter invalidates old thread-local cache lists when the allocator is reinitialized.
+All slabs are released during `ShutdownMemorySystem()`. A generation counter is used to invalidate stale thread-local cache lists when the allocator is reinitialized.
 
-## Performance implications
+## Performance Characteristics
 
-The hot path for a cached small allocation is:
+The hot path for a cached small allocation consists of:
 
 ```text
 compute size class
@@ -47,5 +52,4 @@ pop from thread-local free list
 update pool/thread counters according to policy
 ```
 
-There is no backend allocation, no global lock, and no per-object header in that path.
-
+This path involves no backend allocation, no global lock, and no per-object header.

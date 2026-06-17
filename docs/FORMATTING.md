@@ -1,21 +1,21 @@
 # Formatting
 
-Blue uses a single repository-level `.clang-format` file for C and C++ formatting.
+BlueCore uses a single repository-level `.clang-format` file for all C and C++ code.
 
 ## Policy
 
-- Keep one formatter configuration at the repository root.
-- Do not add nested `.clang-format` or `_clang-format` files.
-- Use `clang-format --style=file` so the repository configuration is discovered consistently.
-- Do not format generated output, third-party payloads, or tool binaries.
-- CI should check formatting; it should not rewrite source files.
+- There is one formatter configuration at the repository root.
+- Nested `.clang-format` or `_clang-format` files are not allowed.
+- All formatting uses `clang-format --style=file` so the root configuration is discovered consistently.
+- Generated output, third-party code, and tool binaries are not formatted.
+- CI checks formatting but does not automatically rewrite source files.
 
-## Style summary
+## Style Guidelines
 
-- Tabs are used for indentation.
-- Braces use Allman style.
-- Short switch cases may remain on one line.
-- Larger switch cases should use explicit braces in source code.
+- Indentation uses tabs.
+- Braces follow Allman style.
+- Short switch cases may stay on one line.
+- Larger switch cases should use explicit braces.
 
 Example:
 
@@ -28,19 +28,19 @@ default: return "Unknown";
 }
 ```
 
-## Tool resolution
+## Tool Resolution
 
-Formatter scripts resolve `clang-format` in this order:
+Formatter scripts locate `clang-format` in the following order:
 
-1. `BLUE_CLANG_FORMAT`, if set.
-2. Repo-local tool under `tools/clang-format/<os>/`.
-3. Standard LLVM install locations.
-4. Visual Studio LLVM toolchain path on Windows.
-5. `clang-format` from `PATH`.
+1. `BLUE_CLANG_FORMAT` environment variable (if set)
+2. Repository-local binary under `tools/clang-format/<os>/`
+3. Standard LLVM installation locations
+4. Visual Studio LLVM toolchain path (on Windows)
+5. `clang-format` available in `PATH`
 
 ## Usage
 
-Windows:
+**Windows**
 
 ```cmd
 scripts\format-windows.cmd
@@ -48,7 +48,7 @@ scripts\format-check-windows.cmd
 scripts\list-format-files-windows.cmd
 ```
 
-Linux:
+**Linux**
 
 ```bash
 ./scripts/format-linux.sh
@@ -56,7 +56,7 @@ Linux:
 ./scripts/list-format-files-linux.sh
 ```
 
-macOS:
+**macOS**
 
 ```bash
 ./scripts/format-macos.sh
@@ -64,7 +64,7 @@ macOS:
 ./scripts/list-format-files-macos.sh
 ```
 
-Premake actions:
+**Premake Actions**
 
 ```cmd
 scripts\premake-windows.cmd format
@@ -74,17 +74,17 @@ scripts\premake-windows.cmd list-format-files
 
 ## Troubleshooting
 
-Check which formatter configuration is used for a file:
+To see which configuration is being used for a specific file:
 
 ```cmd
 clang-format --style=file -dump-config modules\BlueSystem\src\Log\Logger.cpp
 ```
 
-Search for accidental nested formatter files:
+To check for accidental nested formatter files:
 
 ```cmd
 dir /s /b .clang-format
 dir /s /b _clang-format
 ```
 
-Only the repository root formatter file should exist.
+Only the repository root `.clang-format` file should exist.

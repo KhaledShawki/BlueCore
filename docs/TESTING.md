@@ -1,23 +1,25 @@
 # Testing
 
-Blue tests are registered through the Premake framework. Module tests live inside the owning module's `tests/` folder.
+BlueCore uses a target-based test model. Each test is built as a separate executable rather than being bundled into a single test binary.
 
-## Layout
+## Test Layout
+
+Tests for a module are placed inside that module’s `tests/` directory:
 
 ```text
 modules/BlueSystem/
-  include/
-  src/
-  tests/
-    BlueSystemAtomicTests.cpp
-    BlueSystemThreadingTests.cpp
+├── include/
+├── src/
+└── tests/
+    ├── BlueSystemAtomicTests.cpp
+    └── BlueSystemThreadingTests.cpp
 ```
 
-The framework rejects test sources outside the owning project's `tests/` folder.
+The build system enforces that test sources must reside within the owning module’s `tests/` folder.
 
-## Registration
+## Test Registration
 
-Module tests are registered in `project.lua`:
+Tests are registered in the module’s `project.lua` file:
 
 ```lua
 bb.module_tests {
@@ -33,31 +35,33 @@ bb.module_tests {
 }
 ```
 
-Each listed test builds as a separate executable.
+Each registered test is built as an independent executable. This isolation makes it easier to diagnose crashes, deadlocks, or threading issues.
 
-## Aggregate runner
+## Running Tests
 
-`BlueRunTests` builds and runs all registered test executables.
+The aggregate test runner `BlueRunTests` builds and executes all registered test executables.
 
-Windows:
+**Windows**
 
 ```cmd
 scripts\run-tests-windows.cmd
 ```
 
-Linux:
+**Linux**
 
 ```bash
 ./scripts/run-tests-linux.sh
 ```
 
-macOS:
+**macOS**
 
 ```bash
 ./scripts/run-tests-macos.sh
 ```
 
-## Premake actions
+## Premake Actions
+
+The following Premake actions are available for working with tests:
 
 ```cmd
 scripts\premake-windows.cmd list-tests
@@ -65,16 +69,16 @@ scripts\premake-windows.cmd test-metadata
 scripts\premake-windows.cmd run-tests
 ```
 
-`test-metadata` writes:
+The `test-metadata` action generates a JSON file containing test information:
 
 ```text
 generated/tests/BlueTests.json
 ```
 
-## Policy
+## Design Policy
 
-- Each test source should build as an isolated executable.
-- Test registration belongs in Premake project declarations, not duplicated scripts.
-- `BlueRunTests` is the aggregate target for IDEs and CI.
-- Test runner tooling may use the C++ standard library.
+- Every test builds as a separate executable to improve failure isolation.
+- Test registration is managed through Premake declarations rather than scripts.
+- `BlueRunTests` serves as the single entry point for running all tests in IDEs and CI.
+- The test runner may use the C++ standard library, as it is not part of the core runtime.
 - Runtime modules must not depend on the test runner implementation.

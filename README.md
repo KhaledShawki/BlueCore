@@ -1,124 +1,54 @@
-# Blue
+# BlueCore
 
-Blue is a modular C++ foundation framework for native applications, tools, and engine-style systems.
+BlueCore is a modular C++ foundation framework focused on deterministic memory management, low-level primitives, and runtime observability.
 
-The repository is organized as a workspace. Core runtime code lives in `modules/`, runnable programs live in `apps/`, shared test infrastructure lives in `tests/`, and developer tooling lives in `tools/`.
+The project follows a strict layered architecture where each layer depends only on the layers beneath it. This design results in clearer boundaries, better testability, and more maintainable code.
 
-## Modules
+## Architecture
 
-| Module | Responsibility |
-|---|---|
-| `BlueSystem` | Platform detection, compiler utilities, base types, assertions, time, processor queries, threading, synchronization, diagnostics, and logging. |
-| `BlueMemory` | Allocation interfaces, memory backends, pool registry, allocator metrics, allocation tags, blocks, and tracking hooks. |
-| `BlueContainer` | Allocator-aware containers and lightweight view types. |
-| `BlueJobSystem` | Job-system foundation built on the system, memory, and container layers. |
+BlueCore is organized into four layers:
 
-## Repository layout
+| Layer          | Module            | Responsibility |
+|----------------|-------------------|----------------|
+| **Foundation**     | `BlueSystem`      | Platform abstraction, threading, synchronization, logging, diagnostics, and time |
+| **Memory**         | `BlueMemory`      | Pool-based allocators, small-block optimization, metrics, tracking, and OOM reporting |
+| **Containers**     | `BlueContainer`   | Allocator-aware containers and lightweight view types |
+| **Job System**     | `BlueJobSystem`   | Building blocks for concurrent task execution |
 
-```text
-Blue/
-  modules/        Core reusable libraries
-  apps/           Executable applications and benchmarks
-  tests/          Shared test runner and integration-level test infrastructure
-  tools/          Developer tools used by the build and test workflow
-  build/          Premake build framework and dependency declarations
-  scripts/        Entry-point scripts for generation, formatting, and testing
-  docs/           Repository-level documentation
-  third_party/    Optional external dependency payloads
-  out/            Generated build output; not committed
+The dependency direction is strictly downward. Lower layers have no knowledge of higher layers.
+
+## Design Characteristics
+
+- Strong emphasis on predictable memory behavior and observability
+- Threading and synchronization primitives with explicit memory ordering
+- Support for 128-bit atomic operations
+- Cross-platform implementation (Windows, Linux, macOS)
+- Modern C++20 codebase
+
+## Repository Structure
+
+```
+BlueCore/
+├── modules/     Core libraries
+├── apps/        Applications and benchmarks
+├── tests/       Test infrastructure
+├── tools/       Build tooling
+├── build/       Premake configuration
+├── scripts/     Automation scripts
+├── docs/        Documentation
+└── out/         Build output (ignored)
 ```
 
-## Build requirements
+## Getting Started
 
-- C++20 compiler
-- Premake 5
-- Optional: `clang-format`
-- Optional: Graphviz for build graph rendering
+See the documentation in the [`docs/`](docs/) directory, particularly:
 
-Place the Premake executable in the matching folder:
+- [Architecture](docs/ARCHITECTURE.md)
+- [Building](docs/BUILDING.md)
+- [Usage](docs/USAGE.md)
+- [Memory System](docs/MEMORY_SYSTEM.md)
 
-```text
-tools/premake/windows/premake5.exe
-tools/premake/linux/premake5
-tools/premake/macos/premake5
-```
+## Build Requirements
 
-## Quick start
-
-Windows:
-
-```cmd
-scripts\premake-windows.cmd validate
-scripts\premake-windows.cmd vs2022 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
-msbuild out\build\vs2022\Blue.sln /p:Configuration=Debug /p:Platform=Win64
-scripts\run-tests-windows.cmd
-```
-
-Linux:
-
-```bash
-chmod +x tools/premake/linux/premake5 scripts/*.sh
-./scripts/premake-linux.sh validate
-./scripts/premake-linux.sh gmake2 --toolchain=gcc --blue-platforms=linux --blue-startup=BlueRunTests
-make -C out/build/gmake2 config=debug_x64
-./scripts/run-tests-linux.sh
-```
-
-macOS:
-
-```bash
-chmod +x tools/premake/macos/premake5 scripts/*.sh
-./scripts/premake-macos.sh validate
-./scripts/premake-macos.sh xcode4 --toolchain=clang --blue-platforms=macos --blue-startup=BlueRunTests
-./scripts/run-tests-macos.sh
-```
-
-CLion:
-
-```cmd
-scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
-```
-
-Linux/macOS use `premake-linux.sh` or `premake-macos.sh` with the same `clion` action. The default CLion export is `Debug` / `x64` and includes a workspace custom target with build configurations derived from the Premake workspace/project graph. Pass `--clion-build-targets=all` to expose every buildable project in CLion, and pass `--clion-platform=all --clion-config=all` only when the full platform/configuration matrix is needed.
-
-## Formatting
-
-Format supported C/C++ files:
-
-```cmd
-scripts\premake-windows.cmd format
-```
-
-Check formatting without modifying files:
-
-```cmd
-scripts\premake-windows.cmd check-format
-```
-
-Linux/macOS use the corresponding `premake-linux.sh` or `premake-macos.sh` wrapper.
-
-## Documentation
-
-Start with these documents:
-
-| Document | Purpose |
-|---|---|
-| `docs/ARCHITECTURE.md` | Module layering and dependency rules. |
-| `docs/BUILDING.md` | Build setup and platform-specific commands. |
-| `docs/FORMATTING.md` | Formatting policy and formatter scripts. |
-| `docs/CLION.md` | CLion compilation database generation. |
-| `docs/TESTING.md` | Test layout, registration, and execution. |
-| `docs/LINKAGE.md` | Static/shared linkage model and output layout. |
-| `docs/MEMORY_SYSTEM.md` | BlueMemory overview. |
-| `docs/ALLOCATION_CONTRACT.md` | Allocation pool/proxy/invoker contract. |
-| `modules/BlueSystem/README.md` | BlueSystem module overview. |
-
-## Third-party dependencies
-
-External payloads are not committed by default. Optional dependencies are placed under `third_party/` and wired through `build/third_party/` declarations.
-
-The default memory backend is the system allocator. To use mimalloc, place the required headers and libraries under `third_party/mimalloc` and generate with:
-
-```cmd
-scripts\premake-windows.cmd vs2022 --memory-backend=mimalloc
-```
+- C++20 compatible compiler
+- [Premake 5](https://premake.github.io/)

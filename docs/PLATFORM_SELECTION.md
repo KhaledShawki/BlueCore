@@ -1,8 +1,10 @@
 # Platform Selection
 
-Blue separates target operating system selection from static/shared linkage selection.
+BlueCore separates target operating system selection from static/shared linkage selection.
 
-## Target OS selection
+## Target Operating System
+
+Use the `--blue-platforms` flag to select the target operating system:
 
 ```text
 --blue-platforms=auto
@@ -12,33 +14,44 @@ Blue separates target operating system selection from static/shared linkage sele
 --blue-platforms=macos
 ```
 
-Use one native target OS per generation command for normal development.
+For normal development, select one native target OS per generation command.
 
-## Linkage platform selection
+## Linkage Platform
 
-```text
-x64      Static libraries
-x64_DLL  Shared libraries / DLLs
-```
+Linkage is controlled separately using the `x64` and `x64_DLL` platforms:
 
-Both platforms target the same CPU architecture. The difference is linkage.
+| Platform   | Description             |
+|------------|-------------------------|
+| `x64`      | Static libraries        |
+| `x64_DLL`  | Shared libraries / DLLs |
+
+Both platforms target the same CPU architecture. The only difference is whether static or shared libraries are produced.
 
 ## Examples
 
-Windows:
+**Windows**
 
 ```cmd
-scripts\premake-windows.cmd vs2026 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
+scripts\premake-windows.cmd vs2026 \
+    --toolchain=msvc \
+    --blue-platforms=windows \
+    --blue-startup=BlueRunTests
 ```
 
-Linux:
+**Linux**
 
 ```bash
-./scripts/premake-linux.sh gmake2 --toolchain=gcc --blue-platforms=linux --blue-startup=BlueRunTests
+./scripts/premake-linux.sh gmake2 \
+    --toolchain=gcc \
+    --blue-platforms=linux \
+    --blue-startup=BlueRunTests
 ```
 
-macOS:
+**macOS**
 
 ```bash
-./scripts/premake-macos.sh xcode4 --toolchain=clang --blue-platforms=macos --blue-startup=BlueRunTests
+./scripts/premake-macos.sh xcode4 \
+    --toolchain=clang \
+    --blue-platforms=macos \
+    --blue-startup=BlueRunTests
 ```
