@@ -5,6 +5,9 @@
 
 namespace Blue
 {
+// =====================================================================
+// Primary type definitions
+// =====================================================================
 using Int8 = int8_t;
 using Int16 = int16_t;
 using Int32 = int32_t;
@@ -36,6 +39,25 @@ using Utf16Char = char16_t;
 using Utf32Char = char32_t;
 using WChar = wchar_t;
 
+// =====================================================================
+// Short aliases
+// =====================================================================
+using u8  = Uint8;
+using u16 = Uint16;
+using u32 = Uint32;
+using u64 = Uint64;
+
+using i8  = Int8;
+using i16 = Int16;
+using i32 = Int32;
+using i64 = Int64;
+
+using f32 = Float32;
+using f64 = Float64;
+
+// =====================================================================
+// Compile-time size validation
+// =====================================================================
 static_assert( sizeof( Int8 ) == 1, "Blue::Int8 must be 1 byte." );
 static_assert( sizeof( Int16 ) == 2, "Blue::Int16 must be 2 bytes." );
 static_assert( sizeof( Int32 ) == 4, "Blue::Int32 must be 4 bytes." );
