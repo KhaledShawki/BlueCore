@@ -6,19 +6,118 @@
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/System/Log/LogMacros.h>
 
+#include <stdio.h>
+
+#ifndef BLUE_MEMORY_ENABLE_LEAK_DETECTION
+#	if defined( BLUE_SHIPPING )
+#		define BLUE_MEMORY_ENABLE_LEAK_DETECTION 0
+#	else
+#		define BLUE_MEMORY_ENABLE_LEAK_DETECTION BLUE_ENABLE_LOGGING
+#	endif
+#endif
+
 namespace Blue
 {
 BLUE_DEFINE_LOG_CATEGORY( LogMemory, LogLevel::Info );
 
+namespace
+{
 struct MemorySystemState
 {
-	bool Initialized = false;
+	Bool Initialized = false;
 	HeapAllocator Heap = { };
 	Allocator DefaultAllocator = { };
 	MemorySystemDesc Desc = { };
 };
 
 static MemorySystemState s_Memory = { };
+
+#if BLUE_MEMORY_ENABLE_LEAK_DETECTION
+
+constexpr Size MemoryLeakLogMessageCapacity = 256;
+
+const Char* GetSafeMemoryPoolName( const MemoryPoolStats& stats ) noexcept
+{
+	return stats.Name ? stats.Name : "<Unknown>";
+}
+
+Bool CaptureMemoryPoolStatsByIndex( Size poolIndex, MemoryPoolStats& outStats ) noexcept
+{
+	if ( poolIndex >= MemoryPoolCount )
+	{
+		outStats = { };
+		return false;
+	}
+
+	const MemoryPoolId pool = static_cast< MemoryPoolId >( poolIndex );
+	return GetMemoryPoolRegistry( ).CaptureStats( pool, outStats );
+}
+
+
+Bool HasLiveRequestedBytes( const MemoryPoolStats& stats ) noexcept
+{
+	return stats.CurrentBytes != 0;
+}
+
+void ReportLiveMemoryPoolAllocation( const MemoryPoolStats& stats ) noexcept
+{
+	Char message[ MemoryLeakLogMessageCapacity ] = { };
+
+	snprintf( message,
+	          sizeof( message ),
+	          "Memory pool leak detected: pool=%s live allocation bytes=%llu peak_bytes=%llu "
+	          "allocations=%llu frees=%llu total_allocated=%llu total_freed=%llu",
+	          GetSafeMemoryPoolName( stats ),
+	          static_cast< Uint64 >( stats.CurrentBytes ),
+	          static_cast< Uint64 >( stats.PeakBytes ),
+	          static_cast< Uint64 >( stats.AllocationCount ),
+	          static_cast< Uint64 >( stats.FreeCount ),
+	          static_cast< Uint64 >( stats.TotalAllocatedBytes ),
+	          static_cast< Uint64 >( stats.TotalFreedBytes ) );
+
+	BLUE_LOG_ERROR( LogMemory, message );
+}
+
+
+Bool ReportLiveMemoryPoolAllocations( ) noexcept
+{
+	Bool leakDetected = false;
+
+	for ( Size poolIndex = 0; poolIndex < MemoryPoolCount; ++poolIndex )
+	{
+		MemoryPoolStats stats = { };
+		if ( !CaptureMemoryPoolStatsByIndex( poolIndex, stats ) )
+		{
+			continue;
+		}
+
+		if ( !HasLiveRequestedBytes( stats ) )
+		{
+			continue;
+		}
+
+		ReportLiveMemoryPoolAllocation( stats );
+		leakDetected = true;
+	}
+
+	return leakDetected;
+}
+
+void RunShutdownLeakDetection( ) noexcept
+{
+	if ( !s_Memory.Desc.EnableLeakDetection )
+	{
+		return;
+	}
+
+	ReportLiveMemoryPoolAllocations( );
+}
+#else
+void RunShutdownLeakDetection( ) noexcept
+{
+}
+#endif
+}
 
 Result InitializeMemorySystem( const MemorySystemDesc& desc )
 {
@@ -60,11 +159,7 @@ void ShutdownMemorySystem( )
 		return;
 	}
 
-	MemoryMetricsSnapshot metrics = GetMemoryMetricsSnapshot( );
-	if ( s_Memory.Desc.EnableLeakDetection && metrics.CurrentLiveBytes != 0 )
-	{
-		BLUE_LOG_ERROR( LogMemory, "BlueMemory shutdown detected live allocations" );
-	}
+	RunShutdownLeakDetection( );
 
 	ShutdownSmallBlockAllocator( );
 	GetMemoryPoolRegistry( ).Shutdown( );
