@@ -21,8 +21,10 @@ jobs:
 
       - name: Check formatting
         run: |
-          chmod +x scripts/format-check-linux.sh
-          ./scripts/format-check-linux.sh
+          find . -type f \( -name '*.h' -o -name '*.cpp' -o -name '*.inl' \) \
+            ! -path './out/*' \
+            ! -path './third_party/*' \
+            -exec clang-format --dry-run --Werror --style=file {} +
 
   validate:
     name: Validate
