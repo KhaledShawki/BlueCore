@@ -53,27 +53,48 @@ if errorlevel 1 (
 call "%ROOT_DIR%\scripts\premake-windows.cmd" vs2026 --toolchain=msvc --blue-platforms=windows --blue-build-platforms=%BUILD_PLATFORM% --memory-backend=system --blue-startup=BlueRunTests
 if errorlevel 1 exit /b %errorlevel%
 
-set "SOLUTION=%ROOT_DIR%\out\build\vs2026\Blue.slnx"
+set "BUILD_ROOT=%ROOT_DIR%\out\build\vs2026"
+set "RUNNER_PROJECT=%BUILD_ROOT%\BlueRunTests\BlueRunTests.vcxproj"
 
-if not exist "%SOLUTION%" (
-    set "SOLUTION=%ROOT_DIR%\out\build\vs2026\Blue.sln"
-)
+if not exist "%RUNNER_PROJECT%" (
+    echo [BlueBuild] Expected test runner project was not generated: %RUNNER_PROJECT%
 
-if not exist "%SOLUTION%" (
-    echo [BlueBuild] Expected VS2026 solution was not generated.
-    echo [BlueBuild] Checked:
-    echo [BlueBuild]   %ROOT_DIR%\out\build\vs2026\Blue.slnx
-    echo [BlueBuild]   %ROOT_DIR%\out\build\vs2026\Blue.sln
-
-    if exist "%ROOT_DIR%\out\build\vs2026" (
-        dir "%ROOT_DIR%\out\build\vs2026"
+    if exist "%BUILD_ROOT%" (
+        dir "%BUILD_ROOT%"
     )
 
     exit /b 1
 )
 
-msbuild "%SOLUTION%" /m /nr:false /t:BlueRunTests /p:Configuration=%BUILD_CONFIG% /p:Platform=%BUILD_PLATFORM% /v:minimal
+echo [BlueBuild] Building BlueRunTests
+msbuild "%RUNNER_PROJECT%" /m /nr:false /t:Build /p:Configuration=%BUILD_CONFIG% /p:Platform=%BUILD_PLATFORM% /v:minimal
 if errorlevel 1 exit /b %errorlevel%
+
+set "BUILT_TEST_COUNT=0"
+
+for /D %%D in ("%BUILD_ROOT%\*Tests") do (
+    if /I not "%%~nxD"=="BlueRunTests" (
+        set "TEST_PROJECT=%%~fD\%%~nxD.vcxproj"
+
+        if exist "!TEST_PROJECT!" (
+            echo [BlueBuild] Building %%~nxD
+            msbuild "!TEST_PROJECT!" /m /nr:false /t:Build /p:Configuration=%BUILD_CONFIG% /p:Platform=%BUILD_PLATFORM% /v:minimal
+            if errorlevel 1 exit /b !errorlevel!
+
+            set /A BUILT_TEST_COUNT+=1
+        )
+    )
+)
+
+if "%BUILT_TEST_COUNT%"=="0" (
+    echo [BlueBuild] No test projects were found under %BUILD_ROOT%
+
+    if exist "%BUILD_ROOT%" (
+        dir "%BUILD_ROOT%"
+    )
+
+    exit /b 1
+)
 
 set "BIN_DIR=%ROOT_DIR%\out\bin\windows\%BUILD_PLATFORM%\%BUILD_CONFIG%"
 set "RUNNER=%BIN_DIR%\BlueRunTests.exe"
