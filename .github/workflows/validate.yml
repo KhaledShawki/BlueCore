@@ -5,18 +5,30 @@ on:
   pull_request:
 
 jobs:
-  validate:
+  format:
+    name: Format Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y clang-format
+      - name: Install clang-format (LLVM 18)
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18
+          sudo apt-get install -y clang-format-18
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
 
       - name: Check formatting
         run: |
           chmod +x scripts/format-check-linux.sh
           ./scripts/format-check-linux.sh
+
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Validate build graph
         run: |
