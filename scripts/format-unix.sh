@@ -9,6 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 find_clang_format() {
+    # Highest priority: explicit override via environment variable
     if [[ -n "${BLUE_CLANG_FORMAT:-}" ]]; then
         if [[ -x "$BLUE_CLANG_FORMAT" ]]; then
             printf '%s\n' "$BLUE_CLANG_FORMAT"
@@ -24,18 +25,20 @@ find_clang_format() {
         return 1
     fi
 
+    # Prefer clang-format from PATH (system, Homebrew, or manually installed)
+    if command -v clang-format >/dev/null 2>&1; then
+        command -v clang-format
+        return 0
+    fi
+
+    # Fallback: repo-local prebuilt binary (only if nothing in PATH)
     local repo_local="$ROOT_DIR/tools/clang-format/$PLATFORM/clang-format"
     if [[ -x "$repo_local" ]]; then
         printf '%s\n' "$repo_local"
         return 0
     fi
 
-    if command -v clang-format >/dev/null 2>&1; then
-        command -v clang-format
-        return 0
-    fi
-
-    echo "[BlueFormat] clang-format was not found. Install LLVM or set BLUE_CLANG_FORMAT." >&2
+    echo "[BlueFormat] clang-format was not found. Please install it (e.g. brew install llvm or apt install clang-format) or set BLUE_CLANG_FORMAT." >&2
     return 1
 }
 

@@ -11,24 +11,24 @@ using JobFunction = void ( * )( void* userData );
 
 struct JobDesc
 {
-	JobFunction Function;
-	void* UserData;
+  JobFunction Function;
+  void* UserData;
 };
 
 class BLUE_JOB_SYSTEM_API JobSystem
 {
-public:
-	bool Initialize( Allocator allocator, Uint32 workerCount );
-	void Shutdown( );
+  public:
+  bool Initialize( Allocator allocator, Uint32 workerCount );
+  void Shutdown( );
 
-	bool Submit( const JobDesc& desc );
-	void ExecutePendingJobsOnCurrentThread( );
-	bool IsInitialized( ) const;
+  bool Submit( const JobDesc& desc );
+  void ExecutePendingJobsOnCurrentThread( );
+  bool IsInitialized( ) const;
 
-private:
-	FixedRingBuffer< JobDesc, 4096 > m_Queue;
-	Allocator m_Allocator{ };
-	Uint32 m_WorkerCount = 0;
-	bool m_Initialized = false;
+  private:
+  FixedRingBuffer< JobDesc, 4096 > m_Queue;
+  Allocator m_Allocator{ };
+  Uint32 m_WorkerCount = 0;
+  bool m_Initialized = false;
 };
 } // namespace Blue

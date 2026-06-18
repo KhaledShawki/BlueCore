@@ -6,8 +6,8 @@ namespace Blue
 {
 enum class AllocationFailurePolicy : Uint8
 {
-	ReturnNull,
-	Abort,
-	CallHandlerThenAbort
+  ReturnNull,
+  Abort,
+  CallHandlerThenAbort
 };
 } // namespace Blue

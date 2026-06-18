@@ -11,8 +11,8 @@ BLUE_SYSTEM_API void WriteDebugOutput( const Char* message ) noexcept;
 } // namespace Blue
 
 #define BLUE_DEBUG_BREAK( )                                                                                            \
-	do                                                                                                                 \
-	{                                                                                                                  \
-		Blue::BreakIntoDebugger( );                                                                                    \
-	}                                                                                                                  \
-	while ( false )
+  do                                                                                                                   \
+  {                                                                                                                    \
+    Blue::BreakIntoDebugger( );                                                                                        \
+  }                                                                                                                    \
+  while ( false )

@@ -7,16 +7,16 @@ namespace Blue
 {
 enum class AllocatorKind : Uint8
 {
-	Default,
-	Heap,
-	Linear,
-	Stack,
-	FixedPool,
-	Slot,
-	Tlsf,
-	BigBlock,
-	Frame,
-	Count
+  Default,
+  Heap,
+  Linear,
+  Stack,
+  FixedPool,
+  Slot,
+  Tlsf,
+  BigBlock,
+  Frame,
+  Count
 };
 
 BLUE_MEMORY_API const Char* GetAllocatorKindName( AllocatorKind kind ) noexcept;

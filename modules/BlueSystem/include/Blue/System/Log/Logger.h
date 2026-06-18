@@ -10,10 +10,10 @@ constexpr Uint32 MaxLogSinkCount = 16;
 
 struct LoggerStateSnapshot final
 {
-	Bool Initialized = false;
-	Uint32 SinkCount = 0;
-	Uint64 WrittenEventCount = 0;
-	Uint64 DroppedEventCount = 0;
+  Bool Initialized = false;
+  Uint32 SinkCount = 0;
+  Uint64 WrittenEventCount = 0;
+  Uint64 DroppedEventCount = 0;
 };
 
 BLUE_SYSTEM_API Bool InitializeLogger( ) noexcept;

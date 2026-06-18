@@ -8,8 +8,8 @@
 #include <vector>
 
 #if defined( _WIN32 )
-#	include <Blue/System/Platform/WindowsLean.h>
+#  include <Blue/System/Platform/WindowsLean.h>
 #else
-#	include <sys/wait.h>
-#	include <unistd.h>
+#  include <sys/wait.h>
+#  include <unistd.h>
 #endif

@@ -9,7 +9,7 @@ namespace Blue
 {
 struct BLUE_MEMORY_API RuntimeAllocationProxy
 {
-	static void* Allocate( const AllocationRequest& request ) noexcept;
-	static void Free( const AllocationFreeRequest& request ) noexcept;
+  static void* Allocate( const AllocationRequest& request ) noexcept;
+  static void Free( const AllocationFreeRequest& request ) noexcept;
 };
 } // namespace Blue

@@ -9,27 +9,27 @@ namespace Blue
 {
 struct AllocationValidationResult
 {
-	Bool Valid = false;
-	AllocationFailureReason Reason = AllocationFailureReason::None;
+  Bool Valid = false;
+  AllocationFailureReason Reason = AllocationFailureReason::None;
 };
 
 constexpr AllocationValidationResult ValidateAllocationRequest( const AllocationRequest& request ) noexcept
 {
-	if ( request.ByteSize == 0 )
-	{
-		return { false, AllocationFailureReason::InvalidSize };
-	}
+  if ( request.ByteSize == 0 )
+  {
+    return { false, AllocationFailureReason::InvalidSize };
+  }
 
-	if ( !IsPowerOfTwo( request.Alignment ) )
-	{
-		return { false, AllocationFailureReason::InvalidAlignment };
-	}
+  if ( !IsPowerOfTwo( request.Alignment ) )
+  {
+    return { false, AllocationFailureReason::InvalidAlignment };
+  }
 
-	if ( !IsValidMemoryPoolId( request.Pool ) )
-	{
-		return { false, AllocationFailureReason::InvalidPool };
-	}
+  if ( !IsValidMemoryPoolId( request.Pool ) )
+  {
+    return { false, AllocationFailureReason::InvalidPool };
+  }
 
-	return { true, AllocationFailureReason::None };
+  return { true, AllocationFailureReason::None };
 }
 } // namespace Blue

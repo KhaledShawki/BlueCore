@@ -1,6 +1,6 @@
 ---
 Language: Cpp
-BasedOnStyle: Microsoft
+BasedOnStyle: Google
 
 # Blue C++ formatting profile.
 # Source of truth for clang-format, IDEs, scripts, and CI.
@@ -9,11 +9,12 @@ BasedOnStyle: Microsoft
 Standard: c++20
 
 # Indentation
-IndentWidth: 4
-ContinuationIndentWidth: 4
-ConstructorInitializerIndentWidth: 4
-TabWidth: 4
-UseTab: ForIndentation
+IndentWidth: 2
+TabWidth: 2
+UseTab: Never
+
+# Continuation indentation
+ContinuationIndentWidth: 2
 AccessModifierOffset: -4
 IndentAccessModifiers: false
 IndentCaseLabels: true
@@ -49,9 +50,9 @@ BraceWrapping:
 # Short constructs
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: true
-AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
 AllowShortLambdasOnASingleLine: Empty
 AllowShortEnumsOnASingleLine: false
 AllowShortCompoundRequirementOnASingleLine: false
@@ -131,8 +132,8 @@ AlignTrailingComments:
 SpacesBeforeTrailingComments: 1
 
 # Includes
-SortIncludes: CaseSensitive
-IncludeBlocks: Preserve
+SortIncludes: true
+IncludeBlocks: Regroup
 IncludeCategories:
   - Regex: '^<Blue/'
     Priority: 1

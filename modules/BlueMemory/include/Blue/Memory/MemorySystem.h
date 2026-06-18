@@ -14,14 +14,14 @@ namespace Blue
 {
 struct MemorySystemDesc
 {
-	bool EnableMetrics = true;
-	bool EnableTracking = false;
-	bool EnableLeakDetection = false;
-	Size TrackingCapacity = 0;
-	MemoryMetricsMode DefaultMetricsMode = MemoryMetricsMode::Counters;
-	AllocationFailureHandler FailureHandler = nullptr;
-	OomReport* OomReportBuffer = nullptr;
-	Size OomReportCapacity = 0;
+  bool EnableMetrics = true;
+  bool EnableTracking = false;
+  bool EnableLeakDetection = false;
+  Size TrackingCapacity = 0;
+  MemoryMetricsMode DefaultMetricsMode = MemoryMetricsMode::Counters;
+  AllocationFailureHandler FailureHandler = nullptr;
+  OomReport* OomReportBuffer = nullptr;
+  Size OomReportCapacity = 0;
 };
 
 BLUE_MEMORY_API Result InitializeMemorySystem( const MemorySystemDesc& desc );

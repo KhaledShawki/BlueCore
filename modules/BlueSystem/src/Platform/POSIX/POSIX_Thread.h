@@ -10,12 +10,12 @@ inline constexpr Size POSIXThreadNameCapacity = 64;
 
 struct POSIXThreadStartContext final
 {
-	ThreadEntryFn Entry = nullptr;
-	void* UserData = nullptr;
-	Char Name[ POSIXThreadNameCapacity ] = { };
-	Bool HasName = false;
-	ThreadPriority Priority = ThreadPriority::Normal;
-	CpuAffinity Affinity = CpuAffinity::Any( );
+  ThreadEntryFn Entry = nullptr;
+  void* UserData = nullptr;
+  Char Name[ POSIXThreadNameCapacity ] = { };
+  Bool HasName = false;
+  ThreadPriority Priority = ThreadPriority::Normal;
+  CpuAffinity Affinity = CpuAffinity::Any( );
 };
 
 void ClearNativeThreadHandle( NativeThreadHandle& handle ) noexcept;

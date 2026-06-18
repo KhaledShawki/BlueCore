@@ -10,43 +10,43 @@ namespace Blue
 {
 Uint32 GetLogicalProcessorCount( ) noexcept
 {
-	const long value = sysconf( _SC_NPROCESSORS_ONLN );
+  const long value = sysconf( _SC_NPROCESSORS_ONLN );
 
-	if ( value <= 0 )
-	{
-		return 1;
-	}
+  if ( value <= 0 )
+  {
+    return 1;
+  }
 
-	return static_cast< Uint32 >( value );
+  return static_cast< Uint32 >( value );
 }
 
 Uint32 GetCacheLineSize( ) noexcept
 {
 #if defined( _SC_LEVEL1_DCACHE_LINESIZE )
-	const long value = sysconf( _SC_LEVEL1_DCACHE_LINESIZE );
+  const long value = sysconf( _SC_LEVEL1_DCACHE_LINESIZE );
 
-	if ( value > 0 )
-	{
-		return static_cast< Uint32 >( value );
-	}
+  if ( value > 0 )
+  {
+    return static_cast< Uint32 >( value );
+  }
 #endif
 
-	return DefaultCacheLineSize;
+  return DefaultCacheLineSize;
 }
 
 void YieldThread( )
 {
-	sched_yield( );
+  sched_yield( );
 }
 
 void SleepCurrentThread( Uint32 milliseconds )
 {
-	timespec request;
-	request.tv_sec = static_cast< time_t >( milliseconds / 1000 );
-	request.tv_nsec = static_cast< long >( ( milliseconds % 1000 ) * 1000000u );
+  timespec request;
+  request.tv_sec = static_cast< time_t >( milliseconds / 1000 );
+  request.tv_nsec = static_cast< long >( ( milliseconds % 1000 ) * 1000000u );
 
-	while ( nanosleep( &request, &request ) != 0 && errno == EINTR )
-	{
-	}
+  while ( nanosleep( &request, &request ) != 0 && errno == EINTR )
+  {
+  }
 }
 } // namespace Blue

@@ -2,7 +2,6 @@
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
-
 #include <Blue/System/Log.h>
 #include <Blue/System/Types.h>
 
@@ -11,149 +10,149 @@
 #include <string.h>
 
 #define BLUE_TEST_EXPECT( expression )                                                                                 \
-	do                                                                                                                 \
-	{                                                                                                                  \
-		if ( !( expression ) )                                                                                         \
-		{                                                                                                              \
-			fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                          \
-			abort( );                                                                                                  \
-		}                                                                                                              \
-	}                                                                                                                  \
-	while ( false )
+  do                                                                                                                   \
+  {                                                                                                                    \
+    if ( !( expression ) )                                                                                             \
+    {                                                                                                                  \
+      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
+      abort( );                                                                                                        \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  while ( false )
 
 namespace
 {
 struct LeakLogContext
 {
-	Blue::Uint32 ErrorEventCount = 0;
-	Blue::Bool SawMemoryLeakError = false;
+  Blue::Uint32 ErrorEventCount = 0;
+  Blue::Bool SawMemoryLeakError = false;
 };
 
 struct LeakTestObject
 {
-	BLUE_USE_MEMORY_POOL( Test )
+  BLUE_USE_MEMORY_POOL( Test )
 
-	LeakTestObject( ) noexcept
-	    : Value( 0 )
-	{}
+  LeakTestObject( ) noexcept
+      : Value( 0 )
+  {}
 
-	~LeakTestObject( ) noexcept = default;
+  ~LeakTestObject( ) noexcept = default;
 
-	Blue::Uint32 Value;
+  Blue::Uint32 Value;
 };
 
 static void LeakLogSinkWrite( void* context, const Blue::LogEvent& event )
 {
-	LeakLogContext* leakContext = static_cast< LeakLogContext* >( context );
+  LeakLogContext* leakContext = static_cast< LeakLogContext* >( context );
 
-	if ( event.Level < Blue::LogLevel::Error )
-	{
-		return;
-	}
+  if ( event.Level < Blue::LogLevel::Error )
+  {
+    return;
+  }
 
-	++leakContext->ErrorEventCount;
+  ++leakContext->ErrorEventCount;
 
-	const bool isMemoryCategory = event.Category != nullptr && event.Category->Name != nullptr &&
-	                              strcmp( event.Category->Name, "LogMemory" ) == 0;
+  const bool isMemoryCategory =
+    event.Category != nullptr && event.Category->Name != nullptr && strcmp( event.Category->Name, "LogMemory" ) == 0;
 
-	const bool isLeakMessage = event.Message != nullptr && strstr( event.Message, "live allocation" ) != nullptr;
+  const bool isLeakMessage = event.Message != nullptr && strstr( event.Message, "live allocation" ) != nullptr;
 
-	if ( isMemoryCategory && isLeakMessage )
-	{
-		leakContext->SawMemoryLeakError = true;
-	}
+  if ( isMemoryCategory && isLeakMessage )
+  {
+    leakContext->SawMemoryLeakError = true;
+  }
 }
 
 static void InitializeLeakTestLogger( LeakLogContext& context )
 {
-	BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
+  BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
 
-	Blue::LogSink sink = { };
-	sink.Context = &context;
-	sink.Write = &LeakLogSinkWrite;
-	sink.MinimumLevel = Blue::LogLevel::Error;
+  Blue::LogSink sink = { };
+  sink.Context = &context;
+  sink.Write = &LeakLogSinkWrite;
+  sink.MinimumLevel = Blue::LogLevel::Error;
 
-	BLUE_TEST_EXPECT( Blue::RegisterLogSink( sink ) );
+  BLUE_TEST_EXPECT( Blue::RegisterLogSink( sink ) );
 }
 
 static void ShutdownLeakTestLogger( )
 {
-	Blue::ShutdownLogger( );
+  Blue::ShutdownLogger( );
 }
 
 static Blue::MemorySystemDesc CreateLeakDetectionMemorySystemDesc( )
 {
-	Blue::MemorySystemDesc desc = { };
-	desc.EnableLeakDetection = true;
-	return desc;
+  Blue::MemorySystemDesc desc = { };
+  desc.EnableLeakDetection = true;
+  return desc;
 }
 } // namespace
 
 static void BlueMemoryLeakDetection_DetectsTypedAllocationLeak( )
 {
-	LeakLogContext logContext = { };
-	InitializeLeakTestLogger( logContext );
+  LeakLogContext logContext = { };
+  InitializeLeakTestLogger( logContext );
 
-	Blue::MemorySystemDesc desc = CreateLeakDetectionMemorySystemDesc( );
-	BLUE_TEST_EXPECT( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
+  Blue::MemorySystemDesc desc = CreateLeakDetectionMemorySystemDesc( );
+  BLUE_TEST_EXPECT( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
 
-	Blue::MemoryPoolStats before = { };
-	BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, before ) );
+  Blue::MemoryPoolStats before = { };
+  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, before ) );
 
-	LeakTestObject* object = Blue::BlueNew< LeakTestObject >( );
-	BLUE_TEST_EXPECT( object != nullptr );
+  LeakTestObject* object = Blue::BlueNew< LeakTestObject >( );
+  BLUE_TEST_EXPECT( object != nullptr );
 
-	Blue::MemoryPoolStats afterAllocate = { };
-	BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterAllocate ) );
+  Blue::MemoryPoolStats afterAllocate = { };
+  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterAllocate ) );
 
-	BLUE_TEST_EXPECT( afterAllocate.CurrentBytes == before.CurrentBytes + sizeof( LeakTestObject ) );
+  BLUE_TEST_EXPECT( afterAllocate.CurrentBytes == before.CurrentBytes + sizeof( LeakTestObject ) );
 
-	Blue::ShutdownMemorySystem( );
+  Blue::ShutdownMemorySystem( );
 
-	BLUE_TEST_EXPECT( logContext.SawMemoryLeakError );
+  BLUE_TEST_EXPECT( logContext.SawMemoryLeakError );
 
-	ShutdownLeakTestLogger( );
+  ShutdownLeakTestLogger( );
 }
 
 static void BlueMemoryLeakDetection_DetectsRuntimeAllocationLeak( )
 {
-	LeakLogContext logContext = { };
-	InitializeLeakTestLogger( logContext );
+  LeakLogContext logContext = { };
+  InitializeLeakTestLogger( logContext );
 
-	constexpr Blue::Size byteSize = 128;
-	constexpr Blue::Size alignment = 16;
-	constexpr Blue::MemoryPoolId pool = Blue::MemoryPoolId::Test;
-	constexpr Blue::AllocationTag tag = Blue::AllocationTag::Test;
+  constexpr Blue::Size byteSize = 128;
+  constexpr Blue::Size alignment = 16;
+  constexpr Blue::MemoryPoolId pool = Blue::MemoryPoolId::Test;
+  constexpr Blue::AllocationTag tag = Blue::AllocationTag::Test;
 
-	Blue::MemorySystemDesc desc = CreateLeakDetectionMemorySystemDesc( );
-	BLUE_TEST_EXPECT( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
+  Blue::MemorySystemDesc desc = CreateLeakDetectionMemorySystemDesc( );
+  BLUE_TEST_EXPECT( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
 
-	Blue::MemoryPoolStats before = { };
-	BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, before ) );
+  Blue::MemoryPoolStats before = { };
+  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, before ) );
 
-	Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST( byteSize, alignment, tag, pool );
+  Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST( byteSize, alignment, tag, pool );
 
-	void* pointer = Blue::BlueTryAllocate( request );
-	BLUE_TEST_EXPECT( pointer != nullptr );
+  void* pointer = Blue::BlueTryAllocate( request );
+  BLUE_TEST_EXPECT( pointer != nullptr );
 
-	Blue::MemoryPoolStats afterAllocate = { };
-	BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, afterAllocate ) );
+  Blue::MemoryPoolStats afterAllocate = { };
+  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, afterAllocate ) );
 
-	BLUE_TEST_EXPECT( afterAllocate.CurrentBytes == before.CurrentBytes + byteSize );
+  BLUE_TEST_EXPECT( afterAllocate.CurrentBytes == before.CurrentBytes + byteSize );
 
-	Blue::ShutdownMemorySystem( );
+  Blue::ShutdownMemorySystem( );
 
-	BLUE_TEST_EXPECT( logContext.SawMemoryLeakError );
+  BLUE_TEST_EXPECT( logContext.SawMemoryLeakError );
 
-	ShutdownLeakTestLogger( );
+  ShutdownLeakTestLogger( );
 }
 
 int main( )
 {
-	BlueMemoryLeakDetection_DetectsTypedAllocationLeak( );
+  BlueMemoryLeakDetection_DetectsTypedAllocationLeak( );
 
-	BlueMemoryLeakDetection_DetectsRuntimeAllocationLeak( );
+  BlueMemoryLeakDetection_DetectsRuntimeAllocationLeak( );
 
-	printf( "BlueMemory leak detection tests passed.\n" );
-	return 0;
+  printf( "BlueMemory leak detection tests passed.\n" );
+  return 0;
 }

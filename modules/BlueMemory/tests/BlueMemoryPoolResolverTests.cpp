@@ -7,21 +7,21 @@
 #include <stdlib.h>
 
 #define BLUE_TEST_EXPECT( expression )                                                                                 \
-	do                                                                                                                 \
-	{                                                                                                                  \
-		if ( !( expression ) )                                                                                         \
-		{                                                                                                              \
-			fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                          \
-			abort( );                                                                                                  \
-		}                                                                                                              \
-	}                                                                                                                  \
-	while ( false )
+  do                                                                                                                   \
+  {                                                                                                                    \
+    if ( !( expression ) )                                                                                             \
+    {                                                                                                                  \
+      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
+      abort( );                                                                                                        \
+    }                                                                                                                  \
+  }                                                                                                                    \
+  while ( false )
 
 namespace
 {
 struct RendererObject
 {
-	BLUE_USE_MEMORY_POOL( Renderer )
+  BLUE_USE_MEMORY_POOL( Renderer )
 };
 
 struct PlainObject
@@ -36,7 +36,7 @@ namespace Blue
 template<>
 struct MemoryPoolTrait< TraitObject >
 {
-	static constexpr MemoryPoolId Pool = MemoryPoolId::Resources;
+  static constexpr MemoryPoolId Pool = MemoryPoolId::Resources;
 };
 } // namespace Blue
 
@@ -46,10 +46,10 @@ static_assert( Blue::MemoryPoolResolver< TraitObject >::Pool == Blue::MemoryPool
 
 int main( )
 {
-	BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< RendererObject >::Pool == Blue::MemoryPoolId::Renderer );
-	BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< PlainObject >::Pool == Blue::MemoryPoolId::System );
-	BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< TraitObject >::Pool == Blue::MemoryPoolId::Resources );
+  BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< RendererObject >::Pool == Blue::MemoryPoolId::Renderer );
+  BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< PlainObject >::Pool == Blue::MemoryPoolId::System );
+  BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< TraitObject >::Pool == Blue::MemoryPoolId::Resources );
 
-	printf( "BlueMemory pool resolver tests passed.\n" );
-	return 0;
+  printf( "BlueMemory pool resolver tests passed.\n" );
+  return 0;
 }

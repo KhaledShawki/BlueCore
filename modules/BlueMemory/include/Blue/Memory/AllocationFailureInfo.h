@@ -11,16 +11,16 @@ namespace Blue
 {
 struct AllocationFailureInfo
 {
-	AllocationFailureReason Reason = AllocationFailureReason::None;
-	MemoryPoolId Pool = MemoryPoolId::System;
-	AllocatorKind Allocator = AllocatorKind::Default;
-	AllocationTag Tag = AllocationTag::Unknown;
-	Size RequestedSize = 0;
-	Size RequestedAlignment = 0;
-	Size PoolBudgetBytes = 0;
-	Size PoolCurrentBytes = 0;
-	Size PoolPeakBytes = 0;
-	SourceLocation Location = { };
+  AllocationFailureReason Reason = AllocationFailureReason::None;
+  MemoryPoolId Pool = MemoryPoolId::System;
+  AllocatorKind Allocator = AllocatorKind::Default;
+  AllocationTag Tag = AllocationTag::Unknown;
+  Size RequestedSize = 0;
+  Size RequestedAlignment = 0;
+  Size PoolBudgetBytes = 0;
+  Size PoolCurrentBytes = 0;
+  Size PoolPeakBytes = 0;
+  SourceLocation Location = { };
 };
 
 using AllocationFailureHandler = void ( * )( const AllocationFailureInfo& info ) noexcept;

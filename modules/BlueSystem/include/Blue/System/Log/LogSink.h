@@ -11,16 +11,16 @@ using LogSinkFlushFn = void ( * )( void* context );
 
 struct LogSink final
 {
-	void* Context = nullptr;
-	LogSinkWriteFn Write = nullptr;
-	LogSinkFlushFn Flush = nullptr;
-	LogLevel MinimumLevel = LogLevel::Trace;
+  void* Context = nullptr;
+  LogSinkWriteFn Write = nullptr;
+  LogSinkFlushFn Flush = nullptr;
+  LogLevel MinimumLevel = LogLevel::Trace;
 };
 
 BLUE_SYSTEM_API LogSink CreateConsoleLogSink( LogLevel minimumLevel = LogLevel::Trace ) noexcept;
 
 inline LogSink MakeConsoleLogSink( LogLevel minimumLevel = LogLevel::Trace ) noexcept
 {
-	return CreateConsoleLogSink( minimumLevel );
+  return CreateConsoleLogSink( minimumLevel );
 }
 } // namespace Blue

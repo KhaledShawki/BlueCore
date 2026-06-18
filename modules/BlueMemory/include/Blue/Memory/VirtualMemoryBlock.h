@@ -7,12 +7,12 @@ namespace Blue
 {
 struct VirtualMemoryBlock
 {
-	void* ReservedBase;
-	Size ReservedSize;
-	void* CommittedBase;
-	Size CommittedSize;
-	Size PageSize;
-	Uint32 Flags;
+  void* ReservedBase;
+  Size ReservedSize;
+  void* CommittedBase;
+  Size CommittedSize;
+  Size PageSize;
+  Uint32 Flags;
 };
 
 BLUE_MEMORY_API bool ReserveVirtualMemory( VirtualMemoryBlock& block, Size size );

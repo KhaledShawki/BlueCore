@@ -6,34 +6,34 @@
 #include <Blue/System/Threading/Thread.h>
 
 #ifndef BLUE_ENABLE_LOGGING
-#	if defined( BLUE_SHIPPING )
-#		define BLUE_ENABLE_LOGGING 0
-#	else
-#		define BLUE_ENABLE_LOGGING 1
-#	endif
+#  if defined( BLUE_SHIPPING )
+#    define BLUE_ENABLE_LOGGING 0
+#  else
+#    define BLUE_ENABLE_LOGGING 1
+#  endif
 #endif
 
 #if BLUE_ENABLE_LOGGING
-#	define BLUE_LOG( category, level, message )                                                                       \
-		do                                                                                                             \
-		{                                                                                                              \
-			if ( Blue::ShouldLog( ( category ), ( level ) ) )                                                          \
-			{                                                                                                          \
-				Blue::LogEvent blueLogEvent{ };                                                                        \
-				blueLogEvent.Level = ( level );                                                                        \
-				blueLogEvent.Category = &( category );                                                                 \
-				blueLogEvent.Message = ( message );                                                                    \
-				const Blue::SourceLocation blueLogLocation = BLUE_SOURCE_LOCATION( );                                  \
-				blueLogEvent.File = blueLogLocation.File;                                                              \
-				blueLogEvent.Function = blueLogLocation.Function;                                                      \
-				blueLogEvent.Line = blueLogLocation.Line;                                                              \
-				blueLogEvent.Thread = Blue::GetCurrentThreadId( );                                                     \
-				Blue::WriteLog( blueLogEvent );                                                                        \
-			}                                                                                                          \
-		}                                                                                                              \
-		while ( false )
+#  define BLUE_LOG( category, level, message )                                                                         \
+    do                                                                                                                 \
+    {                                                                                                                  \
+      if ( Blue::ShouldLog( ( category ), ( level ) ) )                                                                \
+      {                                                                                                                \
+        Blue::LogEvent blueLogEvent{ };                                                                                \
+        blueLogEvent.Level = ( level );                                                                                \
+        blueLogEvent.Category = &( category );                                                                         \
+        blueLogEvent.Message = ( message );                                                                            \
+        const Blue::SourceLocation blueLogLocation = BLUE_SOURCE_LOCATION( );                                          \
+        blueLogEvent.File = blueLogLocation.File;                                                                      \
+        blueLogEvent.Function = blueLogLocation.Function;                                                              \
+        blueLogEvent.Line = blueLogLocation.Line;                                                                      \
+        blueLogEvent.Thread = Blue::GetCurrentThreadId( );                                                             \
+        Blue::WriteLog( blueLogEvent );                                                                                \
+      }                                                                                                                \
+    }                                                                                                                  \
+    while ( false )
 #else
-#	define BLUE_LOG( category, level, message ) ( ( void ) 0 )
+#  define BLUE_LOG( category, level, message ) ( ( void ) 0 )
 #endif
 
 #define BLUE_LOG_TRACE( category, message ) BLUE_LOG( category, Blue::LogLevel::Trace, message )

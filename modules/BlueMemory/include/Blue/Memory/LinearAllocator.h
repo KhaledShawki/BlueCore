@@ -7,10 +7,10 @@ namespace Blue
 {
 struct LinearAllocator
 {
-	Byte* Start;
-	Byte* Current;
-	Byte* End;
-	AllocationTag DefaultTag;
+  Byte* Start;
+  Byte* Current;
+  Byte* End;
+  AllocationTag DefaultTag;
 };
 
 BLUE_MEMORY_API void InitializeLinearAllocator( LinearAllocator& allocator,

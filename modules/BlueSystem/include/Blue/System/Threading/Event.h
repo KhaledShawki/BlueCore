@@ -10,31 +10,31 @@ namespace Blue
 {
 enum class EventResetMode : Uint8
 {
-	Auto,
-	Manual,
+  Auto,
+  Manual,
 };
 
 struct NativeEventHandle final
 {
-	alignas( 8 ) Byte Storage[ 192 ] = { };
+  alignas( 8 ) Byte Storage[ 192 ] = { };
 };
 
 struct EventCreateDesc final
 {
-	EventResetMode ResetMode = EventResetMode::Manual;
-	Bool InitiallySignaled = false;
+  EventResetMode ResetMode = EventResetMode::Manual;
+  Bool InitiallySignaled = false;
 };
 
 struct Event final : private NonCopyable
 {
-	NativeEventHandle NativeHandle = { };
-	Bool Initialized = false;
+  NativeEventHandle NativeHandle = { };
+  Bool Initialized = false;
 
-	void Signal( ) noexcept;
-	void Reset( ) noexcept;
-	void Wait( ) noexcept;
-	Bool TryWait( ) noexcept;
-	Bool WaitFor( TimeDuration timeout ) noexcept;
+  void Signal( ) noexcept;
+  void Reset( ) noexcept;
+  void Wait( ) noexcept;
+  Bool TryWait( ) noexcept;
+  Bool WaitFor( TimeDuration timeout ) noexcept;
 };
 
 BLUE_SYSTEM_API Bool InitializeEvent( Event& event, const EventCreateDesc& desc = { } ) noexcept;
@@ -50,22 +50,22 @@ Bool IsEventInitialized( const Event& event ) noexcept;
 
 class OwnedEvent final : private NonCopyable
 {
-public:
-	explicit OwnedEvent( const EventCreateDesc& desc = { } ) noexcept;
-	~OwnedEvent( ) noexcept;
+  public:
+  explicit OwnedEvent( const EventCreateDesc& desc = { } ) noexcept;
+  ~OwnedEvent( ) noexcept;
 
-	Bool IsValid( ) const noexcept;
-	Event& Get( ) noexcept;
-	const Event& Get( ) const noexcept;
+  Bool IsValid( ) const noexcept;
+  Event& Get( ) noexcept;
+  const Event& Get( ) const noexcept;
 
-	void Signal( ) noexcept;
-	void Reset( ) noexcept;
-	void Wait( ) noexcept;
-	Bool TryWait( ) noexcept;
-	Bool WaitFor( TimeDuration timeout ) noexcept;
+  void Signal( ) noexcept;
+  void Reset( ) noexcept;
+  void Wait( ) noexcept;
+  Bool TryWait( ) noexcept;
+  Bool WaitFor( TimeDuration timeout ) noexcept;
 
-private:
-	Event m_Event = { };
+  private:
+  Event m_Event = { };
 };
 } // namespace Blue
 

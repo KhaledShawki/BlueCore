@@ -12,30 +12,30 @@ namespace Blue
 {
 Bool IsDebuggerAttached( ) noexcept
 {
-	int mib[ 4 ] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid( ) };
-	kinfo_proc info{ };
-	size_t size = sizeof( info );
+  int mib[ 4 ] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid( ) };
+  kinfo_proc info{ };
+  size_t size = sizeof( info );
 
-	if ( sysctl( mib, 4, &info, &size, nullptr, 0 ) != 0 )
-	{
-		return false;
-	}
+  if ( sysctl( mib, 4, &info, &size, nullptr, 0 ) != 0 )
+  {
+    return false;
+  }
 
-	return ( info.kp_proc.p_flag & P_TRACED ) != 0;
+  return ( info.kp_proc.p_flag & P_TRACED ) != 0;
 }
 
 void BreakIntoDebugger( ) noexcept
 {
-	raise( SIGTRAP );
+  raise( SIGTRAP );
 }
 
 void WriteDebugOutput( const Char* message ) noexcept
 {
-	if ( !message )
-	{
-		return;
-	}
+  if ( !message )
+  {
+    return;
+  }
 
-	fputs( message, stderr );
+  fputs( message, stderr );
 }
 } // namespace Blue

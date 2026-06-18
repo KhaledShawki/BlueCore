@@ -8,10 +8,10 @@ namespace Blue
 {
 struct AllocationFreeRequest
 {
-	void* Pointer = nullptr;
-	Size ByteSize = 0;
-	Size Alignment = 0;
-	MemoryPoolId Pool = MemoryPoolId::System;
-	AllocationTag Tag = AllocationTag::Unknown;
+  void* Pointer = nullptr;
+  Size ByteSize = 0;
+  Size Alignment = 0;
+  MemoryPoolId Pool = MemoryPoolId::System;
+  AllocationTag Tag = AllocationTag::Unknown;
 };
 } // namespace Blue

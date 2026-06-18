@@ -7,14 +7,14 @@ namespace Blue
 template< typename T >
 struct MemoryPoolTrait
 {
-	static constexpr MemoryPoolId Pool = MemoryPoolId::System;
+  static constexpr MemoryPoolId Pool = MemoryPoolId::System;
 };
 
 #define BLUE_USE_MEMORY_POOL( PoolName )                                                                               \
-public:                                                                                                                \
-	static constexpr ::Blue::MemoryPoolId BlueMemoryPoolIdValue = ::Blue::MemoryPoolId::PoolName;                      \
-	static constexpr ::Blue::MemoryPoolId GetMemoryPoolId( ) noexcept                                                  \
-	{                                                                                                                  \
-		return BlueMemoryPoolIdValue;                                                                                  \
-	}
+  public:                                                                                                              \
+  static constexpr ::Blue::MemoryPoolId BlueMemoryPoolIdValue = ::Blue::MemoryPoolId::PoolName;                        \
+  static constexpr ::Blue::MemoryPoolId GetMemoryPoolId( ) noexcept                                                    \
+  {                                                                                                                    \
+    return BlueMemoryPoolIdValue;                                                                                      \
+  }
 } // namespace Blue

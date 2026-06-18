@@ -11,18 +11,18 @@ namespace Blue
 {
 struct NativeConditionVariableHandle final
 {
-	alignas( 8 ) Byte Storage[ 128 ] = { };
+  alignas( 8 ) Byte Storage[ 128 ] = { };
 };
 
 struct ConditionVariable final : private NonCopyable
 {
-	NativeConditionVariableHandle NativeHandle = { };
-	Bool Initialized = false;
+  NativeConditionVariableHandle NativeHandle = { };
+  Bool Initialized = false;
 
-	void Wait( Mutex& mutex ) noexcept;
-	Bool WaitFor( Mutex& mutex, TimeDuration timeout ) noexcept;
-	void NotifyOne( ) noexcept;
-	void NotifyAll( ) noexcept;
+  void Wait( Mutex& mutex ) noexcept;
+  Bool WaitFor( Mutex& mutex, TimeDuration timeout ) noexcept;
+  void NotifyOne( ) noexcept;
+  void NotifyAll( ) noexcept;
 };
 
 BLUE_SYSTEM_API Bool InitializeConditionVariable( ConditionVariable& conditionVariable ) noexcept;
@@ -39,21 +39,21 @@ Bool IsConditionVariableInitialized( const ConditionVariable& conditionVariable 
 
 class OwnedConditionVariable final : private NonCopyable
 {
-public:
-	OwnedConditionVariable( ) noexcept;
-	~OwnedConditionVariable( ) noexcept;
+  public:
+  OwnedConditionVariable( ) noexcept;
+  ~OwnedConditionVariable( ) noexcept;
 
-	Bool IsValid( ) const noexcept;
-	ConditionVariable& Get( ) noexcept;
-	const ConditionVariable& Get( ) const noexcept;
+  Bool IsValid( ) const noexcept;
+  ConditionVariable& Get( ) noexcept;
+  const ConditionVariable& Get( ) const noexcept;
 
-	void Wait( Mutex& mutex ) noexcept;
-	Bool WaitFor( Mutex& mutex, TimeDuration timeout ) noexcept;
-	void NotifyOne( ) noexcept;
-	void NotifyAll( ) noexcept;
+  void Wait( Mutex& mutex ) noexcept;
+  Bool WaitFor( Mutex& mutex, TimeDuration timeout ) noexcept;
+  void NotifyOne( ) noexcept;
+  void NotifyAll( ) noexcept;
 
-private:
-	ConditionVariable m_ConditionVariable = { };
+  private:
+  ConditionVariable m_ConditionVariable = { };
 };
 } // namespace Blue
 

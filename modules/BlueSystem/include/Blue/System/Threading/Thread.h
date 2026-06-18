@@ -24,26 +24,26 @@ BLUE_SYSTEM_API Bool SetCurrentThreadAffinity( CpuAffinity affinity ) noexcept;
 
 class OwnedThread final : private NonCopyable
 {
-public:
-	OwnedThread( ) noexcept = default;
-	explicit OwnedThread( const ThreadCreateInfo& createInfo ) noexcept;
-	~OwnedThread( ) noexcept;
+  public:
+  OwnedThread( ) noexcept = default;
+  explicit OwnedThread( const ThreadCreateInfo& createInfo ) noexcept;
+  ~OwnedThread( ) noexcept;
 
-	Bool Create( const ThreadCreateInfo& createInfo ) noexcept;
-	Bool Join( Uint32* outExitCode = nullptr ) noexcept;
-	Bool Detach( ) noexcept;
+  Bool Create( const ThreadCreateInfo& createInfo ) noexcept;
+  Bool Join( Uint32* outExitCode = nullptr ) noexcept;
+  Bool Detach( ) noexcept;
 
-	Bool IsJoinable( ) const noexcept;
-	ThreadId GetId( ) const noexcept;
+  Bool IsJoinable( ) const noexcept;
+  ThreadId GetId( ) const noexcept;
 
-	Bool SetPriority( ThreadPriority priority ) noexcept;
-	Bool SetAffinity( CpuAffinity affinity ) noexcept;
+  Bool SetPriority( ThreadPriority priority ) noexcept;
+  Bool SetAffinity( CpuAffinity affinity ) noexcept;
 
-	Thread& Get( ) noexcept;
-	const Thread& Get( ) const noexcept;
+  Thread& Get( ) noexcept;
+  const Thread& Get( ) const noexcept;
 
-private:
-	Thread m_Thread = { };
+  private:
+  Thread m_Thread = { };
 };
 } // namespace Blue
 

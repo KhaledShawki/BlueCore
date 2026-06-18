@@ -9,11 +9,11 @@ namespace Blue
 {
 struct MemoryPoolDesc
 {
-	MemoryPoolId Id = MemoryPoolId::System;
-	const Char* Name = "System";
-	Size BudgetBytes = 0;
-	AllocatorKind Allocator = AllocatorKind::Default;
-	MemoryMetricsMode Metrics = MemoryMetricsMode::Counters;
-	Bool EnableOomReports = true;
+  MemoryPoolId Id = MemoryPoolId::System;
+  const Char* Name = "System";
+  Size BudgetBytes = 0;
+  AllocatorKind Allocator = AllocatorKind::Default;
+  MemoryMetricsMode Metrics = MemoryMetricsMode::Counters;
+  Bool EnableOomReports = true;
 };
 } // namespace Blue

@@ -7,35 +7,35 @@ namespace Blue
 {
 class SpinLock final
 {
-public:
-	SpinLock( ) noexcept;
+  public:
+  SpinLock( ) noexcept;
 
-	SpinLock( const SpinLock& ) = delete;
-	SpinLock& operator=( const SpinLock& ) = delete;
+  SpinLock( const SpinLock& ) = delete;
+  SpinLock& operator=( const SpinLock& ) = delete;
 
-	void Acquire( ) noexcept;
-	Bool TryAcquire( ) noexcept;
-	void Release( ) noexcept;
+  void Acquire( ) noexcept;
+  Bool TryAcquire( ) noexcept;
+  void Release( ) noexcept;
 
-	void Lock( ) noexcept;
-	Bool TryLock( ) noexcept;
-	void Unlock( ) noexcept;
+  void Lock( ) noexcept;
+  Bool TryLock( ) noexcept;
+  void Unlock( ) noexcept;
 
-private:
-	AtomicUint32 m_State;
+  private:
+  AtomicUint32 m_State;
 };
 
 class ScopedSpinLock final
 {
-public:
-	explicit ScopedSpinLock( SpinLock& lock ) noexcept;
-	~ScopedSpinLock( ) noexcept;
+  public:
+  explicit ScopedSpinLock( SpinLock& lock ) noexcept;
+  ~ScopedSpinLock( ) noexcept;
 
-	ScopedSpinLock( const ScopedSpinLock& ) = delete;
-	ScopedSpinLock& operator=( const ScopedSpinLock& ) = delete;
+  ScopedSpinLock( const ScopedSpinLock& ) = delete;
+  ScopedSpinLock& operator=( const ScopedSpinLock& ) = delete;
 
-private:
-	SpinLock* m_Lock;
+  private:
+  SpinLock* m_Lock;
 };
 } // namespace Blue
 

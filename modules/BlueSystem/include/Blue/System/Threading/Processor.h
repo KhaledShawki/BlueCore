@@ -11,19 +11,19 @@ inline constexpr Uint32 DefaultCacheLineSize = 64;
 
 enum class ProcessorArchitecture : Uint8
 {
-	Unknown,
-	X86,
-	X64,
-	Arm,
-	Arm64,
+  Unknown,
+  X86,
+  X64,
+  Arm,
+  Arm64,
 };
 
 struct ProcessorInfo final
 {
-	ProcessorArchitecture Architecture;
-	Uint32 LogicalProcessorCount;
-	Uint32 CacheLineSize;
-	const Char* ArchitectureName;
+  ProcessorArchitecture Architecture;
+  Uint32 LogicalProcessorCount;
+  Uint32 CacheLineSize;
+  const Char* ArchitectureName;
 };
 
 BLUE_SYSTEM_API ProcessorArchitecture GetProcessorArchitecture( ) noexcept;

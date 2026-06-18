@@ -2,6 +2,6 @@
 
 #pragma once
 
-#include <BlueMemory/BlueMemory.h>
-
 #include <Blue/System.h>
+
+#include <BlueMemory/BlueMemory.h>

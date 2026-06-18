@@ -6,12 +6,12 @@ namespace Blue
 {
 enum class LogLevel : Uint8
 {
-	Trace = 0,
-	Debug,
-	Info,
-	Warning,
-	Error,
-	Fatal,
+  Trace = 0,
+  Debug,
+  Info,
+  Warning,
+  Error,
+  Fatal,
 };
 
 const Char* GetLogLevelName( LogLevel level ) noexcept;

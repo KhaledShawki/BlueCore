@@ -11,16 +11,16 @@ namespace Blue
 {
 void* SystemMemoryBackend::Allocate( Size size, Size alignment ) noexcept
 {
-	return Backend::BackendAllocate( size, alignment );
+  return Backend::BackendAllocate( size, alignment );
 }
 
 void* SystemMemoryBackend::Reallocate( void* pointer, Size oldSize, Size newSize, Size alignment ) noexcept
 {
-	return Backend::BackendReallocate( pointer, oldSize, newSize, alignment );
+  return Backend::BackendReallocate( pointer, oldSize, newSize, alignment );
 }
 
 void SystemMemoryBackend::Free( void* pointer, Size, Size ) noexcept
 {
-	Backend::BackendFree( pointer );
+  Backend::BackendFree( pointer );
 }
 } // namespace Blue

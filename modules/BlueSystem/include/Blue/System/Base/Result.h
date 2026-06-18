@@ -7,25 +7,25 @@ namespace Blue
 {
 enum class ResultCode : Uint32
 {
-	Success,
-	InvalidArgument,
-	OutOfMemory,
-	NotInitialized,
-	AlreadyInitialized,
-	PlatformError,
-	Unsupported,
-	CapacityExceeded,
-	Timeout,
-	Busy,
-	UnknownFailure,
+  Success,
+  InvalidArgument,
+  OutOfMemory,
+  NotInitialized,
+  AlreadyInitialized,
+  PlatformError,
+  Unsupported,
+  CapacityExceeded,
+  Timeout,
+  Busy,
+  UnknownFailure,
 };
 
 struct Result
 {
-	ResultCode Code;
+  ResultCode Code;
 
-	constexpr Bool Succeeded( ) const;
-	constexpr Bool Failed( ) const;
+  constexpr Bool Succeeded( ) const;
+  constexpr Bool Failed( ) const;
 };
 
 constexpr Result Success( );

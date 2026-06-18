@@ -14,17 +14,17 @@ constexpr Uint64 MillisecondsPerSecond = 1000ull;
 
 struct TimePoint final
 {
-	Uint64 Nanoseconds = 0;
+  Uint64 Nanoseconds = 0;
 };
 
 struct TimeDuration final
 {
-	Uint64 Nanoseconds = 0;
+  Uint64 Nanoseconds = 0;
 };
 
 struct Stopwatch final
 {
-	TimePoint Start;
+  TimePoint Start;
 };
 
 BLUE_SYSTEM_API Uint64 GetPerformanceCounter( ) noexcept;

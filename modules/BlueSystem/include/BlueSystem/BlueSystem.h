@@ -3,4 +3,5 @@
 #pragma once
 
 #include <Blue/System.h>
+
 #include <BlueSystem/BlueSystemApi.h>

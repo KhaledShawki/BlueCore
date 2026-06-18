@@ -11,20 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install clang-format (LLVM 18)
-        run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 18
-          sudo apt-get install -y clang-format-18
-          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
 
       - name: Check formatting
         run: |
-          find . -type f \( -name '*.h' -o -name '*.cpp' -o -name '*.inl' \) \
-            ! -path './out/*' \
-            ! -path './third_party/*' \
-            -exec clang-format --dry-run --Werror --style=file {} +
+          chmod +x scripts/format-check-linux.sh
+          ./scripts/format-check-linux.sh
 
   build-and-test:
     name: ${{ matrix.os }} ${{ matrix.config }}

@@ -8,30 +8,30 @@ namespace Blue
 template< MemoryMetricsMode Mode >
 struct MetricsProxy
 {
-	static void RecordAllocate( MemoryPoolId, AllocatorKind, Size ) noexcept {}
+  static void RecordAllocate( MemoryPoolId, AllocatorKind, Size ) noexcept {}
 
-	static void RecordFree( MemoryPoolId, AllocatorKind, Size ) noexcept {}
+  static void RecordFree( MemoryPoolId, AllocatorKind, Size ) noexcept {}
 
-	static void RecordFailure( MemoryPoolId, AllocatorKind ) noexcept {}
+  static void RecordFailure( MemoryPoolId, AllocatorKind ) noexcept {}
 };
 
 template<>
 struct MetricsProxy< MemoryMetricsMode::ThreadCounters >
 {
-	static void RecordAllocate( MemoryPoolId pool, AllocatorKind allocator, Size size ) noexcept
-	{
-		RecordThreadMemoryAllocation( pool, allocator, size );
-	}
+  static void RecordAllocate( MemoryPoolId pool, AllocatorKind allocator, Size size ) noexcept
+  {
+    RecordThreadMemoryAllocation( pool, allocator, size );
+  }
 
-	static void RecordFree( MemoryPoolId pool, AllocatorKind allocator, Size size ) noexcept
-	{
-		RecordThreadMemoryFree( pool, allocator, size );
-	}
+  static void RecordFree( MemoryPoolId pool, AllocatorKind allocator, Size size ) noexcept
+  {
+    RecordThreadMemoryFree( pool, allocator, size );
+  }
 
-	static void RecordFailure( MemoryPoolId pool, AllocatorKind allocator ) noexcept
-	{
-		RecordThreadMemoryFailure( pool, allocator );
-	}
+  static void RecordFailure( MemoryPoolId pool, AllocatorKind allocator ) noexcept
+  {
+    RecordThreadMemoryFailure( pool, allocator );
+  }
 };
 
 template<>

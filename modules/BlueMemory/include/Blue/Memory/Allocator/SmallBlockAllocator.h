@@ -13,12 +13,12 @@ constexpr Size BlueSmallBlockSlabSize = BLUE_KB( 64 );
 
 struct SmallBlockAllocatorStats
 {
-	Uint64 SlabCount = 0;
-	Uint64 SlabBytes = 0;
-	Uint64 AllocateCount = 0;
-	Uint64 FreeCount = 0;
-	Uint64 RefillCount = 0;
-	Uint64 FailedRefillCount = 0;
+  Uint64 SlabCount = 0;
+  Uint64 SlabBytes = 0;
+  Uint64 AllocateCount = 0;
+  Uint64 FreeCount = 0;
+  Uint64 RefillCount = 0;
+  Uint64 FailedRefillCount = 0;
 };
 
 BLUE_MEMORY_API Bool InitializeSmallBlockAllocator( ) noexcept;

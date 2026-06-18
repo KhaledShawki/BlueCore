@@ -9,44 +9,44 @@ namespace Blue
 {
 Bool IsDebuggerAttached( ) noexcept
 {
-	FILE* statusFile = fopen( "/proc/self/status", "r" );
-	if ( !statusFile )
-	{
-		return false;
-	}
+  FILE* statusFile = fopen( "/proc/self/status", "r" );
+  if ( !statusFile )
+  {
+    return false;
+  }
 
-	char line[ 256 ];
-	Bool attached = false;
+  char line[ 256 ];
+  Bool attached = false;
 
-	while ( fgets( line, sizeof( line ), statusFile ) )
-	{
-		if ( strncmp( line, "TracerPid:", 10 ) == 0 )
-		{
-			int tracerPid = 0;
-			if ( sscanf( line + 10, "%d", &tracerPid ) == 1 )
-			{
-				attached = tracerPid != 0;
-			}
-			break;
-		}
-	}
+  while ( fgets( line, sizeof( line ), statusFile ) )
+  {
+    if ( strncmp( line, "TracerPid:", 10 ) == 0 )
+    {
+      int tracerPid = 0;
+      if ( sscanf( line + 10, "%d", &tracerPid ) == 1 )
+      {
+        attached = tracerPid != 0;
+      }
+      break;
+    }
+  }
 
-	fclose( statusFile );
-	return attached;
+  fclose( statusFile );
+  return attached;
 }
 
 void BreakIntoDebugger( ) noexcept
 {
-	raise( SIGTRAP );
+  raise( SIGTRAP );
 }
 
 void WriteDebugOutput( const Char* message ) noexcept
 {
-	if ( !message )
-	{
-		return;
-	}
+  if ( !message )
+  {
+    return;
+  }
 
-	fputs( message, stderr );
+  fputs( message, stderr );
 }
 } // namespace Blue

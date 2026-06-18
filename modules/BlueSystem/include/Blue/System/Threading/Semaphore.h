@@ -10,24 +10,24 @@ namespace Blue
 {
 struct NativeSemaphoreHandle final
 {
-	alignas( 8 ) Byte Storage[ 192 ] = { };
+  alignas( 8 ) Byte Storage[ 192 ] = { };
 };
 
 struct SemaphoreCreateDesc final
 {
-	Uint32 InitialCount = 0;
-	Uint32 MaximumCount = 0x7FFFFFFFu;
+  Uint32 InitialCount = 0;
+  Uint32 MaximumCount = 0x7FFFFFFFu;
 };
 
 struct Semaphore final : private NonCopyable
 {
-	NativeSemaphoreHandle NativeHandle = { };
-	Bool Initialized = false;
+  NativeSemaphoreHandle NativeHandle = { };
+  Bool Initialized = false;
 
-	void Acquire( ) noexcept;
-	Bool TryAcquire( ) noexcept;
-	Bool AcquireFor( TimeDuration timeout ) noexcept;
-	Bool Release( Uint32 count = 1 ) noexcept;
+  void Acquire( ) noexcept;
+  Bool TryAcquire( ) noexcept;
+  Bool AcquireFor( TimeDuration timeout ) noexcept;
+  Bool Release( Uint32 count = 1 ) noexcept;
 };
 
 BLUE_SYSTEM_API Bool InitializeSemaphore( Semaphore& semaphore, const SemaphoreCreateDesc& desc = { } ) noexcept;
@@ -42,21 +42,21 @@ Bool IsSemaphoreInitialized( const Semaphore& semaphore ) noexcept;
 
 class OwnedSemaphore final : private NonCopyable
 {
-public:
-	explicit OwnedSemaphore( const SemaphoreCreateDesc& desc = { } ) noexcept;
-	~OwnedSemaphore( ) noexcept;
+  public:
+  explicit OwnedSemaphore( const SemaphoreCreateDesc& desc = { } ) noexcept;
+  ~OwnedSemaphore( ) noexcept;
 
-	Bool IsValid( ) const noexcept;
-	Semaphore& Get( ) noexcept;
-	const Semaphore& Get( ) const noexcept;
+  Bool IsValid( ) const noexcept;
+  Semaphore& Get( ) noexcept;
+  const Semaphore& Get( ) const noexcept;
 
-	void Acquire( ) noexcept;
-	Bool TryAcquire( ) noexcept;
-	Bool AcquireFor( TimeDuration timeout ) noexcept;
-	Bool Release( Uint32 count = 1 ) noexcept;
+  void Acquire( ) noexcept;
+  Bool TryAcquire( ) noexcept;
+  Bool AcquireFor( TimeDuration timeout ) noexcept;
+  Bool Release( Uint32 count = 1 ) noexcept;
 
-private:
-	Semaphore m_Semaphore = { };
+  private:
+  Semaphore m_Semaphore = { };
 };
 } // namespace Blue
 

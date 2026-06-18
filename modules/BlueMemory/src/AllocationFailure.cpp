@@ -14,41 +14,41 @@ AllocationFailureInfo MakeAllocationFailureInfo( MemoryPoolId pool,
                                                  AllocationFailureReason reason,
                                                  SourceLocation location ) noexcept
 {
-	AllocationFailureInfo info = { };
-	info.Reason = reason;
-	info.Pool = pool;
-	info.Allocator = allocator;
-	info.Tag = tag;
-	info.RequestedSize = size;
-	info.RequestedAlignment = alignment;
-	info.Location = location;
+  AllocationFailureInfo info = { };
+  info.Reason = reason;
+  info.Pool = pool;
+  info.Allocator = allocator;
+  info.Tag = tag;
+  info.RequestedSize = size;
+  info.RequestedAlignment = alignment;
+  info.Location = location;
 
-	MemoryPoolStats stats = { };
-	if ( GetMemoryPoolRegistry( ).CaptureStats( pool, stats ) )
-	{
-		info.PoolBudgetBytes = stats.BudgetBytes;
-		info.PoolCurrentBytes = static_cast< Size >( stats.CurrentBytes );
-		info.PoolPeakBytes = static_cast< Size >( stats.PeakBytes );
-	}
+  MemoryPoolStats stats = { };
+  if ( GetMemoryPoolRegistry( ).CaptureStats( pool, stats ) )
+  {
+    info.PoolBudgetBytes = stats.BudgetBytes;
+    info.PoolCurrentBytes = static_cast< Size >( stats.CurrentBytes );
+    info.PoolPeakBytes = static_cast< Size >( stats.PeakBytes );
+  }
 
-	return info;
+  return info;
 }
 
 void HandleAllocationFailure( const AllocationFailureInfo& info, AllocationFailurePolicy policy ) noexcept
 {
-	RecordOomReport( info );
+  RecordOomReport( info );
 
-	if ( policy == AllocationFailurePolicy::ReturnNull )
-	{
-		return;
-	}
+  if ( policy == AllocationFailurePolicy::ReturnNull )
+  {
+    return;
+  }
 
-	AllocationFailureHandler handler = GetMemoryAllocationFailureHandler( );
-	if ( handler )
-	{
-		handler( info );
-	}
+  AllocationFailureHandler handler = GetMemoryAllocationFailureHandler( );
+  if ( handler )
+  {
+    handler( info );
+  }
 
-	BLUE_ASSERT( false && "BlueMemory allocation failed." );
+  BLUE_ASSERT( false && "BlueMemory allocation failed." );
 }
 } // namespace Blue
