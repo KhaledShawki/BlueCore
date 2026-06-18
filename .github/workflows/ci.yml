@@ -8,11 +8,16 @@ jobs:
   format:
     name: Format Check
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Install clang-format (LLVM 18)
+        shell: bash
         run: |
+          set -euo pipefail
+
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh 18
@@ -20,68 +25,94 @@ jobs:
           sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
 
       - name: Check formatting
+        shell: bash
         run: |
+          set -euo pipefail
+
           chmod +x scripts/format-check-linux.sh
           ./scripts/format-check-linux.sh
 
   build-and-test:
     name: ${{ matrix.os }} ${{ matrix.config }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
+
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        config: [Debug, Release]
         include:
           - os: ubuntu-latest
-            premake_action: gmake2
-            toolchain: gcc
+            runner: ubuntu-latest
+            config: Debug
             test_script: ./scripts/run-tests-linux.sh
+
+          - os: ubuntu-latest
+            runner: ubuntu-latest
+            config: Release
+            test_script: ./scripts/run-tests-linux.sh
+
           - os: macos-latest
-            premake_action: ninja
-            toolchain: clang
+            runner: macos-latest
+            config: Debug
             test_script: ./scripts/run-tests-macos.sh
+
+          - os: macos-latest
+            runner: macos-latest
+            config: Release
+            test_script: ./scripts/run-tests-macos.sh
+
           - os: windows-latest
-            premake_action: vs2022
-            toolchain: msvc
+            runner: windows-2025-vs2026
+            config: Debug
+            test_script: scripts\run-tests-windows.cmd
+
+          - os: windows-latest
+            runner: windows-2025-vs2026
+            config: Release
             test_script: scripts\run-tests-windows.cmd
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Setup Ninja (Linux/macOS)
-        if: matrix.os != 'windows-latest'
-        run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            sudo apt-get update && sudo apt-get install -y ninja-build
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            brew install ninja
-          fi
-
-      - name: Generate project files
+      - name: Setup Linux dependencies
+        if: runner.os == 'Linux'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            powershell -File scripts/premake-windows.ps1 ${{ matrix.premake_action }} --toolchain=${{ matrix.toolchain }} --blue-platforms=windows --blue-startup=BlueRunTests
-          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            chmod +x tools/premake/linux/premake5 scripts/*.sh
-            ./scripts/premake-linux.sh ${{ matrix.premake_action }} --toolchain=${{ matrix.toolchain }} --blue-platforms=linux --blue-startup=BlueRunTests
-          else
-            chmod +x tools/premake/macos/premake5 scripts/*.sh
-            ./scripts/premake-macos.sh ${{ matrix.premake_action }} --toolchain=${{ matrix.toolchain }} --blue-platforms=macos --blue-startup=BlueRunTests
-          fi
+          set -euo pipefail
 
-      - name: Build
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+          chmod +x tools/premake/linux/premake5 scripts/*.sh
+
+      - name: Setup macOS dependencies
+        if: runner.os == 'macOS'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            msbuild out/build/vs2022/Blue.sln /m /p:Configuration=${{ matrix.config }} /p:Platform=x64
-          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            make -C out/build/gmake config=$(echo ${{ matrix.config }} | tr '[:upper:]' '[:lower:]')_x64 -j$(nproc)
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            ninja -C out/build/ninja -j$(sysctl -n hw.ncpu)
-          fi
+          set -euo pipefail
+
+          brew install ninja
+          chmod +x tools/premake/macos/premake5 scripts/*.sh
+
+      - name: Setup MSBuild
+        if: runner.os == 'Windows'
+        uses: microsoft/setup-msbuild@v3
+        with:
+          vs-version: '[18.0,19.0)'
+          msbuild-architecture: x64
+
+      - name: Print MSBuild version
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          where msbuild
+          msbuild -version
 
       - name: Run tests
+        if: runner.os != 'Windows'
         shell: bash
+        run: ${{ matrix.test_script }} ${{ matrix.config }}_x64
+
+      - name: Run tests
+        if: runner.os == 'Windows'
+        shell: cmd
         run: ${{ matrix.test_script }} ${{ matrix.config }}_x64
