@@ -3,15 +3,13 @@
 ![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 ![License](https://img.shields.io/badge/license-Unlicensed-lightgrey.svg)
 
-BlueCore is a modular C++ foundation framework focused on deterministic memory management, low-level primitives, and runtime observability.
-
 ## CI Status
 
 | Platform | Debug | Release |
 |----------|-------|---------|
-| **Linux** | [![Linux Debug](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=Linux%20Debug&label=Linux%20Debug&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![Linux Release](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=Linux%20Release&label=Linux%20Release&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
-| **macOS** | [![macOS Debug](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=macOS%20Debug&label=macOS%20Debug&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![macOS Release](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=macOS%20Release&label=macOS%20Release&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
-| **Windows** | [![Windows Debug](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=Windows%20Debug&label=Windows%20Debug&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![Windows Release](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=Windows%20Release&label=Windows%20Release&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
+| **Linux** | [![Linux Debug](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=ubuntu-latest%20Debug&label=Linux%20Debug&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![Linux Release](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=ubuntu-latest%20Release&label=Linux%20Release&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
+| **macOS** | [![macOS Debug](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=macos-latest%20Debug&label=macOS%20Debug&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![macOS Release](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=macos-latest%20Release&label=macOS%20Release&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
+| **Windows** | [![Windows Debug](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=windows-latest%20Debug&label=Windows%20Debug&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![Windows Release](https://img.shields.io/github/check-runs/KhaledShawki/BlueCore/main?nameFilter=windows-latest%20Release&label=Windows%20Release&logo=github)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
 
 BlueCore is a modular C++ foundation framework focused on deterministic memory management, low-level primitives, and runtime observability.
 
