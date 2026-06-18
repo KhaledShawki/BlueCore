@@ -33,7 +33,7 @@ jobs:
             toolchain: gcc
             test_script: ./scripts/run-tests-linux.sh
           - os: macos-latest
-            premake_action: xcode4
+            premake_action: ninja
             toolchain: clang
             test_script: ./scripts/run-tests-macos.sh
           - os: windows-latest
@@ -49,6 +49,8 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             sudo apt-get update && sudo apt-get install -y ninja-build
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew install ninja
           fi
 
       - name: Generate project files
@@ -71,8 +73,8 @@ jobs:
             msbuild out/build/vs2022/Blue.sln /m /p:Configuration=${{ matrix.config }} /p:Platform=x64
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             make -C out/build/gmake config=$(echo ${{ matrix.config }} | tr '[:upper:]' '[:lower:]')_x64 -j$(nproc)
-          else
-            xcodebuild -project out/build/xcode4/Blue.xcodeproj -configuration ${{ matrix.config }} -target BlueRunTests build
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            ninja -C out/build/ninja -j$(sysctl -n hw.ncpu)
           fi
 
       - name: Run tests
