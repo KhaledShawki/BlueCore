@@ -56,19 +56,16 @@ if errorlevel 1 exit /b %errorlevel%
 set "BUILD_ROOT=%ROOT_DIR%\out\build\vs2026"
 set "RUNNER_PROJECT=%BUILD_ROOT%\BlueRunTests\BlueRunTests.vcxproj"
 
-if not exist "%RUNNER_PROJECT%" (
-    echo [BlueBuild] Expected test runner project was not generated: %RUNNER_PROJECT%
-
-    if exist "%BUILD_ROOT%" (
-        dir "%BUILD_ROOT%"
-    )
-
+if not exist "%BUILD_ROOT%" (
+    echo [BlueBuild] Expected VS2026 build directory was not generated: %BUILD_ROOT%
     exit /b 1
 )
 
-echo [BlueBuild] Building BlueRunTests
-msbuild "%RUNNER_PROJECT%" /m /nr:false /t:Build /p:Configuration=%BUILD_CONFIG% /p:Platform=%BUILD_PLATFORM% /v:minimal
-if errorlevel 1 exit /b %errorlevel%
+if not exist "%RUNNER_PROJECT%" (
+    echo [BlueBuild] Expected test runner project was not generated: %RUNNER_PROJECT%
+    dir "%BUILD_ROOT%"
+    exit /b 1
+)
 
 set "BUILT_TEST_COUNT=0"
 
@@ -88,46 +85,12 @@ for /D %%D in ("%BUILD_ROOT%\*Tests") do (
 
 if "%BUILT_TEST_COUNT%"=="0" (
     echo [BlueBuild] No test projects were found under %BUILD_ROOT%
-
-    if exist "%BUILD_ROOT%" (
-        dir "%BUILD_ROOT%"
-    )
-
+    dir "%BUILD_ROOT%"
     exit /b 1
 )
 
-set "BIN_DIR=%ROOT_DIR%\out\bin\windows\%BUILD_PLATFORM%\%BUILD_CONFIG%"
-set "RUNNER=%BIN_DIR%\BlueRunTests.exe"
+echo [BlueBuild] Built %BUILT_TEST_COUNT% test projects.
+echo [BlueBuild] Building and running BlueRunTests
 
-if not exist "%RUNNER%" (
-    echo [BlueBuild] Test runner was not built: %RUNNER%
-
-    if exist "%BIN_DIR%" (
-        dir "%BIN_DIR%"
-    )
-
-    exit /b 1
-)
-
-set "TEST_ARGS="
-
-for %%F in ("%BIN_DIR%\*Tests.exe") do (
-    if exist "%%~fF" (
-        if /I not "%%~nxF"=="BlueRunTests.exe" (
-            set "TEST_ARGS=!TEST_ARGS! "%%~fF""
-        )
-    )
-)
-
-if "%TEST_ARGS%"=="" (
-    echo [BlueBuild] No test executables found in %BIN_DIR%
-
-    if exist "%BIN_DIR%" (
-        dir "%BIN_DIR%"
-    )
-
-    exit /b 1
-)
-
-"%RUNNER%" %TEST_ARGS%
+msbuild "%RUNNER_PROJECT%" /m /nr:false /t:Build /p:Configuration=%BUILD_CONFIG% /p:Platform=%BUILD_PLATFORM% /v:minimal
 exit /b %errorlevel%
