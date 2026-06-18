@@ -113,11 +113,9 @@ void RunShutdownLeakDetection( ) noexcept
 	ReportLiveMemoryPoolAllocations( );
 }
 #else
-void RunShutdownLeakDetection( ) noexcept
-{
-}
+void RunShutdownLeakDetection( ) noexcept {}
 #endif
-}
+} // namespace
 
 Result InitializeMemorySystem( const MemorySystemDesc& desc )
 {

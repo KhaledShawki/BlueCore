@@ -42,12 +42,12 @@ using WChar = wchar_t;
 // =====================================================================
 // Short aliases
 // =====================================================================
-using u8  = Uint8;
+using u8 = Uint8;
 using u16 = Uint16;
 using u32 = Uint32;
 using u64 = Uint64;
 
-using i8  = Int8;
+using i8 = Int8;
 using i16 = Int16;
 using i32 = Int32;
 using i64 = Int64;

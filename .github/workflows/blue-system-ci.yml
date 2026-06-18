@@ -23,19 +23,23 @@ jobs:
             cxx: g++
             platform_sources: "src/Platform/Linux/Debug_Linux.cpp src/Platform/Linux/Processor_Linux.cpp src/Platform/Linux/Thread_Linux.cpp"
             linker_flags: "-pthread -ldl -lrt -latomic"
+
           - name: Linux Clang
             os: ubuntu-latest
             cxx: clang++
             platform_sources: "src/Platform/Linux/Debug_Linux.cpp src/Platform/Linux/Processor_Linux.cpp src/Platform/Linux/Thread_Linux.cpp"
             linker_flags: "-pthread -ldl -lrt -latomic"
+
           - name: macOS Clang
             os: macos-latest
             cxx: clang++
             platform_sources: "src/Platform/MacOS/Debug_MacOS.cpp src/Platform/MacOS/Processor_MacOS.cpp src/Platform/MacOS/Thread_MacOS.cpp"
             linker_flags: "-pthread"
+
     steps:
       - uses: actions/checkout@v4
-      - name: Build and run all tests
+
+      - name: Build and run BlueSystem tests
         shell: bash
         run: |
           set -euo pipefail
@@ -58,7 +62,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build and run synchronization stress test with sanitizers
+
+      - name: Build and run stress test with sanitizers
         shell: bash
         run: |
           set -euo pipefail
@@ -74,6 +79,7 @@ jobs:
             -Iinclude tests/BlueSystemSynchronizationStressTests.cpp \
             ${common_sources} ${posix_sources} ${linux_sources} \
             -pthread -ldl -lrt -latomic -o build/ci-tests/BlueSystemSynchronizationStressTestsSanitized
+
           build/ci-tests/BlueSystemSynchronizationStressTestsSanitized
 
   windows-msvc:
@@ -82,7 +88,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Build and run all tests
+
+      - name: Build and run BlueSystem tests
         shell: pwsh
         run: |
           Set-StrictMode -Version Latest

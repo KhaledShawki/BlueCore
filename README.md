@@ -1,5 +1,19 @@
 # BlueCore
 
+![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)
+![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
+![License](https://img.shields.io/badge/license-Unlicensed-lightgrey.svg)
+
+BlueCore is a modular C++ foundation framework focused on deterministic memory management, low-level primitives, and runtime observability.
+
+## CI Status
+
+| Platform   | Debug | Release |
+|------------|-------|---------|
+| **Linux**  | [![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
+| **macOS**  | [![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
+| **Windows**| [![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) | [![CI](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml/badge.svg)](https://github.com/KhaledShawki/BlueCore/actions/workflows/ci.yml) |
+
 BlueCore is a modular C++ foundation framework focused on deterministic memory management, low-level primitives, and runtime observability.
 
 The project follows a strict layered architecture where each layer depends only on the layers beneath it. This design results in clearer boundaries, better testability, and more maintainable code.

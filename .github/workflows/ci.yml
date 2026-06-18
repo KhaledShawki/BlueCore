@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+
+      - name: Check formatting
+        run: |
+          chmod +x scripts/format-check-linux.sh
+          ./scripts/format-check-linux.sh
+
+  build-and-test:
+    name: ${{ matrix.os }} ${{ matrix.config }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        config: [Debug, Release]
+        include:
+          - os: ubuntu-latest
+            premake_action: gmake2
+            toolchain: gcc
+            test_script: ./scripts/run-tests-linux.sh
+          - os: macos-latest
+            premake_action: xcode4
+            toolchain: clang
+            test_script: ./scripts/run-tests-macos.sh
+          - os: windows-latest
+            premake_action: vs2022
+            toolchain: msvc
+            test_script: scripts\run-tests-windows.cmd
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Ninja (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update && sudo apt-get install -y ninja-build
+          fi
+
+      - name: Generate project files
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            powershell -File scripts/premake-windows.ps1 ${{ matrix.premake_action }} --toolchain=${{ matrix.toolchain }} --blue-platforms=windows --blue-startup=BlueRunTests
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            chmod +x tools/premake/linux/premake5 scripts/*.sh
+            ./scripts/premake-linux.sh ${{ matrix.premake_action }} --toolchain=${{ matrix.toolchain }} --blue-platforms=linux --blue-startup=BlueRunTests
+          else
+            chmod +x tools/premake/macos/premake5 scripts/*.sh
+            ./scripts/premake-macos.sh ${{ matrix.premake_action }} --toolchain=${{ matrix.toolchain }} --blue-platforms=macos --blue-startup=BlueRunTests
+          fi
+
+      - name: Build
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            msbuild out/build/vs2022/Blue.sln /m /p:Configuration=${{ matrix.config }} /p:Platform=x64
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            make -C out/build/gmake config=$(echo ${{ matrix.config }} | tr '[:upper:]' '[:lower:]')_x64 -j$(nproc)
+          else
+            xcodebuild -project out/build/xcode4/Blue.xcodeproj -configuration ${{ matrix.config }} -target BlueRunTests build
+          fi
+
+      - name: Run tests
+        shell: bash
+        run: ${{ matrix.test_script }} ${{ matrix.config }}_x64
