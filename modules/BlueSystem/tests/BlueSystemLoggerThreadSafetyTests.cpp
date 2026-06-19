@@ -3,19 +3,8 @@
 #include <Blue/System/Threading/Atomic.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 BLUE_DEFINE_LOG_CATEGORY( LogLoggerTest, Blue::LogLevel::Trace );
 BLUE_DEFINE_LOG_CATEGORY( LogLoggerWarningOnlyTest, Blue::LogLevel::Warning );
@@ -118,23 +107,23 @@ static void TestLoggerRegisterClearAndFlush( )
 {
   CountingSinkContext context;
 
-  BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
-  BLUE_TEST_EXPECT( Blue::RegisterLogSink( MakeCountingSink( context ) ) );
+  ASSERT_TRUE( Blue::InitializeLogger( ) );
+  ASSERT_TRUE( Blue::RegisterLogSink( MakeCountingSink( context ) ) );
 
   Blue::LoggerStateSnapshot snapshot = Blue::GetLoggerStateSnapshot( );
-  BLUE_TEST_EXPECT( snapshot.Initialized );
-  BLUE_TEST_EXPECT( snapshot.SinkCount == 1 );
+  ASSERT_TRUE( snapshot.Initialized );
+  ASSERT_TRUE( snapshot.SinkCount == 1 );
 
   BLUE_LOG_INFO( LogLoggerTest, "single log event" );
   Blue::FlushLogger( );
 
-  BLUE_TEST_EXPECT( context.EventCount.Load( ) == 1 );
-  BLUE_TEST_EXPECT( context.FlushCount.Load( ) == 1 );
-  BLUE_TEST_EXPECT( context.InvalidEventCount.Load( ) == 0 );
+  ASSERT_TRUE( context.EventCount.Load( ) == 1 );
+  ASSERT_TRUE( context.FlushCount.Load( ) == 1 );
+  ASSERT_TRUE( context.InvalidEventCount.Load( ) == 0 );
 
   Blue::ClearLogSinks( );
   snapshot = Blue::GetLoggerStateSnapshot( );
-  BLUE_TEST_EXPECT( snapshot.SinkCount == 0 );
+  ASSERT_TRUE( snapshot.SinkCount == 0 );
 
   Blue::ShutdownLogger( );
 }
@@ -143,14 +132,14 @@ static void TestLoggerLevelFiltering( )
 {
   CountingSinkContext context;
 
-  BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
-  BLUE_TEST_EXPECT( Blue::RegisterLogSink( MakeCountingSink( context ) ) );
+  ASSERT_TRUE( Blue::InitializeLogger( ) );
+  ASSERT_TRUE( Blue::RegisterLogSink( MakeCountingSink( context ) ) );
 
   BLUE_LOG_INFO( LogLoggerWarningOnlyTest, "this info event must be filtered" );
   BLUE_LOG_ERROR( LogLoggerWarningOnlyTest, "this error event must pass" );
 
-  BLUE_TEST_EXPECT( context.EventCount.Load( ) == 1 );
-  BLUE_TEST_EXPECT( context.ErrorCount.Load( ) == 1 );
+  ASSERT_TRUE( context.EventCount.Load( ) == 1 );
+  ASSERT_TRUE( context.ErrorCount.Load( ) == 1 );
 
   Blue::ShutdownLogger( );
 }
@@ -159,14 +148,14 @@ static void TestLoggerSinkMinimumLevelFiltering( )
 {
   CountingSinkContext context;
 
-  BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
-  BLUE_TEST_EXPECT( Blue::RegisterLogSink( MakeCountingSink( context, Blue::LogLevel::Error ) ) );
+  ASSERT_TRUE( Blue::InitializeLogger( ) );
+  ASSERT_TRUE( Blue::RegisterLogSink( MakeCountingSink( context, Blue::LogLevel::Error ) ) );
 
   BLUE_LOG_WARNING( LogLoggerTest, "this warning event must be filtered by sink" );
   BLUE_LOG_ERROR( LogLoggerTest, "this error event must pass sink filtering" );
 
-  BLUE_TEST_EXPECT( context.EventCount.Load( ) == 1 );
-  BLUE_TEST_EXPECT( context.ErrorCount.Load( ) == 1 );
+  ASSERT_TRUE( context.EventCount.Load( ) == 1 );
+  ASSERT_TRUE( context.ErrorCount.Load( ) == 1 );
 
   Blue::ShutdownLogger( );
 }
@@ -181,8 +170,8 @@ static void TestLoggerThreadSafety( )
   Blue::Thread threads[ ThreadCount ];
   LoggingThreadContext threadContexts[ ThreadCount ];
 
-  BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
-  BLUE_TEST_EXPECT( Blue::RegisterLogSink( MakeCountingSink( context ) ) );
+  ASSERT_TRUE( Blue::InitializeLogger( ) );
+  ASSERT_TRUE( Blue::RegisterLogSink( MakeCountingSink( context ) ) );
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
@@ -193,23 +182,23 @@ static void TestLoggerThreadSafety( )
     desc.Entry = &LoggingThreadEntry;
     desc.UserData = &threadContexts[ index ];
 
-    BLUE_TEST_EXPECT( Blue::CreateThread( threads[ index ], desc ) );
+    ASSERT_TRUE( Blue::CreateThread( threads[ index ], desc ) );
   }
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
     Blue::Uint32 exitCode = 0;
-    BLUE_TEST_EXPECT( Blue::JoinThread( threads[ index ], &exitCode ) );
-    BLUE_TEST_EXPECT( exitCode == Iterations );
+    ASSERT_TRUE( Blue::JoinThread( threads[ index ], &exitCode ) );
+    ASSERT_TRUE( exitCode == Iterations );
   }
 
   Blue::LoggerStateSnapshot snapshot = Blue::GetLoggerStateSnapshot( );
 
-  BLUE_TEST_EXPECT( context.EventCount.Load( ) == ExpectedEvents );
-  BLUE_TEST_EXPECT( context.InvalidEventCount.Load( ) == 0 );
-  BLUE_TEST_EXPECT( snapshot.WrittenEventCount == ExpectedEvents );
-  BLUE_TEST_EXPECT( snapshot.DroppedEventCount == 0 );
-  BLUE_TEST_EXPECT( context.LastSequence.Load( ) == ExpectedEvents );
+  ASSERT_TRUE( context.EventCount.Load( ) == ExpectedEvents );
+  ASSERT_TRUE( context.InvalidEventCount.Load( ) == 0 );
+  ASSERT_TRUE( snapshot.WrittenEventCount == ExpectedEvents );
+  ASSERT_TRUE( snapshot.DroppedEventCount == 0 );
+  ASSERT_TRUE( context.LastSequence.Load( ) == ExpectedEvents );
 
   Blue::ShutdownLogger( );
 }
@@ -218,28 +207,25 @@ static void TestLoggerRecursionGuard( )
 {
   RecursiveSinkContext context;
 
-  BLUE_TEST_EXPECT( Blue::InitializeLogger( ) );
-  BLUE_TEST_EXPECT( Blue::RegisterLogSink( MakeRecursiveSink( context ) ) );
+  ASSERT_TRUE( Blue::InitializeLogger( ) );
+  ASSERT_TRUE( Blue::RegisterLogSink( MakeRecursiveSink( context ) ) );
 
   BLUE_LOG_INFO( LogLoggerTest, "outer event" );
 
   Blue::LoggerStateSnapshot snapshot = Blue::GetLoggerStateSnapshot( );
 
-  BLUE_TEST_EXPECT( context.Calls.Load( ) == 1 );
-  BLUE_TEST_EXPECT( snapshot.WrittenEventCount == 1 );
-  BLUE_TEST_EXPECT( snapshot.DroppedEventCount == 1 );
+  ASSERT_TRUE( context.Calls.Load( ) == 1 );
+  ASSERT_TRUE( snapshot.WrittenEventCount == 1 );
+  ASSERT_TRUE( snapshot.DroppedEventCount == 1 );
 
   Blue::ShutdownLogger( );
 }
 
-int main( )
+TEST( BlueSystemLoggerThreadSafetyTests, RunsSuccessfully )
 {
   TestLoggerRegisterClearAndFlush( );
   TestLoggerLevelFiltering( );
   TestLoggerSinkMinimumLevelFiltering( );
   TestLoggerThreadSafety( );
   TestLoggerRecursionGuard( );
-
-  printf( "BlueSystem logger thread-safety tests passed.\n" );
-  return 0;
 }

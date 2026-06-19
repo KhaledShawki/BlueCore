@@ -4,17 +4,17 @@ namespace Blue
 {
 constexpr Bool IsPowerOfTwo( Size value )
 {
-  return value != 0 && ( value & ( value - 1 ) ) == 0;
+  return value != 0 && ( value & ( value - 1u ) ) == 0;
 }
 
 constexpr Size AlignUp( Size value, Size alignment )
 {
-  return IsPowerOfTwo( alignment ) ? ( ( value + alignment - 1 ) & ~( alignment - 1 ) ) : value;
+  return IsPowerOfTwo( alignment ) ? ( ( value + alignment - 1u ) & ~( alignment - 1 ) ) : value;
 }
 
 constexpr Size AlignDown( Size value, Size alignment )
 {
-  return IsPowerOfTwo( alignment ) ? ( value & ~( alignment - 1 ) ) : value;
+  return IsPowerOfTwo( alignment ) ? ( value & ~( alignment - 1u ) ) : value;
 }
 
 constexpr Size AlignPointerUp( NativeUInt value, Size alignment )

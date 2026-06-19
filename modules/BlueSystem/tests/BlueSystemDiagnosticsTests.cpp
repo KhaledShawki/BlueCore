@@ -4,7 +4,7 @@
 #include <Blue/System/SourceLocation.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
+#include <gtest/gtest.h>
 
 namespace
 {
@@ -40,46 +40,75 @@ void TestLogSinkWrite( void* context, const Blue::LogEvent& event )
   }
 }
 
-int Fail( const char* message )
+class AssertHandlerScope final
 {
-  fprintf( stderr, "FAILED: %s\n", message );
-  return 1;
-}
+  public:
+  explicit AssertHandlerScope( Blue::AssertHandler handler ) { Blue::SetAssertHandler( handler ); }
+
+  ~AssertHandlerScope( ) { Blue::SetAssertHandler( nullptr ); }
+
+  AssertHandlerScope( const AssertHandlerScope& ) = delete;
+  AssertHandlerScope& operator=( const AssertHandlerScope& ) = delete;
+};
+
+class LoggerScope final
+{
+  public:
+  explicit LoggerScope( bool initialized )
+      : Initialized( initialized )
+  {}
+
+  ~LoggerScope( )
+  {
+    if ( Initialized )
+    {
+      Blue::ShutdownLogger( );
+    }
+  }
+
+  LoggerScope( const LoggerScope& ) = delete;
+  LoggerScope& operator=( const LoggerScope& ) = delete;
+
+  private:
+  bool Initialized = false;
+};
 } // namespace
 
-int main( )
+TEST( BlueSystemDiagnosticsTests, SourceLocationMacroCapturesValidCallSite )
 {
   const Blue::SourceLocation location = BLUE_SOURCE_LOCATION( );
-  if ( !location.File || !location.Function || location.Line == 0 )
-  {
-    return Fail( "BLUE_SOURCE_LOCATION returned invalid data" );
-  }
+
+  ASSERT_NE( location.File, nullptr );
+  ASSERT_NE( location.Function, nullptr );
+  EXPECT_GT( location.Line, 0u );
+}
+
+TEST( BlueSystemDiagnosticsTests, CustomAssertHandlerReceivesReportedAssertion )
+{
+  const Blue::SourceLocation location = BLUE_SOURCE_LOCATION( );
+  g_AssertHandlerCalled = false;
+  g_LastAssertContext = Blue::AssertContext{ };
+
+  const AssertHandlerScope handlerScope( &TestAssertHandler );
+
+  const Blue::AssertContext handledContext{ "1 == 2", "handler path", location };
+  Blue::ReportAssertion( handledContext );
+
+  ASSERT_TRUE( g_AssertHandlerCalled );
+  EXPECT_EQ( g_LastAssertContext.Expression, handledContext.Expression );
+  EXPECT_EQ( g_LastAssertContext.Message, handledContext.Message );
+}
+
+TEST( BlueSystemDiagnosticsTests, AssertionReportsThroughLoggerSink )
+{
+  const Blue::SourceLocation location = BLUE_SOURCE_LOCATION( );
 
   ( void ) Blue::IsDebuggerAttached( );
   Blue::WriteDebugOutput( "BlueSystem diagnostics smoke test output\n" );
 
-  Blue::SetAssertHandler( &TestAssertHandler );
-
-  Blue::AssertContext handledContext{ "1 == 2", "handler path", location };
-  Blue::ReportAssertion( handledContext );
-
-  if ( !g_AssertHandlerCalled )
-  {
-    return Fail( "custom assert handler was not called" );
-  }
-
-  if ( g_LastAssertContext.Expression != handledContext.Expression ||
-       g_LastAssertContext.Message != handledContext.Message )
-  {
-    return Fail( "custom assert handler received unexpected context" );
-  }
-
-  Blue::SetAssertHandler( nullptr );
-
-  if ( !Blue::InitializeLogger( ) )
-  {
-    return Fail( "logger initialization failed" );
-  }
+  const bool loggerInitialized = Blue::InitializeLogger( );
+  ASSERT_TRUE( loggerInitialized );
+  const LoggerScope loggerScope( loggerInitialized );
 
   TestContext testContext{ };
   Blue::LogSink sink{ };
@@ -87,38 +116,15 @@ int main( )
   sink.Write = &TestLogSinkWrite;
   sink.MinimumLevel = Blue::LogLevel::Trace;
 
-  if ( !Blue::RegisterLogSink( sink ) )
-  {
-    return Fail( "failed to register test log sink" );
-  }
+  ASSERT_TRUE( Blue::RegisterLogSink( sink ) );
 
-  Blue::AssertContext loggedContext{ "false", "logger path", location };
+  const Blue::AssertContext loggedContext{ "false", "logger path", location };
   Blue::ReportAssertion( loggedContext );
 
-  Blue::LoggerStateSnapshot snapshot = Blue::GetLoggerStateSnapshot( );
+  const Blue::LoggerStateSnapshot snapshot = Blue::GetLoggerStateSnapshot( );
 
-  Blue::ShutdownLogger( );
-
-  if ( testContext.EventCount != 1 )
-  {
-    return Fail( "assertion did not produce exactly one logger event" );
-  }
-
-  if ( !testContext.SawAssertCategory )
-  {
-    return Fail( "assertion logger event did not use Assert category" );
-  }
-
-  if ( !testContext.SawExpectedLocation )
-  {
-    return Fail( "assertion logger event did not preserve source location" );
-  }
-
-  if ( snapshot.WrittenEventCount == 0 )
-  {
-    return Fail( "logger written counter was not updated" );
-  }
-
-  printf( "BlueSystem diagnostics tests passed.\n" );
-  return 0;
+  EXPECT_EQ( testContext.EventCount, 1u );
+  EXPECT_TRUE( testContext.SawAssertCategory );
+  EXPECT_TRUE( testContext.SawExpectedLocation );
+  EXPECT_NE( snapshot.WrittenEventCount, 0u );
 }

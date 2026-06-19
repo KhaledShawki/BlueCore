@@ -3,19 +3,8 @@
 #include <Blue/Memory/Pool/MemoryPoolTrait.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -44,12 +33,9 @@ static_assert( Blue::MemoryPoolResolver< RendererObject >::Pool == Blue::MemoryP
 static_assert( Blue::MemoryPoolResolver< PlainObject >::Pool == Blue::MemoryPoolId::System );
 static_assert( Blue::MemoryPoolResolver< TraitObject >::Pool == Blue::MemoryPoolId::Resources );
 
-int main( )
+TEST( BlueMemoryPoolResolverTests, RunsSuccessfully )
 {
-  BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< RendererObject >::Pool == Blue::MemoryPoolId::Renderer );
-  BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< PlainObject >::Pool == Blue::MemoryPoolId::System );
-  BLUE_TEST_EXPECT( Blue::MemoryPoolResolver< TraitObject >::Pool == Blue::MemoryPoolId::Resources );
-
-  printf( "BlueMemory pool resolver tests passed.\n" );
-  return 0;
+  ASSERT_TRUE( Blue::MemoryPoolResolver< RendererObject >::Pool == Blue::MemoryPoolId::Renderer );
+  ASSERT_TRUE( Blue::MemoryPoolResolver< PlainObject >::Pool == Blue::MemoryPoolId::System );
+  ASSERT_TRUE( Blue::MemoryPoolResolver< TraitObject >::Pool == Blue::MemoryPoolId::Resources );
 }

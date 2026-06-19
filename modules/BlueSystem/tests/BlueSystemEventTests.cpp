@@ -3,19 +3,8 @@
 #include <Blue/System/Thread.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -42,20 +31,20 @@ static void TestManualResetEventLifecycle( )
   desc.ResetMode = Blue::EventResetMode::Manual;
   desc.InitiallySignaled = false;
 
-  BLUE_TEST_EXPECT( !Blue::IsEventInitialized( event ) );
-  BLUE_TEST_EXPECT( Blue::InitializeEvent( event, desc ) );
-  BLUE_TEST_EXPECT( Blue::IsEventInitialized( event ) );
-  BLUE_TEST_EXPECT( !Blue::TryWaitEvent( event ) );
+  ASSERT_TRUE( !Blue::IsEventInitialized( event ) );
+  ASSERT_TRUE( Blue::InitializeEvent( event, desc ) );
+  ASSERT_TRUE( Blue::IsEventInitialized( event ) );
+  ASSERT_TRUE( !Blue::TryWaitEvent( event ) );
 
   Blue::SignalEvent( event );
-  BLUE_TEST_EXPECT( Blue::TryWaitEvent( event ) );
-  BLUE_TEST_EXPECT( Blue::TryWaitEvent( event ) );
+  ASSERT_TRUE( Blue::TryWaitEvent( event ) );
+  ASSERT_TRUE( Blue::TryWaitEvent( event ) );
 
   Blue::ResetEvent( event );
-  BLUE_TEST_EXPECT( !Blue::TryWaitEvent( event ) );
+  ASSERT_TRUE( !Blue::TryWaitEvent( event ) );
 
   Blue::ShutdownEvent( event );
-  BLUE_TEST_EXPECT( !Blue::IsEventInitialized( event ) );
+  ASSERT_TRUE( !Blue::IsEventInitialized( event ) );
 }
 
 static void TestAutoResetEventLifecycle( )
@@ -65,12 +54,12 @@ static void TestAutoResetEventLifecycle( )
   desc.ResetMode = Blue::EventResetMode::Auto;
   desc.InitiallySignaled = false;
 
-  BLUE_TEST_EXPECT( Blue::InitializeEvent( event, desc ) );
-  BLUE_TEST_EXPECT( !event.TryWait( ) );
+  ASSERT_TRUE( Blue::InitializeEvent( event, desc ) );
+  ASSERT_TRUE( !event.TryWait( ) );
 
   event.Signal( );
-  BLUE_TEST_EXPECT( event.TryWait( ) );
-  BLUE_TEST_EXPECT( !event.TryWait( ) );
+  ASSERT_TRUE( event.TryWait( ) );
+  ASSERT_TRUE( !event.TryWait( ) );
 
   Blue::ShutdownEvent( event );
 }
@@ -82,12 +71,12 @@ static void TestOwnedEventAndTimedWait( )
   desc.InitiallySignaled = false;
 
   Blue::OwnedEvent event( desc );
-  BLUE_TEST_EXPECT( event.IsValid( ) );
-  BLUE_TEST_EXPECT( !event.WaitFor( Blue::MakeTimeDurationFromMilliseconds( 5 ) ) );
+  ASSERT_TRUE( event.IsValid( ) );
+  ASSERT_TRUE( !event.WaitFor( Blue::MakeTimeDurationFromMilliseconds( 5 ) ) );
 
   event.Signal( );
-  BLUE_TEST_EXPECT( event.WaitFor( Blue::MakeTimeDurationFromMilliseconds( 50 ) ) );
-  BLUE_TEST_EXPECT( !event.TryWait( ) );
+  ASSERT_TRUE( event.WaitFor( Blue::MakeTimeDurationFromMilliseconds( 50 ) ) );
+  ASSERT_TRUE( !event.TryWait( ) );
 }
 
 static void TestEventWithThread( )
@@ -96,7 +85,7 @@ static void TestEventWithThread( )
   Blue::EventCreateDesc desc;
   desc.ResetMode = Blue::EventResetMode::Manual;
   desc.InitiallySignaled = false;
-  BLUE_TEST_EXPECT( Blue::InitializeEvent( event, desc ) );
+  ASSERT_TRUE( Blue::InitializeEvent( event, desc ) );
 
   Blue::AtomicUint32 flag( 0 );
   EventWorkerContext context;
@@ -109,28 +98,25 @@ static void TestEventWithThread( )
   threadDesc.Entry = &EventWorkerEntry;
   threadDesc.UserData = &context;
 
-  BLUE_TEST_EXPECT( Blue::CreateThread( thread, threadDesc ) );
+  ASSERT_TRUE( Blue::CreateThread( thread, threadDesc ) );
 
   for ( Blue::Uint32 attempt = 0; attempt < 100; ++attempt )
   {
     Blue::YieldThread( );
   }
 
-  BLUE_TEST_EXPECT( flag.Load( Blue::MemoryOrder::Acquire ) == 0 );
+  ASSERT_TRUE( flag.Load( Blue::MemoryOrder::Acquire ) == 0 );
   event.Signal( );
-  BLUE_TEST_EXPECT( Blue::JoinThread( thread ) );
-  BLUE_TEST_EXPECT( flag.Load( Blue::MemoryOrder::Acquire ) == 1 );
+  ASSERT_TRUE( Blue::JoinThread( thread ) );
+  ASSERT_TRUE( flag.Load( Blue::MemoryOrder::Acquire ) == 1 );
 
   Blue::ShutdownEvent( event );
 }
 
-int main( )
+TEST( BlueSystemEventTests, RunsSuccessfully )
 {
   TestManualResetEventLifecycle( );
   TestAutoResetEventLifecycle( );
   TestOwnedEventAndTimedWait( );
   TestEventWithThread( );
-
-  printf( "BlueSystem event tests passed.\n" );
-  return 0;
 }

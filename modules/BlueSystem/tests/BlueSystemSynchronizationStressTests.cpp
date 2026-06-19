@@ -6,19 +6,8 @@
 #include <Blue/System/Thread.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -68,15 +57,15 @@ static void TestSynchronizationStress( )
   Blue::SemaphoreCreateDesc semaphoreDesc;
   semaphoreDesc.InitialCount = 0;
   semaphoreDesc.MaximumCount = TotalWork;
-  BLUE_TEST_EXPECT( Blue::InitializeSemaphore( workSemaphore, semaphoreDesc ) );
+  ASSERT_TRUE( Blue::InitializeSemaphore( workSemaphore, semaphoreDesc ) );
 
   Blue::EventCreateDesc eventDesc;
   eventDesc.ResetMode = Blue::EventResetMode::Manual;
   eventDesc.InitiallySignaled = false;
-  BLUE_TEST_EXPECT( Blue::InitializeEvent( startEvent, eventDesc ) );
+  ASSERT_TRUE( Blue::InitializeEvent( startEvent, eventDesc ) );
 
-  BLUE_TEST_EXPECT( Blue::InitializeConditionVariable( doneCondition ) );
-  BLUE_TEST_EXPECT( Blue::InitializeMutex( mutex ) );
+  ASSERT_TRUE( Blue::InitializeConditionVariable( doneCondition ) );
+  ASSERT_TRUE( Blue::InitializeMutex( mutex ) );
 
   Blue::AtomicUint32 consumedCount( 0 );
   Blue::Uint32 doneCount = 0;
@@ -97,10 +86,10 @@ static void TestSynchronizationStress( )
     desc.Name = "BlueSyncStressWorker";
     desc.Entry = &StressWorkerEntry;
     desc.UserData = &context;
-    BLUE_TEST_EXPECT( Blue::CreateThread( threads[ index ], desc ) );
+    ASSERT_TRUE( Blue::CreateThread( threads[ index ], desc ) );
   }
 
-  BLUE_TEST_EXPECT( workSemaphore.Release( TotalWork ) );
+  ASSERT_TRUE( workSemaphore.Release( TotalWork ) );
   startEvent.Signal( );
 
   mutex.Acquire( );
@@ -112,10 +101,10 @@ static void TestSynchronizationStress( )
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
-    BLUE_TEST_EXPECT( Blue::JoinThread( threads[ index ] ) );
+    ASSERT_TRUE( Blue::JoinThread( threads[ index ] ) );
   }
 
-  BLUE_TEST_EXPECT( consumedCount.Load( Blue::MemoryOrder::Acquire ) == TotalWork );
+  ASSERT_TRUE( consumedCount.Load( Blue::MemoryOrder::Acquire ) == TotalWork );
 
   Blue::ShutdownMutex( mutex );
   Blue::ShutdownConditionVariable( doneCondition );
@@ -123,10 +112,7 @@ static void TestSynchronizationStress( )
   Blue::ShutdownSemaphore( workSemaphore );
 }
 
-int main( )
+TEST( BlueSystemSynchronizationStressTests, RunsSuccessfully )
 {
   TestSynchronizationStress( );
-
-  printf( "BlueSystem synchronization stress tests passed.\n" );
-  return 0;
 }

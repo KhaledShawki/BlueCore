@@ -1,132 +1,77 @@
 #include <Blue/System/Time.h>
+#include <Blue/System/Types.h>
 
-#include <stdio.h>
+#include <gtest/gtest.h>
 
-namespace
+TEST( BlueSystemTimeTests, PlatformClockReportsValidRuntimeValues )
 {
-int Fail( const char* message )
-{
-  printf( "BlueSystem time test failed: %s\n", message );
-  return 1;
+  EXPECT_NE( Blue::GetPerformanceFrequency( ), 0u );
+  EXPECT_NE( Blue::GetTimeNowNs( ), 0u );
 }
-} // namespace
 
-int main( )
+TEST( BlueSystemTimeTests, DurationFactoriesConvertToNanoseconds )
 {
-  const Blue::Uint64 frequency = Blue::GetPerformanceFrequency( );
+  EXPECT_EQ( Blue::MakeTimeDurationFromSeconds( 1 ).Nanoseconds, Blue::NanosecondsPerSecond );
+  EXPECT_EQ( Blue::MakeTimeDurationFromMilliseconds( 1 ).Nanoseconds, Blue::NanosecondsPerMillisecond );
+  EXPECT_EQ( Blue::MakeTimeDurationFromMicroseconds( 1 ).Nanoseconds, Blue::NanosecondsPerMicrosecond );
+}
 
-  if ( frequency == 0 )
-  {
-    return Fail( "performance frequency must be non-zero" );
-  }
-
-  const Blue::Uint64 nowNs = Blue::GetTimeNowNs( );
-
-  if ( nowNs == 0 )
-  {
-    return Fail( "current monotonic time must be non-zero" );
-  }
-
-  const Blue::TimeDuration oneSecond = Blue::MakeTimeDurationFromSeconds( 1 );
-  const Blue::TimeDuration oneMillisecond = Blue::MakeTimeDurationFromMilliseconds( 1 );
-  const Blue::TimeDuration oneMicrosecond = Blue::MakeTimeDurationFromMicroseconds( 1 );
-
-  if ( oneSecond.Nanoseconds != Blue::NanosecondsPerSecond )
-  {
-    return Fail( "second conversion is incorrect" );
-  }
-
-  if ( oneMillisecond.Nanoseconds != Blue::NanosecondsPerMillisecond )
-  {
-    return Fail( "millisecond conversion is incorrect" );
-  }
-
-  if ( oneMicrosecond.Nanoseconds != Blue::NanosecondsPerMicrosecond )
-  {
-    return Fail( "microsecond conversion is incorrect" );
-  }
-
+TEST( BlueSystemTimeTests, ElapsedTimeSaturatesWhenEndPrecedesBegin )
+{
   const Blue::TimePoint begin{ 100 };
   const Blue::TimePoint end{ 250 };
-  const Blue::TimeDuration elapsed = Blue::GetElapsedTime( begin, end );
 
-  if ( elapsed.Nanoseconds != 150 )
-  {
-    return Fail( "elapsed time subtraction is incorrect" );
-  }
+  EXPECT_EQ( Blue::GetElapsedTime( begin, end ).Nanoseconds, 150u );
+  EXPECT_EQ( Blue::GetElapsedTime( end, begin ).Nanoseconds, 0u );
+}
 
-  const Blue::TimeDuration saturated = Blue::GetElapsedTime( end, begin );
-
-  if ( saturated.Nanoseconds != 0 )
-  {
-    return Fail( "negative elapsed time must saturate to zero" );
-  }
-
+TEST( BlueSystemTimeTests, DurationArithmeticSaturatesOnUnderflowAndOverflow )
+{
   const Blue::TimeDuration added =
     Blue::MakeTimeDurationFromNanoseconds( 10 ) + Blue::MakeTimeDurationFromNanoseconds( 20 );
-
-  if ( added.Nanoseconds != 30 )
-  {
-    return Fail( "duration addition is incorrect" );
-  }
+  EXPECT_EQ( added.Nanoseconds, 30u );
 
   const Blue::TimeDuration subtracted =
     Blue::MakeTimeDurationFromNanoseconds( 10 ) - Blue::MakeTimeDurationFromNanoseconds( 20 );
+  EXPECT_EQ( subtracted.Nanoseconds, 0u );
 
-  if ( subtracted.Nanoseconds != 0 )
-  {
-    return Fail( "duration subtraction must saturate to zero" );
-  }
+  constexpr Blue::Uint64 MaxUint64 = ~static_cast< Blue::Uint64 >( 0 );
 
-  constexpr Blue::Uint64 maxUint64 = ~static_cast< Blue::Uint64 >( 0 );
-
-  if ( Blue::MakeTimeDurationFromSeconds( maxUint64 ).Nanoseconds != maxUint64 )
-  {
-    return Fail( "duration factory overflow must saturate" );
-  }
+  EXPECT_EQ( Blue::MakeTimeDurationFromSeconds( MaxUint64 ).Nanoseconds, MaxUint64 );
 
   const Blue::TimeDuration saturatedAddition =
-    Blue::MakeTimeDurationFromNanoseconds( maxUint64 ) + Blue::MakeTimeDurationFromNanoseconds( 1 );
+    Blue::MakeTimeDurationFromNanoseconds( MaxUint64 ) + Blue::MakeTimeDurationFromNanoseconds( 1 );
+  EXPECT_EQ( saturatedAddition.Nanoseconds, MaxUint64 );
+}
 
-  if ( saturatedAddition.Nanoseconds != maxUint64 )
-  {
-    return Fail( "duration addition overflow must saturate" );
-  }
+TEST( BlueSystemTimeTests, TimePointArithmeticSaturatesOnOverflow )
+{
+  constexpr Blue::Uint64 MaxUint64 = ~static_cast< Blue::Uint64 >( 0 );
 
-  const Blue::TimePoint saturatedPoint = Blue::TimePoint{ maxUint64 } + Blue::MakeTimeDurationFromNanoseconds( 1 );
+  const Blue::TimePoint saturatedPoint = Blue::TimePoint{ MaxUint64 } + Blue::MakeTimeDurationFromNanoseconds( 1 );
 
-  if ( saturatedPoint.Nanoseconds != maxUint64 )
-  {
-    return Fail( "time point addition overflow must saturate" );
-  }
+  EXPECT_EQ( saturatedPoint.Nanoseconds, MaxUint64 );
+}
 
+TEST( BlueSystemTimeTests, StopwatchAdvancesAndRestartKeepsValidStartPoint )
+{
   Blue::Stopwatch stopwatch = Blue::StartStopwatch( );
-  Blue::TimeDuration stopwatchElapsed{ };
+  Blue::TimeDuration elapsed{ };
 
   for ( int attempt = 0; attempt < 100000; ++attempt )
   {
-    stopwatchElapsed = Blue::GetElapsedTime( stopwatch );
+    elapsed = Blue::GetElapsedTime( stopwatch );
 
-    if ( stopwatchElapsed.Nanoseconds != 0 )
+    if ( elapsed.Nanoseconds != 0 )
     {
       break;
     }
   }
 
-  if ( stopwatchElapsed.Nanoseconds == 0 )
-  {
-    return Fail( "stopwatch did not advance" );
-  }
+  EXPECT_NE( elapsed.Nanoseconds, 0u );
 
   const Blue::TimeDuration restartElapsed = Blue::RestartStopwatch( stopwatch );
-
-  if ( Blue::IsTimePointValid( stopwatch.Start ) == false )
-  {
-    return Fail( "restart must preserve a valid stopwatch start point" );
-  }
-
   ( void ) restartElapsed;
 
-  printf( "BlueSystem time tests passed.\n" );
-  return 0;
+  EXPECT_TRUE( Blue::IsTimePointValid( stopwatch.Start ) );
 }

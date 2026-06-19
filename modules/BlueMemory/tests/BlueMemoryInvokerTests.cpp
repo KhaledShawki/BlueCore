@@ -3,19 +3,8 @@
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -45,39 +34,37 @@ struct ExplicitObject
 };
 } // namespace
 
-int main( )
+TEST( BlueMemoryInvokerTests, RunsSuccessfully )
 {
   Blue::MemorySystemDesc desc = { };
-  BLUE_TEST_EXPECT( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
+  ASSERT_TRUE( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
 
   Blue::MemoryPoolStats before = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, before ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, before ) );
 
   RendererObject* object = Blue::BlueNew< RendererObject >( );
-  BLUE_TEST_EXPECT( object != nullptr );
-  BLUE_TEST_EXPECT( RendererObject::Constructed == 1 );
-  BLUE_TEST_EXPECT( RendererObject::Destroyed == 0 );
+  ASSERT_TRUE( object != nullptr );
+  ASSERT_TRUE( RendererObject::Constructed == 1 );
+  ASSERT_TRUE( RendererObject::Destroyed == 0 );
 
   Blue::MemoryPoolStats during = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, during ) );
-  BLUE_TEST_EXPECT( during.CurrentBytes >= before.CurrentBytes + sizeof( RendererObject ) );
-  BLUE_TEST_EXPECT( during.AllocationCount == before.AllocationCount + 1 );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, during ) );
+  ASSERT_TRUE( during.CurrentBytes >= before.CurrentBytes + sizeof( RendererObject ) );
+  ASSERT_TRUE( during.AllocationCount == before.AllocationCount + 1 );
 
   Blue::BlueDelete( object );
-  BLUE_TEST_EXPECT( RendererObject::Destroyed == 1 );
+  ASSERT_TRUE( RendererObject::Destroyed == 1 );
 
   Blue::MemoryPoolStats after = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, after ) );
-  BLUE_TEST_EXPECT( after.CurrentBytes == before.CurrentBytes );
-  BLUE_TEST_EXPECT( after.FreeCount == before.FreeCount + 1 );
-  BLUE_TEST_EXPECT( after.PeakBytes >= during.CurrentBytes );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, after ) );
+  ASSERT_TRUE( after.CurrentBytes == before.CurrentBytes );
+  ASSERT_TRUE( after.FreeCount == before.FreeCount + 1 );
+  ASSERT_TRUE( after.PeakBytes >= during.CurrentBytes );
 
   ExplicitObject* explicitObject = Blue::BlueNewInPool< Blue::MemoryPoolId::Test, ExplicitObject >( 42 );
-  BLUE_TEST_EXPECT( explicitObject != nullptr );
-  BLUE_TEST_EXPECT( explicitObject->Value == 42 );
+  ASSERT_TRUE( explicitObject != nullptr );
+  ASSERT_TRUE( explicitObject->Value == 42 );
   Blue::BlueDeleteFromPool< Blue::MemoryPoolId::Test >( explicitObject );
 
   Blue::ShutdownMemorySystem( );
-  printf( "BlueMemory invoker tests passed.\n" );
-  return 0;
 }

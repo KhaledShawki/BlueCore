@@ -3,19 +3,8 @@
 #include <Blue/System/Thread.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -38,27 +27,27 @@ Blue::Uint32 SemaphoreWorkerEntry( void* userData )
 static void TestSemaphoreLifecycle( )
 {
   Blue::Semaphore semaphore;
-  BLUE_TEST_EXPECT( !Blue::IsSemaphoreInitialized( semaphore ) );
+  ASSERT_TRUE( !Blue::IsSemaphoreInitialized( semaphore ) );
 
   Blue::SemaphoreCreateDesc desc;
   desc.InitialCount = 0;
   desc.MaximumCount = 2;
 
-  BLUE_TEST_EXPECT( Blue::InitializeSemaphore( semaphore, desc ) );
-  BLUE_TEST_EXPECT( Blue::IsSemaphoreInitialized( semaphore ) );
-  BLUE_TEST_EXPECT( !Blue::TryAcquireSemaphore( semaphore ) );
+  ASSERT_TRUE( Blue::InitializeSemaphore( semaphore, desc ) );
+  ASSERT_TRUE( Blue::IsSemaphoreInitialized( semaphore ) );
+  ASSERT_TRUE( !Blue::TryAcquireSemaphore( semaphore ) );
 
-  BLUE_TEST_EXPECT( Blue::ReleaseSemaphore( semaphore ) );
-  BLUE_TEST_EXPECT( Blue::TryAcquireSemaphore( semaphore ) );
-  BLUE_TEST_EXPECT( !Blue::TryAcquireSemaphore( semaphore ) );
+  ASSERT_TRUE( Blue::ReleaseSemaphore( semaphore ) );
+  ASSERT_TRUE( Blue::TryAcquireSemaphore( semaphore ) );
+  ASSERT_TRUE( !Blue::TryAcquireSemaphore( semaphore ) );
 
-  BLUE_TEST_EXPECT( semaphore.Release( 2 ) );
-  BLUE_TEST_EXPECT( semaphore.TryAcquire( ) );
-  BLUE_TEST_EXPECT( semaphore.TryAcquire( ) );
-  BLUE_TEST_EXPECT( !semaphore.TryAcquire( ) );
+  ASSERT_TRUE( semaphore.Release( 2 ) );
+  ASSERT_TRUE( semaphore.TryAcquire( ) );
+  ASSERT_TRUE( semaphore.TryAcquire( ) );
+  ASSERT_TRUE( !semaphore.TryAcquire( ) );
 
   Blue::ShutdownSemaphore( semaphore );
-  BLUE_TEST_EXPECT( !Blue::IsSemaphoreInitialized( semaphore ) );
+  ASSERT_TRUE( !Blue::IsSemaphoreInitialized( semaphore ) );
 }
 
 static void TestOwnedSemaphoreAndTimedAcquire( )
@@ -68,12 +57,12 @@ static void TestOwnedSemaphoreAndTimedAcquire( )
   desc.MaximumCount = 1;
 
   Blue::OwnedSemaphore semaphore( desc );
-  BLUE_TEST_EXPECT( semaphore.IsValid( ) );
-  BLUE_TEST_EXPECT( !semaphore.AcquireFor( Blue::MakeTimeDurationFromMilliseconds( 5 ) ) );
+  ASSERT_TRUE( semaphore.IsValid( ) );
+  ASSERT_TRUE( !semaphore.AcquireFor( Blue::MakeTimeDurationFromMilliseconds( 5 ) ) );
 
-  BLUE_TEST_EXPECT( semaphore.Release( ) );
-  BLUE_TEST_EXPECT( semaphore.AcquireFor( Blue::MakeTimeDurationFromMilliseconds( 50 ) ) );
-  BLUE_TEST_EXPECT( !semaphore.TryAcquire( ) );
+  ASSERT_TRUE( semaphore.Release( ) );
+  ASSERT_TRUE( semaphore.AcquireFor( Blue::MakeTimeDurationFromMilliseconds( 50 ) ) );
+  ASSERT_TRUE( !semaphore.TryAcquire( ) );
 }
 
 static void TestSemaphoreWithThreads( )
@@ -84,7 +73,7 @@ static void TestSemaphoreWithThreads( )
   Blue::SemaphoreCreateDesc desc;
   desc.InitialCount = 0;
   desc.MaximumCount = ThreadCount;
-  BLUE_TEST_EXPECT( Blue::InitializeSemaphore( semaphore, desc ) );
+  ASSERT_TRUE( Blue::InitializeSemaphore( semaphore, desc ) );
 
   Blue::AtomicUint32 counter( 0 );
   Blue::Thread threads[ ThreadCount ];
@@ -100,7 +89,7 @@ static void TestSemaphoreWithThreads( )
     threadDesc.Entry = &SemaphoreWorkerEntry;
     threadDesc.UserData = &contexts[ index ];
 
-    BLUE_TEST_EXPECT( Blue::CreateThread( threads[ index ], threadDesc ) );
+    ASSERT_TRUE( Blue::CreateThread( threads[ index ], threadDesc ) );
   }
 
   for ( Blue::Uint32 attempt = 0; attempt < 100; ++attempt )
@@ -108,24 +97,21 @@ static void TestSemaphoreWithThreads( )
     Blue::YieldThread( );
   }
 
-  BLUE_TEST_EXPECT( counter.Load( Blue::MemoryOrder::Acquire ) == 0 );
-  BLUE_TEST_EXPECT( semaphore.Release( ThreadCount ) );
+  ASSERT_TRUE( counter.Load( Blue::MemoryOrder::Acquire ) == 0 );
+  ASSERT_TRUE( semaphore.Release( ThreadCount ) );
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
-    BLUE_TEST_EXPECT( Blue::JoinThread( threads[ index ] ) );
+    ASSERT_TRUE( Blue::JoinThread( threads[ index ] ) );
   }
 
-  BLUE_TEST_EXPECT( counter.Load( Blue::MemoryOrder::Acquire ) == ThreadCount );
+  ASSERT_TRUE( counter.Load( Blue::MemoryOrder::Acquire ) == ThreadCount );
   Blue::ShutdownSemaphore( semaphore );
 }
 
-int main( )
+TEST( BlueSystemSemaphoreTests, RunsSuccessfully )
 {
   TestSemaphoreLifecycle( );
   TestOwnedSemaphoreAndTimedAcquire( );
   TestSemaphoreWithThreads( );
-
-  printf( "BlueSystem semaphore tests passed.\n" );
-  return 0;
 }

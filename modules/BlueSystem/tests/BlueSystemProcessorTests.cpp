@@ -1,103 +1,56 @@
+#include <Blue/System/Alignment.h>
 #include <Blue/System/Threading/Processor.h>
+#include <Blue/System/Types.h>
 
-#include <stdio.h>
+#include <gtest/gtest.h>
 
-namespace
-{
-int Fail( const char* message )
-{
-  printf( "FAILED: %s\n", message );
-  return 1;
-}
 
-int TestProcessorInfo( )
+TEST( BlueSystemProcessorTests, ProcessorInfoReportsValidRuntimeValues )
 {
   const Blue::ProcessorArchitecture architecture = Blue::GetProcessorArchitecture( );
-  const char* architectureName = Blue::GetProcessorArchitectureName( architecture );
+  const Blue::Char* architectureName = Blue::GetProcessorArchitectureName( architecture );
 
-  if ( !architectureName || architectureName[ 0 ] == '\0' )
-  {
-    return Fail( "processor architecture name must be available" );
-  }
+  ASSERT_NE( architectureName, nullptr );
+  EXPECT_NE( architectureName[ 0 ], '\0' );
 
   const Blue::Uint32 logicalProcessorCount = Blue::GetLogicalProcessorCount( );
-  if ( logicalProcessorCount == 0 )
-  {
-    return Fail( "logical processor count must be greater than zero" );
-  }
+  EXPECT_GT( logicalProcessorCount, 0u );
 
   const Blue::Uint32 cacheLineSize = Blue::GetCacheLineSize( );
-  if ( cacheLineSize == 0 )
-  {
-    return Fail( "cache line size must be greater than zero" );
-  }
-
-  if ( ( cacheLineSize & ( cacheLineSize - 1 ) ) != 0 )
-  {
-    return Fail( "cache line size must be a power of two" );
-  }
+  EXPECT_GT( cacheLineSize, 0u );
+  EXPECT_TRUE( Blue::IsPowerOfTwo( cacheLineSize ) );
 
   const Blue::ProcessorInfo info = Blue::QueryProcessorInfo( );
-  if ( info.LogicalProcessorCount == 0 )
-  {
-    return Fail( "processor info logical processor count must be greater than zero" );
-  }
 
-  if ( info.CacheLineSize == 0 )
-  {
-    return Fail( "processor info cache line size must be greater than zero" );
-  }
+  EXPECT_EQ( info.Architecture, architecture );
+  EXPECT_EQ( info.LogicalProcessorCount, logicalProcessorCount );
+  EXPECT_EQ( info.CacheLineSize, cacheLineSize );
 
-  if ( !info.ArchitectureName || info.ArchitectureName[ 0 ] == '\0' )
-  {
-    return Fail( "processor info architecture name must be available" );
-  }
-
-  return 0;
+  ASSERT_NE( info.ArchitectureName, nullptr );
+  EXPECT_NE( info.ArchitectureName[ 0 ], '\0' );
 }
 
-int TestRecommendedWorkerThreadCount( )
+TEST( BlueSystemProcessorTests, RecommendedWorkerThreadCountIsAlwaysUsable )
 {
   const Blue::Uint32 logicalProcessorCount = Blue::GetLogicalProcessorCount( );
+
   const Blue::Uint32 recommendedDefault = Blue::GetRecommendedWorkerThreadCount( );
   const Blue::Uint32 recommendedNoneReserved = Blue::GetRecommendedWorkerThreadCount( 0 );
-  const Blue::Uint32 recommendedTooManyReserved = Blue::GetRecommendedWorkerThreadCount( logicalProcessorCount + 32 );
+  const Blue::Uint32 recommendedTooManyReserved = Blue::GetRecommendedWorkerThreadCount( logicalProcessorCount + 32u );
 
-  if ( recommendedDefault == 0 )
-  {
-    return Fail( "default recommended worker count must be greater than zero" );
-  }
+  EXPECT_GT( recommendedDefault, 0u );
+  EXPECT_GT( recommendedNoneReserved, 0u );
+  EXPECT_EQ( recommendedTooManyReserved, 1u );
 
-  if ( recommendedNoneReserved == 0 )
-  {
-    return Fail( "recommended worker count with no reserved threads must be greater than zero" );
-  }
-
-  if ( recommendedTooManyReserved != 1 )
-  {
-    return Fail( "recommended worker count must clamp to one when too many threads are reserved" );
-  }
-
-  return 0;
+  EXPECT_LE( recommendedDefault, logicalProcessorCount );
+  EXPECT_LE( recommendedNoneReserved, logicalProcessorCount );
 }
-} // namespace
 
-int main( )
+TEST( BlueSystemProcessorTests, ProcessorWaitPrimitivesAreCallable )
 {
-  if ( TestProcessorInfo( ) != 0 )
-  {
-    return 1;
-  }
-
-  if ( TestRecommendedWorkerThreadCount( ) != 0 )
-  {
-    return 1;
-  }
-
   Blue::ProcessorPause( );
   Blue::YieldThread( );
   Blue::SleepCurrentThread( 1 );
 
-  printf( "BlueSystem processor tests passed.\n" );
-  return 0;
+  SUCCEED( );
 }

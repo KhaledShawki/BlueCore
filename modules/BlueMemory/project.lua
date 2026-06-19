@@ -115,6 +115,8 @@ bb.module_tests {
     deps = {
         "BlueMemory",
         "BlueSystem",
+        "gtest",
+        "gtest_main",
     },
 
     platform = {

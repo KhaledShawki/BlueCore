@@ -2,19 +2,8 @@
 #include <Blue/System/Thread.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -44,9 +33,9 @@ static void TestMutexLifecycle( )
 {
   Blue::Mutex mutex;
 
-  BLUE_TEST_EXPECT( !Blue::IsMutexInitialized( mutex ) );
-  BLUE_TEST_EXPECT( Blue::InitializeMutex( mutex ) );
-  BLUE_TEST_EXPECT( Blue::IsMutexInitialized( mutex ) );
+  ASSERT_TRUE( !Blue::IsMutexInitialized( mutex ) );
+  ASSERT_TRUE( Blue::InitializeMutex( mutex ) );
+  ASSERT_TRUE( Blue::IsMutexInitialized( mutex ) );
 
   Blue::AcquireMutex( mutex );
   Blue::ReleaseMutex( mutex );
@@ -54,20 +43,20 @@ static void TestMutexLifecycle( )
   mutex.Acquire( );
   mutex.Release( );
 
-  BLUE_TEST_EXPECT( Blue::TryAcquireMutex( mutex ) );
+  ASSERT_TRUE( Blue::TryAcquireMutex( mutex ) );
   Blue::ReleaseMutex( mutex );
 
-  BLUE_TEST_EXPECT( mutex.TryAcquire( ) );
+  ASSERT_TRUE( mutex.TryAcquire( ) );
   mutex.Release( );
 
   Blue::ShutdownMutex( mutex );
-  BLUE_TEST_EXPECT( !Blue::IsMutexInitialized( mutex ) );
+  ASSERT_TRUE( !Blue::IsMutexInitialized( mutex ) );
 }
 
 static void TestScopedMutexLock( )
 {
   Blue::Mutex mutex;
-  BLUE_TEST_EXPECT( Blue::InitializeMutex( mutex ) );
+  ASSERT_TRUE( Blue::InitializeMutex( mutex ) );
 
   Blue::Uint32 value = 0;
 
@@ -76,8 +65,8 @@ static void TestScopedMutexLock( )
     ++value;
   }
 
-  BLUE_TEST_EXPECT( value == 1 );
-  BLUE_TEST_EXPECT( Blue::TryAcquireMutex( mutex ) );
+  ASSERT_TRUE( value == 1 );
+  ASSERT_TRUE( Blue::TryAcquireMutex( mutex ) );
   Blue::ReleaseMutex( mutex );
 
   Blue::ShutdownMutex( mutex );
@@ -86,12 +75,12 @@ static void TestScopedMutexLock( )
 static void TestOwnedMutexLifecycle( )
 {
   Blue::OwnedMutex mutex;
-  BLUE_TEST_EXPECT( mutex.IsValid( ) );
+  ASSERT_TRUE( mutex.IsValid( ) );
 
   mutex.Acquire( );
   mutex.Release( );
 
-  BLUE_TEST_EXPECT( mutex.TryAcquire( ) );
+  ASSERT_TRUE( mutex.TryAcquire( ) );
   mutex.Release( );
 }
 
@@ -101,7 +90,7 @@ static void TestMutexWithMultipleThreads( )
   constexpr Blue::Uint32 Iterations = 20000;
 
   Blue::Mutex mutex;
-  BLUE_TEST_EXPECT( Blue::InitializeMutex( mutex ) );
+  ASSERT_TRUE( Blue::InitializeMutex( mutex ) );
 
   Blue::Uint32 counter = 0;
   Blue::Thread threads[ ThreadCount ];
@@ -118,25 +107,22 @@ static void TestMutexWithMultipleThreads( )
     desc.Entry = &MutexIncrementThreadEntry;
     desc.UserData = &contexts[ index ];
 
-    BLUE_TEST_EXPECT( Blue::CreateThread( threads[ index ], desc ) );
+    ASSERT_TRUE( Blue::CreateThread( threads[ index ], desc ) );
   }
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
-    BLUE_TEST_EXPECT( Blue::JoinThread( threads[ index ] ) );
+    ASSERT_TRUE( Blue::JoinThread( threads[ index ] ) );
   }
 
-  BLUE_TEST_EXPECT( counter == ThreadCount * Iterations );
+  ASSERT_TRUE( counter == ThreadCount * Iterations );
   Blue::ShutdownMutex( mutex );
 }
 
-int main( )
+TEST( BlueSystemMutexTests, RunsSuccessfully )
 {
   TestMutexLifecycle( );
   TestScopedMutexLock( );
   TestOwnedMutexLifecycle( );
   TestMutexWithMultipleThreads( );
-
-  printf( "BlueSystem mutex tests passed.\n" );
-  return 0;
 }

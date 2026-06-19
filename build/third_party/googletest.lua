@@ -14,8 +14,10 @@ bb.module {
         path.join(googletestRoot, "src/gtest-all.cc"),
     },
 
-    public_include_dirs = {
-        path.join(googletestRoot, "include"),
+    external_include_dirs = {
+        public = {
+            path.join(googletestRoot, "include"),
+        },
     },
 
     private_include_dirs = {
@@ -36,8 +38,10 @@ bb.module {
         path.join(googletestRoot, "src/gtest_main.cc"),
     },
 
-    public_include_dirs = {
-        path.join(googletestRoot, "include"),
+    external_include_dirs = {
+        public = {
+            path.join(googletestRoot, "include"),
+        },
     },
 
     private_include_dirs = {

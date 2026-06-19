@@ -4,19 +4,8 @@
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <gtest/gtest.h>
 
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
 
 namespace
 {
@@ -46,40 +35,40 @@ struct AllPoolStats
 
 static void ExpectPoolStatsEqual( const Blue::MemoryPoolStats& actual, const Blue::MemoryPoolStats& expected )
 {
-  BLUE_TEST_EXPECT( actual.CurrentBytes == expected.CurrentBytes );
-  BLUE_TEST_EXPECT( actual.PeakBytes == expected.PeakBytes );
-  BLUE_TEST_EXPECT( actual.TotalAllocatedBytes == expected.TotalAllocatedBytes );
-  BLUE_TEST_EXPECT( actual.TotalFreedBytes == expected.TotalFreedBytes );
-  BLUE_TEST_EXPECT( actual.AllocationCount == expected.AllocationCount );
-  BLUE_TEST_EXPECT( actual.FreeCount == expected.FreeCount );
-  BLUE_TEST_EXPECT( actual.FailedAllocationCount == expected.FailedAllocationCount );
-  BLUE_TEST_EXPECT( actual.BudgetExceededCount == expected.BudgetExceededCount );
+  ASSERT_TRUE( actual.CurrentBytes == expected.CurrentBytes );
+  ASSERT_TRUE( actual.PeakBytes == expected.PeakBytes );
+  ASSERT_TRUE( actual.TotalAllocatedBytes == expected.TotalAllocatedBytes );
+  ASSERT_TRUE( actual.TotalFreedBytes == expected.TotalFreedBytes );
+  ASSERT_TRUE( actual.AllocationCount == expected.AllocationCount );
+  ASSERT_TRUE( actual.FreeCount == expected.FreeCount );
+  ASSERT_TRUE( actual.FailedAllocationCount == expected.FailedAllocationCount );
+  ASSERT_TRUE( actual.BudgetExceededCount == expected.BudgetExceededCount );
 }
 
 static void CheckPoolStatsAreZero( Blue::MemoryPoolId poolId )
 {
   Blue::MemoryPoolStats poolStats = { };
 
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( poolId, poolStats ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( poolId, poolStats ) );
 
-  BLUE_TEST_EXPECT( poolStats.CurrentBytes == 0 );
-  BLUE_TEST_EXPECT( poolStats.PeakBytes == 0 );
-  BLUE_TEST_EXPECT( poolStats.TotalAllocatedBytes == 0 );
-  BLUE_TEST_EXPECT( poolStats.TotalFreedBytes == 0 );
-  BLUE_TEST_EXPECT( poolStats.AllocationCount == 0 );
-  BLUE_TEST_EXPECT( poolStats.FreeCount == 0 );
-  BLUE_TEST_EXPECT( poolStats.FailedAllocationCount == 0 );
-  BLUE_TEST_EXPECT( poolStats.BudgetExceededCount == 0 );
+  ASSERT_TRUE( poolStats.CurrentBytes == 0 );
+  ASSERT_TRUE( poolStats.PeakBytes == 0 );
+  ASSERT_TRUE( poolStats.TotalAllocatedBytes == 0 );
+  ASSERT_TRUE( poolStats.TotalFreedBytes == 0 );
+  ASSERT_TRUE( poolStats.AllocationCount == 0 );
+  ASSERT_TRUE( poolStats.FreeCount == 0 );
+  ASSERT_TRUE( poolStats.FailedAllocationCount == 0 );
+  ASSERT_TRUE( poolStats.BudgetExceededCount == 0 );
 }
 
 static void CaptureAllPoolStats( AllPoolStats& stats )
 {
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::System, stats.System ) );
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, stats.Renderer ) );
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Resources, stats.Resources ) );
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::JobSystem, stats.JobSystem ) );
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Temporary, stats.Temporary ) );
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, stats.Test ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::System, stats.System ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, stats.Renderer ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Resources, stats.Resources ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::JobSystem, stats.JobSystem ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Temporary, stats.Temporary ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, stats.Test ) );
 }
 
 static void ExpectAllPoolStatsEqual( const AllPoolStats& actual, const AllPoolStats& expected )
@@ -105,37 +94,37 @@ static void BlueMemoryContract_PoolStatsAreZeroAfterInitialization( )
 static void BlueMemoryContract_TypedAllocationUpdatesPoolStats( )
 {
   Blue::MemoryPoolStats before = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, before ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, before ) );
 
   ContractTestObject* object = Blue::BlueNew< ContractTestObject >( );
-  BLUE_TEST_EXPECT( object != nullptr );
+  ASSERT_TRUE( object != nullptr );
 
   Blue::MemoryPoolStats afterNew = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterNew ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterNew ) );
 
-  BLUE_TEST_EXPECT( afterNew.CurrentBytes == before.CurrentBytes + sizeof( ContractTestObject ) );
-  BLUE_TEST_EXPECT( afterNew.TotalAllocatedBytes == before.TotalAllocatedBytes + sizeof( ContractTestObject ) );
-  BLUE_TEST_EXPECT( afterNew.TotalFreedBytes == before.TotalFreedBytes );
-  BLUE_TEST_EXPECT( afterNew.AllocationCount == before.AllocationCount + 1 );
-  BLUE_TEST_EXPECT( afterNew.FreeCount == before.FreeCount );
-  BLUE_TEST_EXPECT( afterNew.FailedAllocationCount == before.FailedAllocationCount );
-  BLUE_TEST_EXPECT( afterNew.BudgetExceededCount == before.BudgetExceededCount );
-  BLUE_TEST_EXPECT( afterNew.PeakBytes >= afterNew.CurrentBytes );
+  ASSERT_TRUE( afterNew.CurrentBytes == before.CurrentBytes + sizeof( ContractTestObject ) );
+  ASSERT_TRUE( afterNew.TotalAllocatedBytes == before.TotalAllocatedBytes + sizeof( ContractTestObject ) );
+  ASSERT_TRUE( afterNew.TotalFreedBytes == before.TotalFreedBytes );
+  ASSERT_TRUE( afterNew.AllocationCount == before.AllocationCount + 1 );
+  ASSERT_TRUE( afterNew.FreeCount == before.FreeCount );
+  ASSERT_TRUE( afterNew.FailedAllocationCount == before.FailedAllocationCount );
+  ASSERT_TRUE( afterNew.BudgetExceededCount == before.BudgetExceededCount );
+  ASSERT_TRUE( afterNew.PeakBytes >= afterNew.CurrentBytes );
 
   Blue::BlueDelete< ContractTestObject >( object );
   object = nullptr;
 
   Blue::MemoryPoolStats afterDelete = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterDelete ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterDelete ) );
 
-  BLUE_TEST_EXPECT( afterDelete.CurrentBytes == before.CurrentBytes );
-  BLUE_TEST_EXPECT( afterDelete.TotalAllocatedBytes == before.TotalAllocatedBytes + sizeof( ContractTestObject ) );
-  BLUE_TEST_EXPECT( afterDelete.TotalFreedBytes == before.TotalFreedBytes + sizeof( ContractTestObject ) );
-  BLUE_TEST_EXPECT( afterDelete.AllocationCount == before.AllocationCount + 1 );
-  BLUE_TEST_EXPECT( afterDelete.FreeCount == before.FreeCount + 1 );
-  BLUE_TEST_EXPECT( afterDelete.FailedAllocationCount == before.FailedAllocationCount );
-  BLUE_TEST_EXPECT( afterDelete.BudgetExceededCount == before.BudgetExceededCount );
-  BLUE_TEST_EXPECT( afterDelete.PeakBytes >= afterNew.CurrentBytes );
+  ASSERT_TRUE( afterDelete.CurrentBytes == before.CurrentBytes );
+  ASSERT_TRUE( afterDelete.TotalAllocatedBytes == before.TotalAllocatedBytes + sizeof( ContractTestObject ) );
+  ASSERT_TRUE( afterDelete.TotalFreedBytes == before.TotalFreedBytes + sizeof( ContractTestObject ) );
+  ASSERT_TRUE( afterDelete.AllocationCount == before.AllocationCount + 1 );
+  ASSERT_TRUE( afterDelete.FreeCount == before.FreeCount + 1 );
+  ASSERT_TRUE( afterDelete.FailedAllocationCount == before.FailedAllocationCount );
+  ASSERT_TRUE( afterDelete.BudgetExceededCount == before.BudgetExceededCount );
+  ASSERT_TRUE( afterDelete.PeakBytes >= afterNew.CurrentBytes );
 }
 
 static void BlueMemoryContract_RuntimeAllocationUpdatesSelectedPoolStats( )
@@ -146,39 +135,39 @@ static void BlueMemoryContract_RuntimeAllocationUpdatesSelectedPoolStats( )
   constexpr Blue::AllocationTag tag = Blue::AllocationTag::Test;
 
   Blue::MemoryPoolStats before = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, before ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, before ) );
 
   Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST( byteSize, alignment, tag, pool );
 
   void* pointer = Blue::BlueTryAllocate( request );
-  BLUE_TEST_EXPECT( pointer != nullptr );
+  ASSERT_TRUE( pointer != nullptr );
 
   Blue::MemoryPoolStats afterAllocate = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, afterAllocate ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, afterAllocate ) );
 
-  BLUE_TEST_EXPECT( afterAllocate.CurrentBytes == before.CurrentBytes + byteSize );
-  BLUE_TEST_EXPECT( afterAllocate.TotalAllocatedBytes == before.TotalAllocatedBytes + byteSize );
-  BLUE_TEST_EXPECT( afterAllocate.TotalFreedBytes == before.TotalFreedBytes );
-  BLUE_TEST_EXPECT( afterAllocate.AllocationCount == before.AllocationCount + 1 );
-  BLUE_TEST_EXPECT( afterAllocate.FreeCount == before.FreeCount );
-  BLUE_TEST_EXPECT( afterAllocate.FailedAllocationCount == before.FailedAllocationCount );
-  BLUE_TEST_EXPECT( afterAllocate.BudgetExceededCount == before.BudgetExceededCount );
-  BLUE_TEST_EXPECT( afterAllocate.PeakBytes >= afterAllocate.CurrentBytes );
+  ASSERT_TRUE( afterAllocate.CurrentBytes == before.CurrentBytes + byteSize );
+  ASSERT_TRUE( afterAllocate.TotalAllocatedBytes == before.TotalAllocatedBytes + byteSize );
+  ASSERT_TRUE( afterAllocate.TotalFreedBytes == before.TotalFreedBytes );
+  ASSERT_TRUE( afterAllocate.AllocationCount == before.AllocationCount + 1 );
+  ASSERT_TRUE( afterAllocate.FreeCount == before.FreeCount );
+  ASSERT_TRUE( afterAllocate.FailedAllocationCount == before.FailedAllocationCount );
+  ASSERT_TRUE( afterAllocate.BudgetExceededCount == before.BudgetExceededCount );
+  ASSERT_TRUE( afterAllocate.PeakBytes >= afterAllocate.CurrentBytes );
 
   Blue::BlueFree( Blue::AllocationFreeRequest{ pointer, byteSize, alignment, pool, tag } );
   pointer = nullptr;
 
   Blue::MemoryPoolStats afterFree = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, afterFree ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, afterFree ) );
 
-  BLUE_TEST_EXPECT( afterFree.CurrentBytes == before.CurrentBytes );
-  BLUE_TEST_EXPECT( afterFree.TotalAllocatedBytes == before.TotalAllocatedBytes + byteSize );
-  BLUE_TEST_EXPECT( afterFree.TotalFreedBytes == before.TotalFreedBytes + byteSize );
-  BLUE_TEST_EXPECT( afterFree.AllocationCount == before.AllocationCount + 1 );
-  BLUE_TEST_EXPECT( afterFree.FreeCount == before.FreeCount + 1 );
-  BLUE_TEST_EXPECT( afterFree.FailedAllocationCount == before.FailedAllocationCount );
-  BLUE_TEST_EXPECT( afterFree.BudgetExceededCount == before.BudgetExceededCount );
-  BLUE_TEST_EXPECT( afterFree.PeakBytes >= afterAllocate.CurrentBytes );
+  ASSERT_TRUE( afterFree.CurrentBytes == before.CurrentBytes );
+  ASSERT_TRUE( afterFree.TotalAllocatedBytes == before.TotalAllocatedBytes + byteSize );
+  ASSERT_TRUE( afterFree.TotalFreedBytes == before.TotalFreedBytes + byteSize );
+  ASSERT_TRUE( afterFree.AllocationCount == before.AllocationCount + 1 );
+  ASSERT_TRUE( afterFree.FreeCount == before.FreeCount + 1 );
+  ASSERT_TRUE( afterFree.FailedAllocationCount == before.FailedAllocationCount );
+  ASSERT_TRUE( afterFree.BudgetExceededCount == before.BudgetExceededCount );
+  ASSERT_TRUE( afterFree.PeakBytes >= afterAllocate.CurrentBytes );
 }
 
 static void BlueMemoryContract_InvalidSizeFails( )
@@ -189,15 +178,15 @@ static void BlueMemoryContract_InvalidSizeFails( )
   constexpr Blue::AllocationTag tag = Blue::AllocationTag::Test;
 
   Blue::MemoryPoolStats before = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, before ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, before ) );
 
   Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST( byteSize, alignment, tag, pool );
 
   void* pointer = Blue::BlueTryAllocate( request );
-  BLUE_TEST_EXPECT( pointer == nullptr );
+  ASSERT_TRUE( pointer == nullptr );
 
   Blue::MemoryPoolStats after = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, after ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, after ) );
 
   ExpectPoolStatsEqual( after, before );
 }
@@ -210,15 +199,15 @@ static void BlueMemoryContract_InvalidAlignmentFails( )
   constexpr Blue::AllocationTag tag = Blue::AllocationTag::Test;
 
   Blue::MemoryPoolStats before = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, before ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, before ) );
 
   Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST( byteSize, alignment, tag, pool );
 
   void* pointer = Blue::BlueTryAllocate( request );
-  BLUE_TEST_EXPECT( pointer == nullptr );
+  ASSERT_TRUE( pointer == nullptr );
 
   Blue::MemoryPoolStats after = { };
-  BLUE_TEST_EXPECT( Blue::CaptureMemoryPoolStats( pool, after ) );
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, after ) );
 
   ExpectPoolStatsEqual( after, before );
 }
@@ -236,7 +225,7 @@ static void BlueMemoryContract_InvalidPoolFails( )
   Blue::AllocationRequest request = BLUE_POOL_ALLOCATION_REQUEST( byteSize, alignment, tag, invalidPool );
 
   void* pointer = Blue::BlueTryAllocate( request );
-  BLUE_TEST_EXPECT( pointer == nullptr );
+  ASSERT_TRUE( pointer == nullptr );
 
   AllPoolStats after = { };
   CaptureAllPoolStats( after );
@@ -244,10 +233,10 @@ static void BlueMemoryContract_InvalidPoolFails( )
   ExpectAllPoolStatsEqual( after, before );
 }
 
-int main( )
+TEST( BlueMemoryContractTests, RunsSuccessfully )
 {
   Blue::MemorySystemDesc desc = { };
-  BLUE_TEST_EXPECT( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
+  ASSERT_TRUE( Blue::InitializeMemorySystem( desc ).Succeeded( ) );
 
   BlueMemoryContract_PoolStatsAreZeroAfterInitialization( );
 
@@ -262,7 +251,4 @@ int main( )
   BlueMemoryContract_InvalidPoolFails( );
 
   Blue::ShutdownMemorySystem( );
-
-  printf( "BlueMemory contract tests passed.\n" );
-  return 0;
 }

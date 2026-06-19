@@ -1,6 +1,6 @@
 #include <Blue/System.h>
 
-#include <stdio.h>
+#include <gtest/gtest.h>
 
 namespace
 {
@@ -25,61 +25,45 @@ Blue::Uint32 DetachedThreadEntry( void* )
 {
   return 0;
 }
-
-int Fail( const char* message )
-{
-  fprintf( stderr, "FAILED: %s\n", message );
-  return 1;
-}
 } // namespace
 
-int main( )
+static_assert( sizeof( Blue::Bool ) == 1 );
+static_assert( sizeof( Blue::Char ) == 1 );
+static_assert( sizeof( Blue::UniChar ) == 4 );
+
+TEST( BlueSystemPhase2Tests, BaseHelpersAndResultContractsAreStable )
 {
-  static_assert( sizeof( Blue::Bool ) == 1 );
-  static_assert( sizeof( Blue::Char ) == 1 );
-  static_assert( sizeof( Blue::UniChar ) == 4 );
+  EXPECT_TRUE( Blue::IsPowerOfTwo( 64 ) );
+  EXPECT_EQ( Blue::AlignUp( 65, 64 ), 128u );
 
-  if ( !Blue::IsPowerOfTwo( 64 ) )
-  {
-    return Fail( "IsPowerOfTwo failed" );
-  }
+  const Blue::Result result = Blue::Success( );
+  EXPECT_TRUE( result.Succeeded( ) );
+  EXPECT_FALSE( result.Failed( ) );
+}
 
-  if ( Blue::AlignUp( 65, 64 ) != 128 )
-  {
-    return Fail( "AlignUp failed" );
-  }
-
-  Blue::Result ok = Blue::Success( );
-
-  if ( !ok.Succeeded( ) || ok.Failed( ) )
-  {
-    return Fail( "Result failed" );
-  }
-
+TEST( BlueSystemPhase2Tests, AtomicLoadStoreAndCompareExchangeAreStable )
+{
   Blue::AtomicUint32 value( 0 );
   value.Store( 10, Blue::MemoryOrder::Release );
 
-  if ( value.Load( Blue::MemoryOrder::Acquire ) != 10 )
-  {
-    return Fail( "AtomicLoad/Store failed" );
-  }
+  EXPECT_EQ( value.Load( Blue::MemoryOrder::Acquire ), 10u );
 
   Blue::Uint32 expected = 10;
+  ASSERT_TRUE( value.CompareExchange( expected, 20, Blue::MemoryOrder::AcquireRelease ) );
+  EXPECT_EQ( expected, 10u );
+  EXPECT_EQ( value.Load( Blue::MemoryOrder::Acquire ), 20u );
+}
 
-  if ( !value.CompareExchange( expected, 20, Blue::MemoryOrder::AcquireRelease ) )
-  {
-    return Fail( "AtomicCompareExchange failed" );
-  }
-
+TEST( BlueSystemPhase2Tests, SpinLockCanBeAcquiredAndReleased )
+{
   Blue::SpinLock lock;
 
-  if ( !lock.TryAcquire( ) )
-  {
-    return Fail( "SpinLock TryLock failed" );
-  }
-
+  ASSERT_TRUE( lock.TryAcquire( ) );
   lock.Release( );
+}
 
+TEST( BlueSystemPhase2Tests, NativeThreadRunsAndJoinsWithExitCode )
+{
   TestState state = { };
   state.Counter.Store( 0, Blue::MemoryOrder::Relaxed );
 
@@ -89,45 +73,24 @@ int main( )
   threadDesc.Entry = ThreadEntry;
   threadDesc.UserData = &state;
 
-  if ( !Blue::CreateThread( thread, threadDesc ) )
-  {
-    return Fail( "CreateThread failed" );
-  }
+  ASSERT_TRUE( Blue::CreateThread( thread, threadDesc ) );
 
   Blue::Uint32 exitCode = 0;
+  ASSERT_TRUE( Blue::JoinThread( thread, &exitCode ) );
 
-  if ( !Blue::JoinThread( thread, &exitCode ) )
-  {
-    return Fail( "JoinThread failed" );
-  }
+  EXPECT_EQ( exitCode, 7u );
+  EXPECT_EQ( state.Counter.Load( Blue::MemoryOrder::Acquire ), 10000u );
+}
 
-  if ( exitCode != 7 )
-  {
-    return Fail( "Thread exit code failed" );
-  }
-
-  if ( state.Counter.Load( Blue::MemoryOrder::Acquire ) != 10000 )
-  {
-    return Fail( "Thread atomic counter failed" );
-  }
-
+TEST( BlueSystemPhase2Tests, NativeThreadCanBeDetached )
+{
   Blue::Thread detached = { };
   Blue::ThreadCreateDesc detachDesc = { };
   detachDesc.Name = "BlueDetachedTest";
   detachDesc.Entry = DetachedThreadEntry;
 
-  if ( !Blue::CreateThread( detached, detachDesc ) )
-  {
-    return Fail( "CreateThread detach case failed" );
-  }
-
-  if ( !Blue::DetachThread( detached ) )
-  {
-    return Fail( "DetachThread failed" );
-  }
+  ASSERT_TRUE( Blue::CreateThread( detached, detachDesc ) );
+  ASSERT_TRUE( Blue::DetachThread( detached ) );
 
   Blue::SleepCurrentThread( 10 );
-
-  printf( "BlueSystem Phase 2 tests passed.\n" );
-  return 0;
 }
