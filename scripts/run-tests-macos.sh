@@ -67,8 +67,13 @@ TARGET="BlueRunTests_${CONFIG}"
 BIN_DIR="${ROOT_DIR}/out/bin/${BLUE_SYSTEM}/${BUILD_PLATFORM}/${BUILD_CONFIG}"
 RUNNER="${BIN_DIR}/BlueRunTests"
 
+echo "[BlueBuild] Generating Ninja build graph"
 "${ROOT_DIR}/scripts/premake-macos.sh" ninja --toolchain=clang --blue-platforms=macos --blue-build-platforms=x64 --memory-backend=system --blue-startup=BlueRunTests
+
+echo "[BlueBuild] Building all test executables"
 ninja -C "${ROOT_DIR}/out/build/ninja" "$TARGET"
+
+
 
 if [[ ! -x "$RUNNER" ]]; then
 	echo "[BlueBuild] Test runner was not built or is not executable: $RUNNER" >&2
@@ -89,4 +94,5 @@ if [[ "${#TESTS[@]}" -eq 0 ]]; then
 	exit 1
 fi
 
-"$RUNNER" "${TESTS[@]}"
+echo "[BlueBuild] Running ${#TESTS[@]} test executables"
+"$RUNNER" --jobs=auto "${TESTS[@]}"

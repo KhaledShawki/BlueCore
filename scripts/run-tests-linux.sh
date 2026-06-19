@@ -62,4 +62,4 @@ if [[ "${#TESTS[@]}" -eq 0 ]]; then
 	exit 1
 fi
 
-"$RUNNER" "${TESTS[@]}"
+"$RUNNER" --jobs=auto "${TESTS[@]}"
