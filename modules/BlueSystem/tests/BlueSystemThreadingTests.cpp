@@ -1,37 +1,42 @@
 #include <Blue/System/Atomic.h>
-#include <Blue/System/Platform.h>
 #include <Blue/System/SpinLock.h>
 #include <Blue/System/Thread.h>
 #include <Blue/System/Types.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#define BLUE_TEST_EXPECT( expression )                                                                                 \
-  do                                                                                                                   \
-  {                                                                                                                    \
-    if ( !( expression ) )                                                                                             \
-    {                                                                                                                  \
-      fprintf( stderr, "Test failed: %s at %s:%d\n", #expression, __FILE__, __LINE__ );                                \
-      abort( );                                                                                                        \
-    }                                                                                                                  \
-  }                                                                                                                    \
-  while ( false )
+#include "BlueSystemTestWait.h"
+#include <gtest/gtest.h>
 
 namespace
 {
+static void JoinCreatedThreads( Blue::Thread* threads, Blue::Uint32 threadCount )
+{
+  for ( Blue::Uint32 index = 0; index < threadCount; ++index )
+  {
+    if ( Blue::IsThreadJoinable( threads[ index ] ) )
+    {
+      Blue::JoinThread( threads[ index ] );
+    }
+  }
+}
+
 struct ThreadIncrementContext final
 {
-  Blue::AtomicUint32* Counter;
-  Blue::Uint32 Iterations;
-  Blue::Uint32 ExitCode;
+  Blue::AtomicUint32* Counter = nullptr;
+  Blue::Uint32 Iterations = 0;
+  Blue::Uint32 ExitCode = 0;
 };
 
 struct SpinLockThreadContext final
 {
-  Blue::SpinLock* Lock;
-  Blue::Uint32* Counter;
-  Blue::Uint32 Iterations;
+  Blue::SpinLock* Lock = nullptr;
+  Blue::Uint32* Counter = nullptr;
+  Blue::Uint32 Iterations = 0;
+};
+
+struct ThreadPolicyContext final
+{
+  Blue::AtomicUint32 Started{ 0 };
+  Blue::AtomicUint32 Release{ 0 };
 };
 
 Blue::Uint32 IncrementThreadEntry( void* userData )
@@ -79,24 +84,69 @@ Blue::Uint32 OwnedThreadEntry( void* userData )
 
 Blue::Uint32 PolicyThreadEntry( void* userData )
 {
-  Blue::AtomicUint32* flag = static_cast< Blue::AtomicUint32* >( userData );
+  ThreadPolicyContext* context = static_cast< ThreadPolicyContext* >( userData );
   Blue::SetCurrentThreadName( "BluePolicyWorker" );
+
   BLUE_UNUSED( Blue::SetCurrentThreadPriority( Blue::ThreadPriority::Normal ) );
   BLUE_UNUSED( Blue::SetCurrentThreadAffinity( Blue::CpuAffinity::Any( ) ) );
-  flag->Store( 1, Blue::MemoryOrder::Release );
+
+  context->Started.Store( 1, Blue::MemoryOrder::Release );
+
+  while ( context->Release.Load( Blue::MemoryOrder::Acquire ) == 0 )
+  {
+    Blue::YieldThread( );
+    Blue::SleepCurrentThread( 1 );
+  }
+
   return 0;
+}
+
+static void ReleaseAndJoinPolicyThread( Blue::Thread& thread, ThreadPolicyContext& context )
+{
+  context.Release.Store( 1, Blue::MemoryOrder::Release );
+
+  if ( Blue::IsThreadJoinable( thread ) )
+  {
+    Blue::JoinThread( thread );
+  }
 }
 } // namespace
 
-static void TestThreadCreateJoin( )
+TEST( BlueSystemThreadingTests, CurrentThreadUtilitiesAreCallable )
+{
+  const Blue::ThreadId currentThreadId = Blue::GetCurrentThreadId( );
+
+  EXPECT_NE( currentThreadId, Blue::ThreadId{ 0 } );
+
+  Blue::SetCurrentThreadName( "BlueMainTest" );
+  Blue::YieldThread( );
+  Blue::SleepCurrentThread( 1 );
+}
+
+TEST( BlueSystemThreadingTests, CpuAffinityHelpersExposeExpectedMasks )
+{
+  constexpr Blue::CpuAffinity any = Blue::CpuAffinity::Any( );
+  constexpr Blue::CpuAffinity first = Blue::CpuAffinity::FromProcessorIndex( 0 );
+  constexpr Blue::CpuAffinity invalid = Blue::CpuAffinity::FromProcessorIndex( 64 );
+
+  EXPECT_FALSE( any.IsEnabled( ) );
+  EXPECT_TRUE( first.IsEnabled( ) );
+  EXPECT_TRUE( first.ContainsProcessor( 0 ) );
+  EXPECT_FALSE( first.ContainsProcessor( 1 ) );
+  EXPECT_FALSE( invalid.IsEnabled( ) );
+}
+
+TEST( BlueSystemThreadingTests, CreateJoinRunsWorkerAndReturnsExitCode )
 {
   Blue::AtomicUint32 counter( 0 );
+
   ThreadIncrementContext context;
   context.Counter = &counter;
   context.Iterations = 10000;
   context.ExitCode = 17;
 
   Blue::Thread thread;
+
   Blue::ThreadCreateDesc desc;
   desc.Name = "BlueJoinWorker";
   desc.Entry = &IncrementThreadEntry;
@@ -104,41 +154,131 @@ static void TestThreadCreateJoin( )
   desc.StackSize = 0;
   desc.Priority = Blue::ThreadPriority::Normal;
 
-  BLUE_TEST_EXPECT( Blue::CreateThread( thread, desc ) );
-  BLUE_TEST_EXPECT( Blue::IsThreadJoinable( thread ) );
-  BLUE_TEST_EXPECT( thread.Id != 0 );
+  ASSERT_TRUE( Blue::CreateThread( thread, desc ) );
+  EXPECT_TRUE( Blue::IsThreadJoinable( thread ) );
+  EXPECT_NE( thread.Id, Blue::ThreadId{ 0 } );
 
   Blue::Uint32 exitCode = 0;
-  BLUE_TEST_EXPECT( Blue::JoinThread( thread, &exitCode ) );
-  BLUE_TEST_EXPECT( exitCode == context.ExitCode );
-  BLUE_TEST_EXPECT( !Blue::IsThreadJoinable( thread ) );
-  BLUE_TEST_EXPECT( counter.Load( Blue::MemoryOrder::Acquire ) == context.Iterations );
+  ASSERT_TRUE( Blue::JoinThread( thread, &exitCode ) );
+
+  EXPECT_EQ( exitCode, context.ExitCode );
+  EXPECT_FALSE( Blue::IsThreadJoinable( thread ) );
+  EXPECT_EQ( counter.Load( Blue::MemoryOrder::Acquire ), context.Iterations );
 }
 
-static void TestThreadDetach( )
+TEST( BlueSystemThreadingTests, DetachReleasesJoinHandleAndRunsWorker )
 {
   Blue::AtomicUint32 flag( 0 );
 
   Blue::Thread thread;
+
   Blue::ThreadCreateDesc desc;
   desc.Name = "BlueDetachWorker";
   desc.Entry = &DetachThreadEntry;
   desc.UserData = &flag;
 
-  BLUE_TEST_EXPECT( Blue::CreateThread( thread, desc ) );
-  BLUE_TEST_EXPECT( Blue::IsThreadJoinable( thread ) );
-  BLUE_TEST_EXPECT( Blue::DetachThread( thread ) );
-  BLUE_TEST_EXPECT( !Blue::IsThreadJoinable( thread ) );
+  ASSERT_TRUE( Blue::CreateThread( thread, desc ) );
+  EXPECT_TRUE( Blue::IsThreadJoinable( thread ) );
 
-  for ( Blue::Uint32 attempt = 0; attempt < 1000 && flag.Load( Blue::MemoryOrder::Acquire ) == 0; ++attempt )
-  {
-    Blue::YieldThread( );
-  }
+  ASSERT_TRUE( Blue::DetachThread( thread ) );
+  EXPECT_FALSE( Blue::IsThreadJoinable( thread ) );
 
-  BLUE_TEST_EXPECT( flag.Load( Blue::MemoryOrder::Acquire ) == 1 );
+  EXPECT_TRUE( BlueSystemTest::WaitUntil(
+    [ &flag ]( )
+    {
+      return flag.Load( Blue::MemoryOrder::Acquire ) == 1;
+    } ) )
+    << "Detached worker did not publish completion before timeout.";
 }
 
-static void TestMultipleThreadsWithAtomics( )
+TEST( BlueSystemThreadingTests, OwnedThreadJoinLifecycleRunsWorkerAndReturnsExitCode )
+{
+  Blue::AtomicUint32 flag( 0 );
+
+  Blue::ThreadCreateInfo createInfo;
+  createInfo.Name = "BlueOwnedWorker";
+  createInfo.Entry = &OwnedThreadEntry;
+  createInfo.UserData = &flag;
+
+  Blue::OwnedThread thread( createInfo );
+
+  ASSERT_TRUE( thread.IsJoinable( ) );
+  EXPECT_NE( thread.GetId( ), Blue::ThreadId{ 0 } );
+
+  Blue::Uint32 exitCode = 0;
+  ASSERT_TRUE( thread.Join( &exitCode ) );
+
+  EXPECT_EQ( exitCode, 23u );
+  EXPECT_FALSE( thread.IsJoinable( ) );
+  EXPECT_EQ( flag.Load( Blue::MemoryOrder::Acquire ), 1u );
+}
+
+TEST( BlueSystemThreadingTests, OwnedThreadDetachLifecycleRunsWorker )
+{
+  Blue::AtomicUint32 flag( 0 );
+  Blue::OwnedThread thread;
+
+  Blue::ThreadCreateInfo createInfo;
+  createInfo.Name = "BlueOwnedDetach";
+  createInfo.Entry = &DetachThreadEntry;
+  createInfo.UserData = &flag;
+
+  ASSERT_TRUE( thread.Create( createInfo ) );
+  EXPECT_TRUE( thread.IsJoinable( ) );
+
+  ASSERT_TRUE( thread.Detach( ) );
+  EXPECT_FALSE( thread.IsJoinable( ) );
+
+  EXPECT_TRUE( BlueSystemTest::WaitUntil(
+    [ &flag ]( )
+    {
+      return flag.Load( Blue::MemoryOrder::Acquire ) == 1;
+    } ) )
+    << "Owned detached worker did not publish completion before timeout.";
+}
+
+TEST( BlueSystemThreadingTests, ThreadPolicyApiSmokeAppliesToLiveThread )
+{
+  ThreadPolicyContext context;
+
+  Blue::Thread thread;
+
+  Blue::ThreadCreateInfo createInfo;
+  createInfo.Name = "BluePolicyWorker";
+  createInfo.Entry = &PolicyThreadEntry;
+  createInfo.UserData = &context;
+  createInfo.Priority = Blue::ThreadPriority::Normal;
+  createInfo.Affinity = Blue::CpuAffinity::Any( );
+
+  ASSERT_TRUE( Blue::CreateThread( thread, createInfo ) );
+
+  if ( !BlueSystemTest::WaitUntil(
+         [ &context ]( )
+         {
+           return context.Started.Load( Blue::MemoryOrder::Acquire ) == 1;
+         } ) )
+  {
+    ReleaseAndJoinPolicyThread( thread, context );
+    FAIL( ) << "Policy worker did not start before timeout.";
+    return;
+  }
+
+  EXPECT_TRUE( Blue::SetThreadAffinity( thread, Blue::CpuAffinity::Any( ) ) );
+  BLUE_UNUSED( Blue::SetThreadPriority( thread, Blue::ThreadPriority::Normal ) );
+
+  const Blue::CpuAffinity firstProcessor = Blue::CpuAffinity::FromProcessorIndex( 0 );
+  BLUE_UNUSED( Blue::SetThreadAffinity( thread, firstProcessor ) );
+
+  context.Release.Store( 1, Blue::MemoryOrder::Release );
+
+  ASSERT_TRUE( Blue::JoinThread( thread ) );
+
+  EXPECT_TRUE( Blue::SetCurrentThreadAffinity( Blue::CpuAffinity::Any( ) ) );
+  BLUE_UNUSED( Blue::SetCurrentThreadAffinity( firstProcessor ) );
+  BLUE_UNUSED( Blue::SetCurrentThreadPriority( Blue::ThreadPriority::Normal ) );
+}
+
+TEST( BlueSystemThreadingTests, MultipleThreadsIncrementAtomicCounter )
 {
   constexpr Blue::Uint32 ThreadCount = 8;
   constexpr Blue::Uint32 Iterations = 25000;
@@ -146,6 +286,8 @@ static void TestMultipleThreadsWithAtomics( )
   Blue::AtomicUint32 counter( 0 );
   Blue::Thread threads[ ThreadCount ];
   ThreadIncrementContext contexts[ ThreadCount ];
+
+  Blue::Uint32 createdThreadCount = 0;
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
@@ -158,20 +300,33 @@ static void TestMultipleThreadsWithAtomics( )
     desc.Entry = &IncrementThreadEntry;
     desc.UserData = &contexts[ index ];
 
-    BLUE_TEST_EXPECT( Blue::CreateThread( threads[ index ], desc ) );
+    if ( !Blue::CreateThread( threads[ index ], desc ) )
+    {
+      JoinCreatedThreads( threads, createdThreadCount );
+      FAIL( ) << "Failed to create atomic worker thread " << index << ".";
+      return;
+    }
+
+    ++createdThreadCount;
   }
 
-  for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
+  for ( Blue::Uint32 index = 0; index < createdThreadCount; ++index )
   {
     Blue::Uint32 exitCode = 0;
-    BLUE_TEST_EXPECT( Blue::JoinThread( threads[ index ], &exitCode ) );
-    BLUE_TEST_EXPECT( exitCode == index );
+    const Blue::Bool joined = Blue::JoinThread( threads[ index ], &exitCode );
+
+    EXPECT_TRUE( joined );
+
+    if ( joined )
+    {
+      EXPECT_EQ( exitCode, index );
+    }
   }
 
-  BLUE_TEST_EXPECT( counter.Load( Blue::MemoryOrder::Acquire ) == ThreadCount * Iterations );
+  EXPECT_EQ( counter.Load( Blue::MemoryOrder::Acquire ), ThreadCount * Iterations );
 }
 
-static void TestMultipleThreadsWithSpinLock( )
+TEST( BlueSystemThreadingTests, MultipleThreadsSynchronizeWithSpinLock )
 {
   constexpr Blue::Uint32 ThreadCount = 6;
   constexpr Blue::Uint32 Iterations = 10000;
@@ -180,6 +335,8 @@ static void TestMultipleThreadsWithSpinLock( )
   Blue::Uint32 counter = 0;
   Blue::Thread threads[ ThreadCount ];
   SpinLockThreadContext contexts[ ThreadCount ];
+
+  Blue::Uint32 createdThreadCount = 0;
 
   for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
   {
@@ -192,123 +349,20 @@ static void TestMultipleThreadsWithSpinLock( )
     desc.Entry = &SpinLockThreadEntry;
     desc.UserData = &contexts[ index ];
 
-    BLUE_TEST_EXPECT( Blue::CreateThread( threads[ index ], desc ) );
+    if ( !Blue::CreateThread( threads[ index ], desc ) )
+    {
+      JoinCreatedThreads( threads, createdThreadCount );
+      FAIL( ) << "Failed to create spin-lock worker thread " << index << ".";
+      return;
+    }
+
+    ++createdThreadCount;
   }
 
-  for ( Blue::Uint32 index = 0; index < ThreadCount; ++index )
+  for ( Blue::Uint32 index = 0; index < createdThreadCount; ++index )
   {
-    BLUE_TEST_EXPECT( Blue::JoinThread( threads[ index ] ) );
+    EXPECT_TRUE( Blue::JoinThread( threads[ index ] ) );
   }
 
-  BLUE_TEST_EXPECT( counter == ThreadCount * Iterations );
-}
-
-static void TestCurrentThreadUtilities( )
-{
-  Blue::ThreadId currentThreadId = Blue::GetCurrentThreadId( );
-  BLUE_TEST_EXPECT( currentThreadId != 0 );
-
-  Blue::SetCurrentThreadName( "BlueMainTest" );
-  Blue::YieldThread( );
-  Blue::SleepCurrentThread( 1 );
-}
-
-static void TestCpuAffinityHelpers( )
-{
-  constexpr Blue::CpuAffinity any = Blue::CpuAffinity::Any( );
-  constexpr Blue::CpuAffinity first = Blue::CpuAffinity::FromProcessorIndex( 0 );
-  constexpr Blue::CpuAffinity invalid = Blue::CpuAffinity::FromProcessorIndex( 64 );
-
-  BLUE_TEST_EXPECT( !any.IsEnabled( ) );
-  BLUE_TEST_EXPECT( first.IsEnabled( ) );
-  BLUE_TEST_EXPECT( first.ContainsProcessor( 0 ) );
-  BLUE_TEST_EXPECT( !first.ContainsProcessor( 1 ) );
-  BLUE_TEST_EXPECT( !invalid.IsEnabled( ) );
-}
-
-static void TestOwnedThreadJoinLifecycle( )
-{
-  Blue::AtomicUint32 flag( 0 );
-
-  Blue::ThreadCreateInfo createInfo;
-  createInfo.Name = "BlueOwnedWorker";
-  createInfo.Entry = &OwnedThreadEntry;
-  createInfo.UserData = &flag;
-
-  Blue::OwnedThread thread( createInfo );
-  BLUE_TEST_EXPECT( thread.IsJoinable( ) );
-  BLUE_TEST_EXPECT( thread.GetId( ) != 0 );
-
-  Blue::Uint32 exitCode = 0;
-  BLUE_TEST_EXPECT( thread.Join( &exitCode ) );
-  BLUE_TEST_EXPECT( exitCode == 23 );
-  BLUE_TEST_EXPECT( !thread.IsJoinable( ) );
-  BLUE_TEST_EXPECT( flag.Load( Blue::MemoryOrder::Acquire ) == 1 );
-}
-
-static void TestOwnedThreadDetachLifecycle( )
-{
-  Blue::AtomicUint32 flag( 0 );
-
-  Blue::OwnedThread thread;
-
-  Blue::ThreadCreateInfo createInfo;
-  createInfo.Name = "BlueOwnedDetach";
-  createInfo.Entry = &DetachThreadEntry;
-  createInfo.UserData = &flag;
-
-  BLUE_TEST_EXPECT( thread.Create( createInfo ) );
-  BLUE_TEST_EXPECT( thread.IsJoinable( ) );
-  BLUE_TEST_EXPECT( thread.Detach( ) );
-  BLUE_TEST_EXPECT( !thread.IsJoinable( ) );
-
-  for ( Blue::Uint32 attempt = 0; attempt < 1000 && flag.Load( Blue::MemoryOrder::Acquire ) == 0; ++attempt )
-  {
-    Blue::YieldThread( );
-  }
-
-  BLUE_TEST_EXPECT( flag.Load( Blue::MemoryOrder::Acquire ) == 1 );
-}
-
-static void TestThreadPolicyApiSmoke( )
-{
-  Blue::AtomicUint32 flag( 0 );
-
-  Blue::Thread thread;
-  Blue::ThreadCreateInfo createInfo;
-  createInfo.Name = "BluePolicyWorker";
-  createInfo.Entry = &PolicyThreadEntry;
-  createInfo.UserData = &flag;
-  createInfo.Priority = Blue::ThreadPriority::Normal;
-  createInfo.Affinity = Blue::CpuAffinity::Any( );
-
-  BLUE_TEST_EXPECT( Blue::CreateThread( thread, createInfo ) );
-  BLUE_TEST_EXPECT( Blue::SetThreadAffinity( thread, Blue::CpuAffinity::Any( ) ) );
-  BLUE_UNUSED( Blue::SetThreadPriority( thread, Blue::ThreadPriority::Normal ) );
-
-  const Blue::CpuAffinity firstProcessor = Blue::CpuAffinity::FromProcessorIndex( 0 );
-  BLUE_UNUSED( Blue::SetThreadAffinity( thread, firstProcessor ) );
-
-  BLUE_TEST_EXPECT( Blue::JoinThread( thread ) );
-  BLUE_TEST_EXPECT( flag.Load( Blue::MemoryOrder::Acquire ) == 1 );
-
-  BLUE_TEST_EXPECT( Blue::SetCurrentThreadAffinity( Blue::CpuAffinity::Any( ) ) );
-  BLUE_UNUSED( Blue::SetCurrentThreadAffinity( firstProcessor ) );
-  BLUE_UNUSED( Blue::SetCurrentThreadPriority( Blue::ThreadPriority::Normal ) );
-}
-
-int main( )
-{
-  TestCurrentThreadUtilities( );
-  TestCpuAffinityHelpers( );
-  TestThreadCreateJoin( );
-  TestThreadDetach( );
-  TestOwnedThreadJoinLifecycle( );
-  TestOwnedThreadDetachLifecycle( );
-  TestThreadPolicyApiSmoke( );
-  TestMultipleThreadsWithAtomics( );
-  TestMultipleThreadsWithSpinLock( );
-
-  printf( "BlueSystem native threading tests passed.\n" );
-  return 0;
+  EXPECT_EQ( counter, ThreadCount * Iterations );
 }
