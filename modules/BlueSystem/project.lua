@@ -186,6 +186,8 @@ bb.module_tests {
 
     deps = {
         "BlueSystem",
+        "gtest",
+        "gtest_main",
     },
 
     platform = {
@@ -210,6 +212,7 @@ bb.module_tests {
     },
 
     tests = {
+	    "BlueSystemBaseContractTests",
         "BlueSystemAtomicTests",
         "BlueSystemPhase2Tests",
         "BlueSystemThreadingTests",

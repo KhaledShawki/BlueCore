@@ -9,6 +9,7 @@ bb.workspace {
 
 bb.include_dependencies {
     "build/third_party/mimalloc.lua",
+    "build/third_party/googletest.lua",
 }
 
 bb.include_projects {
