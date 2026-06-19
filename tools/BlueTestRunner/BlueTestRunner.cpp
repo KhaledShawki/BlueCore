@@ -264,26 +264,21 @@ void PrintHeader( std::size_t total, std::size_t workerCount )
 
 class UniqueHandle
 {
-public:
+  public:
   UniqueHandle( ) = default;
 
   explicit UniqueHandle( HANDLE handle )
-    : Handle( handle )
-  {
-  }
+      : Handle( handle )
+  {}
 
-  ~UniqueHandle( )
-  {
-    Reset( );
-  }
+  ~UniqueHandle( ) { Reset( ); }
 
   UniqueHandle( const UniqueHandle& ) = delete;
   UniqueHandle& operator=( const UniqueHandle& ) = delete;
 
   UniqueHandle( UniqueHandle&& other ) noexcept
-    : Handle( other.Release( ) )
-  {
-  }
+      : Handle( other.Release( ) )
+  {}
 
   UniqueHandle& operator=( UniqueHandle&& other ) noexcept
   {
@@ -295,10 +290,7 @@ public:
     return *this;
   }
 
-  HANDLE Get( ) const
-  {
-    return Handle;
-  }
+  HANDLE Get( ) const { return Handle; }
 
   HANDLE Release( )
   {
@@ -317,12 +309,9 @@ public:
     Handle = handle;
   }
 
-  explicit operator bool( ) const
-  {
-    return Handle != nullptr && Handle != INVALID_HANDLE_VALUE;
-  }
+  explicit operator bool( ) const { return Handle != nullptr && Handle != INVALID_HANDLE_VALUE; }
 
-private:
+  private:
   HANDLE Handle = nullptr;
 };
 
@@ -467,26 +456,21 @@ ProcessResult RunProcess( const std::string& executablePath )
 
 class FileDescriptor
 {
-public:
+  public:
   FileDescriptor( ) = default;
 
   explicit FileDescriptor( int descriptor )
-    : Descriptor( descriptor )
-  {
-  }
+      : Descriptor( descriptor )
+  {}
 
-  ~FileDescriptor( )
-  {
-    Reset( );
-  }
+  ~FileDescriptor( ) { Reset( ); }
 
   FileDescriptor( const FileDescriptor& ) = delete;
   FileDescriptor& operator=( const FileDescriptor& ) = delete;
 
   FileDescriptor( FileDescriptor&& other ) noexcept
-    : Descriptor( other.Release( ) )
-  {
-  }
+      : Descriptor( other.Release( ) )
+  {}
 
   FileDescriptor& operator=( FileDescriptor&& other ) noexcept
   {
@@ -498,10 +482,7 @@ public:
     return *this;
   }
 
-  int Get( ) const
-  {
-    return Descriptor;
-  }
+  int Get( ) const { return Descriptor; }
 
   int Release( )
   {
@@ -520,12 +501,9 @@ public:
     Descriptor = descriptor;
   }
 
-  explicit operator bool( ) const
-  {
-    return Descriptor >= 0;
-  }
+  explicit operator bool( ) const { return Descriptor >= 0; }
 
-private:
+  private:
   int Descriptor = -1;
 };
 
@@ -798,8 +776,7 @@ void PrintResult( const TestResult& result, std::size_t index, std::size_t total
   if ( result.DurationMilliseconds >= SlowExecutableWarningMilliseconds )
   {
     std::cout << "[BlueRunTests] Warning: slow test executable"
-              << " duration_ms=" << result.DurationMilliseconds
-              << " executable=" << result.ExecutablePath << "\n";
+              << " duration_ms=" << result.DurationMilliseconds << " executable=" << result.ExecutablePath << "\n";
   }
 }
 
