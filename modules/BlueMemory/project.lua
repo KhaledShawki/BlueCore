@@ -43,6 +43,7 @@ bb.module {
             "include/Blue/Memory/Pool/MemoryPoolStats.h",
             "include/Blue/Memory/Pool/MemoryPoolTrait.h",
             "include/Blue/Memory/PoolAllocator.h",
+            "include/Blue/Memory/Tracking/MemoryAllocationTracker.h",
             "include/Blue/Memory/Proxy/AllocatorProxy.h",
             "include/Blue/Memory/Proxy/RuntimeAllocationProxy.h",
             "include/Blue/Memory/Proxy/TypedAllocationProxy.h",
@@ -80,6 +81,7 @@ bb.module {
             "src/Pch.cpp",
             "src/Pool/MemoryPoolRegistry.cpp",
             "src/PoolAllocator.cpp",
+            "src/Tracking/MemoryAllocationTracker.cpp",
             "src/Proxy/RuntimeAllocationProxy.cpp",
             "src/VirtualMemoryBlock.cpp",
 
@@ -146,5 +148,6 @@ bb.module_tests {
         "BlueMemoryInvokerTests",
         "BlueMemoryRuntimeAllocationTests",
         "BlueMemorySmallBlockAllocatorTests",
+        "BlueMemoryTrackingTests",
     },
 }

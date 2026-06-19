@@ -8,6 +8,7 @@
 #include <Blue/Memory/MemoryMetricsMode.h>
 #include <Blue/Memory/Oom/OomReport.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
+#include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Result.h>
 
 namespace Blue

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Blue/Memory/AllocationFailurePolicy.h>
+#include <Blue/Memory/AllocationFlags.h>
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/Api.h>
 #include <Blue/Memory/Backend/SystemMemoryBackend.h>
@@ -8,6 +9,8 @@
 #include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/Memory/Pool/MemoryPoolPolicy.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
+#include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
+
 
 namespace Blue
 {
@@ -28,7 +31,11 @@ struct AllocatorProxy;
 template< MemoryPoolId Pool >
 struct AllocatorProxy< AllocatorKind::Default, Pool >
 {
-  static void* Allocate( Size size, Size alignment, AllocationTag tag, SourceLocation location ) noexcept
+  static void* Allocate( Size size,
+                         Size alignment,
+                         AllocationTag tag,
+                         AllocationFlags flags,
+                         SourceLocation location ) noexcept
   {
     using Policy = MemoryPoolPolicy< Pool >;
     using Metrics = MetricsProxy< Policy::Metrics >;
@@ -63,6 +70,14 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
       return nullptr;
     }
 
+#if BLUE_ENABLE_MEMORY_TRACKING
+    if ( !HasAllocationFlag( flags, AllocationFlag_NoTracking ) )
+    {
+      TrackMemoryAllocation(
+        MemoryAllocationRecord{ pointer, size, alignment, Pool, tag, AllocatorKind::Default, location } );
+    }
+#endif
+
     registry.CommitAllocation( Pool, size );
     Metrics::RecordAllocate( Pool, AllocatorKind::Default, size );
     return pointer;
@@ -77,6 +92,15 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
     {
       return;
     }
+
+#if BLUE_ENABLE_MEMORY_TRACKING
+    MemoryAllocationRecord tracked = { };
+    if ( UntrackMemoryAllocation( pointer, tracked ) )
+    {
+      size = tracked.ByteSize;
+      alignment = tracked.Alignment;
+    }
+#endif
 
     if ( IsSmallBlockAllocationSupported( size, alignment ) )
     {

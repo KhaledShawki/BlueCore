@@ -1,6 +1,7 @@
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
+#include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Assert.h>
 
 namespace Blue
@@ -43,7 +44,24 @@ void* RuntimeAllocationInvoker::Allocate( const AllocationRequest& request ) noe
 
 void RuntimeAllocationInvoker::Free( const AllocationFreeRequest& request ) noexcept
 {
-  RuntimeAllocationProxy::Free( request );
+  if ( !request.Pointer )
+  {
+    return;
+  }
+
+  AllocationFreeRequest effectiveRequest = request;
+#if BLUE_ENABLE_MEMORY_TRACKING
+  MemoryAllocationRecord tracked = { };
+  if ( TryFindTrackedMemoryAllocation( request.Pointer, tracked ) )
+  {
+    effectiveRequest.ByteSize = tracked.ByteSize;
+    effectiveRequest.Alignment = tracked.Alignment;
+    effectiveRequest.Pool = tracked.Pool;
+    effectiveRequest.Tag = tracked.Tag;
+  }
+#endif
+
+  RuntimeAllocationProxy::Free( effectiveRequest );
 }
 
 void* BlueTryAllocate( const AllocationRequest& request ) noexcept

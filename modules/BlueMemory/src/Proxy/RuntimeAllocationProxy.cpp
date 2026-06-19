@@ -1,5 +1,7 @@
 #include <Blue/Memory/Proxy/RuntimeAllocationProxy.h>
 
+#include <string.h>
+
 namespace Blue
 {
 namespace
@@ -14,6 +16,7 @@ void* AllocateRuntimeDefaultPool( MemoryPoolId pool, const AllocationRequest& re
       request.ByteSize,                                                                                                \
       request.Alignment,                                                                                               \
       request.Tag,                                                                                                     \
+      request.Flags,                                                                                                   \
       { request.File, request.Function, request.Line } );
 #include <Blue/Memory/Pool/MemoryPools.def>
 #undef BLUE_MEMORY_POOL
@@ -42,7 +45,13 @@ void FreeRuntimeDefaultPool( MemoryPoolId pool, const AllocationFreeRequest& req
 
 void* RuntimeAllocationProxy::Allocate( const AllocationRequest& request ) noexcept
 {
-  return AllocateRuntimeDefaultPool( request.Pool, request );
+  void* pointer = AllocateRuntimeDefaultPool( request.Pool, request );
+  if ( pointer && HasAllocationFlag( request.Flags, AllocationFlag_ZeroMemory ) )
+  {
+    memset( pointer, 0, request.ByteSize );
+  }
+
+  return pointer;
 }
 
 void RuntimeAllocationProxy::Free( const AllocationFreeRequest& request ) noexcept

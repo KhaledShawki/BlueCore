@@ -21,7 +21,7 @@ struct AllocationRequest
   Uint32 Line = 0;
   MemoryPoolId Pool = MemoryPoolId::System;
   AllocationFailurePolicy FailurePolicy = AllocationFailurePolicy::ReturnNull;
-  Uint32 Flags = AllocationFlag_None;
+  AllocationFlags Flags = AllocationFlag_None;
 };
 
 struct AllocationResult

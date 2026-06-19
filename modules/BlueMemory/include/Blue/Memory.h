@@ -25,5 +25,6 @@
 #include <Blue/Memory/Pool/MemoryPoolResolver.h>
 #include <Blue/Memory/Pool/MemoryPoolTrait.h>
 #include <Blue/Memory/PoolAllocator.h>
+#include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/Memory/UniquePtr.h>
 #include <Blue/Memory/VirtualMemoryBlock.h>
