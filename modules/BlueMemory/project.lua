@@ -1,3 +1,11 @@
+local blueMemoryPublicDeps = {
+    "BlueSystem",
+}
+
+if (_OPTIONS["memory-backend"] or "system") == "mimalloc" then
+    table.insert(blueMemoryPublicDeps, "mimalloc")
+end
+
 bb.module {
     name = "BlueMemory",
     type = "library",
@@ -97,16 +105,7 @@ bb.module {
     },
 
     deps = {
-        public = {
-            "BlueSystem",
-        },
-    },
-
-    filters = {
-        {
-            when = { "options:memory-backend=mimalloc" },
-            deps = { "mimalloc" },
-        },
+        public = blueMemoryPublicDeps,
     },
 }
 
