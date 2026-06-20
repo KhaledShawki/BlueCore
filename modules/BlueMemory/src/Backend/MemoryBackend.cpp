@@ -43,4 +43,22 @@ void MemoryBackend::Free( void* pointer, Size size, Size alignment ) noexcept
   SystemMemoryBackend::Free( pointer, size, alignment );
 #endif
 }
+
+MemoryBackendKind MemoryBackend::GetKind( ) noexcept
+{
+#if BLUE_MEMORY_USE_MIMALLOC
+  return MemoryBackendKind::Mimalloc;
+#else
+  return MemoryBackendKind::System;
+#endif
+}
+
+const Char* MemoryBackend::GetName( ) noexcept
+{
+#if BLUE_MEMORY_USE_MIMALLOC
+  return "mimalloc";
+#else
+  return "system";
+#endif
+}
 } // namespace Blue
