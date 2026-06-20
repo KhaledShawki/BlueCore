@@ -1,7 +1,6 @@
 // Copyright (c) Khaled Shawki. All rights reserved.
-#include "Pch.h"
 
-#include <Blue/System/Base/Alignment.h>
+#include "Pch.h"
 
 #include <cstddef>
 #include <cstdlib>
@@ -16,17 +15,9 @@
 
 namespace
 {
-static_assert( Blue::IsPowerOfTwo( alignof( std::max_align_t ) ) );
-
-constexpr Blue::Size NormalizeAlignment( Blue::Size alignment ) noexcept
+constexpr bool RequiresAlignedAllocation( Blue::Size alignment ) noexcept
 {
-  constexpr Blue::Size minimumAlignment = alignof( std::max_align_t );
-  return alignment < minimumAlignment ? minimumAlignment : alignment;
-}
-
-constexpr bool RequiresAlignedAllocation( Blue::Size normalizedAlignment ) noexcept
-{
-  return normalizedAlignment > alignof( std::max_align_t );
+  return alignment > alignof( std::max_align_t );
 }
 } // namespace
 
@@ -34,18 +25,6 @@ namespace Blue
 {
 void* SystemMemoryBackend::Allocate( Size size, Size alignment ) noexcept
 {
-  if ( size == 0 )
-  {
-    return nullptr;
-  }
-
-  alignment = NormalizeAlignment( alignment );
-
-  if ( !IsPowerOfTwo( alignment ) )
-  {
-    return nullptr;
-  }
-
   if ( !RequiresAlignedAllocation( alignment ) )
   {
     return std::malloc( size );
@@ -66,24 +45,6 @@ void* SystemMemoryBackend::Allocate( Size size, Size alignment ) noexcept
 
 void* SystemMemoryBackend::Reallocate( void* pointer, Size oldSize, Size newSize, Size alignment ) noexcept
 {
-  if ( pointer == nullptr )
-  {
-    return Allocate( newSize, alignment );
-  }
-
-  if ( newSize == 0 )
-  {
-    Free( pointer, oldSize, alignment );
-    return nullptr;
-  }
-
-  alignment = NormalizeAlignment( alignment );
-
-  if ( !IsPowerOfTwo( alignment ) )
-  {
-    return nullptr;
-  }
-
   if ( !RequiresAlignedAllocation( alignment ) )
   {
     return std::realloc( pointer, newSize );
@@ -108,19 +69,14 @@ void* SystemMemoryBackend::Reallocate( void* pointer, Size oldSize, Size newSize
 
 void SystemMemoryBackend::Free( void* pointer, Size, Size alignment ) noexcept
 {
-  if ( pointer == nullptr )
-  {
-    return;
-  }
-
-  alignment = NormalizeAlignment( alignment );
-
 #if defined( _WIN32 )
   if ( RequiresAlignedAllocation( alignment ) )
   {
     _aligned_free( pointer );
     return;
   }
+#else
+  BLUE_UNUSED( alignment );
 #endif
 
   std::free( pointer );

@@ -14,6 +14,18 @@ enum class MemoryBackendKind
   Mimalloc
 };
 
+//////////////////////////////////////////////////////////////////////////////////
+// Raw memory backend facade.
+//
+// This layer normalizes Blue zero-size semantics and dispatches to the selected
+// concrete backend at compile time.
+//
+// Preconditions:
+// - alignment must be valid and normalized before reaching this layer.
+// - alignment must be a power of two.
+// - alignment must be at least alignof(std::max_align_t).
+// - Reallocate oldSize must describe the currently allocated block size.
+// - Free must receive the same alignment contract used for allocation.
 struct BLUE_MEMORY_API MemoryBackend
 {
   static void* Allocate( Size size, Size alignment ) noexcept;

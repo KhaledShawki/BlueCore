@@ -19,6 +19,11 @@ namespace Blue
 {
 void* MemoryBackend::Allocate( Size size, Size alignment ) noexcept
 {
+  if ( size == 0 )
+  {
+    return nullptr;
+  }
+
 #if BLUE_MEMORY_USE_MIMALLOC
   return MimallocMemoryBackend::Allocate( size, alignment );
 #else
@@ -28,6 +33,17 @@ void* MemoryBackend::Allocate( Size size, Size alignment ) noexcept
 
 void* MemoryBackend::Reallocate( void* pointer, Size oldSize, Size newSize, Size alignment ) noexcept
 {
+  if ( pointer == nullptr )
+  {
+    return Allocate( newSize, alignment );
+  }
+
+  if ( newSize == 0 )
+  {
+    Free( pointer, oldSize, alignment );
+    return nullptr;
+  }
+
 #if BLUE_MEMORY_USE_MIMALLOC
   return MimallocMemoryBackend::Reallocate( pointer, oldSize, newSize, alignment );
 #else
@@ -37,6 +53,11 @@ void* MemoryBackend::Reallocate( void* pointer, Size oldSize, Size newSize, Size
 
 void MemoryBackend::Free( void* pointer, Size size, Size alignment ) noexcept
 {
+  if ( pointer == nullptr )
+  {
+    return;
+  }
+
 #if BLUE_MEMORY_USE_MIMALLOC
   MimallocMemoryBackend::Free( pointer, size, alignment );
 #else
