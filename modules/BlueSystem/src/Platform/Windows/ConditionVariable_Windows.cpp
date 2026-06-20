@@ -3,6 +3,7 @@
 #include <Blue/System/Platform/WindowsLean.h>
 
 #include "Windows_Synchronization.h"
+
 #include <string.h>
 
 namespace Blue

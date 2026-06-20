@@ -1,11 +1,13 @@
 // Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Alignment.h>
 #include <Blue/System/Log/LogMacros.h>
 #include <Blue/System/Threading/SpinLock.h>
 
-#include "Pch.h"
 #include <stdio.h>
 #include <string.h>
 

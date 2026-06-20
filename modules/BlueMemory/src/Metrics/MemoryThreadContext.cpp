@@ -1,6 +1,11 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/Metrics/MemoryThreadContext.h>
 #include <Blue/System/Threading/Atomic.h>
 #include <Blue/System/Threading/Thread.h>
+
 
 namespace Blue
 {

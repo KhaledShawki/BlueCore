@@ -1,6 +1,7 @@
 #include <Blue/System/Threading/Thread.h>
 
 #include "../POSIX/POSIX_Thread.h"
+
 #include <errno.h>
 #include <pthread.h>
 #include <sched.h>

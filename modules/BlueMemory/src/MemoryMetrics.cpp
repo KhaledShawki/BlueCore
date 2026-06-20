@@ -1,5 +1,10 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/MemoryMetrics.h>
 #include <Blue/System/Threading/Atomic.h>
+
 
 namespace Blue
 {

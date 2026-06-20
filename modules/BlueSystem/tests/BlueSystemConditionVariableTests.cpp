@@ -5,6 +5,7 @@
 #include <Blue/System/Types.h>
 
 #include "BlueSystemTestWait.h"
+
 #include <gtest/gtest.h>
 
 namespace

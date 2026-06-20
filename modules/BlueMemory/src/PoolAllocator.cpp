@@ -1,5 +1,10 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/PoolAllocator.h>
 #include <Blue/System/Alignment.h>
+
 
 namespace Blue
 {

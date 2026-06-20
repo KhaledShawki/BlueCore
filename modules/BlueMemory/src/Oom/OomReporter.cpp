@@ -1,7 +1,12 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/Metrics/MemoryThreadContext.h>
 #include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/System/Threading/Atomic.h>
 #include <Blue/System/Time.h>
+
 
 namespace Blue
 {

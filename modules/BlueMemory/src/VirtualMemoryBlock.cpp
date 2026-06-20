@@ -1,5 +1,10 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/VirtualMemoryBlock.h>
 #include <Blue/System/Platform.h>
+
 
 #if BLUE_PLATFORM == BLUE_PLATFORM_WINDOWS
 #  include <windows.h>

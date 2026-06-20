@@ -1,7 +1,12 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/System/Alignment.h>
 #include <Blue/System/Threading/Atomic.h>
+
 
 namespace Blue
 {

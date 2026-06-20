@@ -135,6 +135,8 @@ SpacesBeforeTrailingComments: 1
 SortIncludes: true
 IncludeBlocks: Regroup
 IncludeCategories:
+  - Regex: '^"Pch\.h"$'
+    Priority: 0
   - Regex: '^<Blue/'
     Priority: 1
   - Regex: '^<[^.]+>'

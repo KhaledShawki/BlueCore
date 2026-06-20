@@ -3,6 +3,7 @@
 #include <Blue/System/Semaphore.h>
 
 #include "Windows_Synchronization.h"
+
 #include <limits.h>
 #include <string.h>
 

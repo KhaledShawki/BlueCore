@@ -1,7 +1,8 @@
 // Copyright (c) Khaled Shawki. All rights reserved.
+#include "Pch.h"
+
 #include "MimallocMemoryBackend.h"
 
-#include "Pch.h"
 
 #ifndef BLUE_MEMORY_USE_MIMALLOC
 #  define BLUE_MEMORY_USE_MIMALLOC 0

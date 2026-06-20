@@ -2,6 +2,7 @@
 #include <Blue/System/ConditionVariable.h>
 
 #include "POSIX_Synchronization.h"
+
 #include <pthread.h>
 #include <string.h>
 

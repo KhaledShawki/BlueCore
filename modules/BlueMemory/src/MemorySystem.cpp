@@ -1,3 +1,7 @@
+// Copyright (c) Khaled Shawki. All rights reserved.
+
+#include "Pch.h"
+
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/AllocatorInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
