@@ -144,6 +144,7 @@ bb.module_tests {
     },
 
     tests = {
+        "BlueMemoryBackendContractTests",
         "BlueMemoryContractTests",
         "BlueMemoryLeakDetectionTests",
         "BlueMemoryPoolResolverTests",

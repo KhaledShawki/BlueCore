@@ -137,6 +137,14 @@ local function plain_header_content()
     return license_header() .. "#pragma once\n"
 end
 
+local function test_source_content()
+    return license_header() .. table.concat({
+        "#include <gtest/gtest.h>",
+        "",
+        "",
+    }, "\n")
+end
+
 local function project_template(projectName, root, projectType)
     if projectType == "library" then
         return table.concat({
@@ -268,6 +276,10 @@ local function manifest_file_content(projectName, projectRelativeFile)
 
     if fileName == "Pch.cpp" then
         return pch_source_content()
+    end
+
+    if projectRelativeFile:match("^tests/.+%.cpp$") then
+        return test_source_content()
     end
 
     if projectRelativeFile:match("%.c$") or projectRelativeFile:match("%.cpp$") or projectRelativeFile:match("%.cxx$") or projectRelativeFile:match("%.cc$") then

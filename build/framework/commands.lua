@@ -109,11 +109,38 @@ local function with_prefix(prefix, value)
     return prefix .. "/" .. value
 end
 
+local function normalize_test_name(value)
+    local normalized = normalize_project_relative_path(value)
+
+    if normalized:sub(1, 6) == "tests/" then
+        normalized = normalized:sub(7)
+    end
+
+    normalized = normalized:gsub("%.cpp$", "")
+    normalized = normalized:gsub("%.cc$", "")
+    normalized = normalized:gsub("%.cxx$", "")
+
+    if normalized == "" then
+        error("Test name must not be empty")
+    end
+
+    if normalized:find("/") then
+        error("Test name must not contain directories: " .. value)
+    end
+
+    if not normalized:match("^[A-Za-z_][A-Za-z0-9_]*$") then
+        error("Invalid test name: " .. normalized)
+    end
+
+    return normalized
+end
+
 local function classify_file(projectName, kind, value)
     local normalizedKind = tostring(kind or ""):lower():gsub("_", "-")
     local relative = value
     local sectionPath
     local category
+    local manifestEntry
 
     if normalizedKind == "source" or normalizedKind == "src" then
         relative = with_prefix("src", relative)
@@ -147,6 +174,12 @@ local function classify_file(projectName, kind, value)
         relative = with_prefix("src/Platform/POSIX", relative)
         sectionPath = { "files", "platform", "linux", "sources" }
         category = "sources"
+    elseif normalizedKind == "test" or normalizedKind == "tests" or normalizedKind == "unit-test" or normalizedKind == "unit_test" then
+        local testName = normalize_test_name(relative)
+        relative = "tests/" .. testName .. ".cpp"
+        sectionPath = { "tests" }
+        category = "tests"
+        manifestEntry = testName
     else
         error("Unsupported file kind: " .. tostring(kind))
     end
@@ -163,6 +196,7 @@ local function classify_file(projectName, kind, value)
     return {
         kind = normalizedKind,
         project_relative = normalize_project_relative_path(relative),
+        manifest_entry = manifestEntry or normalize_project_relative_path(relative),
         section_path = sectionPath,
         section_paths = sectionPaths,
         category = category,
@@ -359,7 +393,7 @@ function bb.commands.add_file()
 
     bb.scaffold.validate_manifest_path(desc, classified.project_relative, classified.category)
     for _, sectionPath in ipairs(classified.section_paths) do
-        insert_manifest_entry(manifest, sectionPath, classified.project_relative)
+        insert_manifest_entry(manifest, sectionPath, classified.manifest_entry)
     end
     ensure_physical_file(desc, classified)
     bb.log.info("Added " .. root_relative_path(desc, classified.project_relative) .. " to " .. desc.name)
@@ -374,7 +408,7 @@ function bb.commands.remove_file()
     local manifest = project_lua_path(desc)
 
     for _, sectionPath in ipairs(classified.section_paths) do
-        remove_manifest_entry(manifest, sectionPath, classified.project_relative)
+        remove_manifest_entry(manifest, sectionPath, classified.manifest_entry)
     end
 
     if should_delete_files() then
@@ -404,7 +438,7 @@ function bb.commands.rename_file()
     end
 
     for index, sectionPath in ipairs(oldFile.section_paths) do
-        replace_manifest_entry(manifest, sectionPath, oldFile.project_relative, newFile.project_relative)
+        replace_manifest_entry(manifest, sectionPath, oldFile.manifest_entry, newFile.manifest_entry)
     end
 
     if should_create_files() then
