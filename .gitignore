@@ -31,11 +31,8 @@ compile_commands.json
 *.VC.VC.opendb
 
 # Visual Studio Code
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
+.vscode/
+
 
 # JetBrains IDEs
 .idea/
