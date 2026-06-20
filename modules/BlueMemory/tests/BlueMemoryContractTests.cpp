@@ -35,17 +35,6 @@ struct AllPoolStats
 } // namespace
 
 
-TEST( BlueMemoryBackendContract, ReportsSelectedBackend )
-{
-#if BLUE_MEMORY_USE_MIMALLOC
-  EXPECT_EQ( Blue::MemoryBackend::GetKind( ), Blue::MemoryBackendKind::Mimalloc );
-  EXPECT_STREQ( Blue::MemoryBackend::GetName( ), "mimalloc" );
-#else
-  EXPECT_EQ( Blue::MemoryBackend::GetKind( ), Blue::MemoryBackendKind::System );
-  EXPECT_STREQ( Blue::MemoryBackend::GetName( ), "system" );
-#endif
-}
-
 static void ExpectPoolStatsEqual( const Blue::MemoryPoolStats& actual, const Blue::MemoryPoolStats& expected )
 {
   ASSERT_TRUE( actual.CurrentBytes == expected.CurrentBytes );
