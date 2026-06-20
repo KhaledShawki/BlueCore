@@ -1,9 +1,11 @@
-#include <Blue/Memory/Backend/SystemMemoryBackend.h>
+// Copyright (c) Khaled Shawki. All rights reserved.
+#include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Alignment.h>
 #include <Blue/System/Log/LogMacros.h>
 #include <Blue/System/Threading/SpinLock.h>
 
+#include "Pch.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -194,7 +196,7 @@ Bool InitializeMemoryAllocationTracker( Size capacity ) noexcept
 
   const Size normalizedCapacity = NormalizeTrackerCapacity( capacity );
   const Size byteSize = sizeof( MemoryAllocationTrackerSlot ) * normalizedCapacity;
-  void* memory = SystemMemoryBackend::Allocate( byteSize, alignof( MemoryAllocationTrackerSlot ) );
+  void* memory = MemoryBackend::Allocate( byteSize, alignof( MemoryAllocationTrackerSlot ) );
   if ( !memory )
   {
     return false;
@@ -219,9 +221,9 @@ void ShutdownMemoryAllocationTracker( ) noexcept
 
   if ( s_Tracker.Slots )
   {
-    SystemMemoryBackend::Free( s_Tracker.Slots,
-                               sizeof( MemoryAllocationTrackerSlot ) * s_Tracker.Capacity,
-                               alignof( MemoryAllocationTrackerSlot ) );
+    MemoryBackend::Free( s_Tracker.Slots,
+                         sizeof( MemoryAllocationTrackerSlot ) * s_Tracker.Capacity,
+                         alignof( MemoryAllocationTrackerSlot ) );
   }
 
   s_Tracker.Slots = nullptr;

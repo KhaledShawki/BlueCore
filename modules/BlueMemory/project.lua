@@ -28,7 +28,6 @@ bb.module {
             "include/Blue/Memory/Allocator/SmallBlockAllocator.h",
             "include/Blue/Memory/Api.h",
             "include/Blue/Memory/Backend/MemoryBackend.h",
-            "include/Blue/Memory/Backend/SystemMemoryBackend.h",
             "include/Blue/Memory/BlueNew.h",
             "include/Blue/Memory/HeapAllocator.h",
             "include/Blue/Memory/Invoker/MemoryNewInvoker.h",
@@ -69,6 +68,8 @@ bb.module {
         },
 
         private_headers = {
+            "src/Backend/MimallocMemoryBackend.h",
+            "src/Backend/SystemMemoryBackend.h",
             "src/BlueMemoryPrivate.h",
             "src/Pch.h",
 
@@ -79,7 +80,7 @@ bb.module {
             "src/Allocator/SmallBlockAllocator.cpp",
             "src/AllocatorKind.cpp",
             "src/Backend/MemoryBackend.cpp",
-            "src/Backend/MimallocBackend.cpp",
+            "src/Backend/MimallocMemoryBackend.cpp",
             "src/Backend/SystemMemoryBackend.cpp",
             "src/HeapAllocator.cpp",
             "src/Invoker/RuntimeAllocationInvoker.cpp",

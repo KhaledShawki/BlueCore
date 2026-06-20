@@ -1,3 +1,4 @@
+#include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/HeapAllocator.h>
 #include <Blue/Memory/MemoryMetrics.h>
 #include <Blue/Memory/Oom/OomReporter.h>
@@ -7,12 +8,6 @@
 
 #include <string.h>
 
-namespace Blue::Backend
-{
-void* BackendAllocate( Size size, Size alignment );
-void* BackendReallocate( void* pointer, Size oldSize, Size newSize, Size alignment );
-void BackendFree( void* pointer );
-} // namespace Blue::Backend
 
 namespace Blue
 {
@@ -39,7 +34,7 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
     }
   }
 
-  void* pointer = Backend::BackendAllocate( request.ByteSize, request.Alignment );
+  void* pointer = MemoryBackend::Allocate( request.ByteSize, request.Alignment );
   if ( !pointer )
   {
     if ( reserved )
@@ -110,7 +105,7 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
     }
   }
 
-  void* newPointer = Backend::BackendReallocate( pointer, oldSize, request.ByteSize, request.Alignment );
+  void* newPointer = MemoryBackend::Reallocate( pointer, oldSize, request.ByteSize, request.Alignment );
   if ( !newPointer )
   {
     if ( grows && registry.IsInitialized( ) )
@@ -185,7 +180,7 @@ void HeapAllocator::Free( const AllocationFreeRequest& request )
   }
 #endif
 
-  Backend::BackendFree( effectiveRequest.Pointer );
+  MemoryBackend::Free( effectiveRequest.Pointer, effectiveRequest.ByteSize, effectiveRequest.Alignment );
   if ( GetMemoryPoolRegistry( ).IsInitialized( ) )
   {
     GetMemoryPoolRegistry( ).RecordFree( effectiveRequest.Pool, effectiveRequest.ByteSize );
