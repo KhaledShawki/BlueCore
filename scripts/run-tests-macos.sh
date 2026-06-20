@@ -2,8 +2,21 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REQUESTED_CONFIG="${1:-Debug_x64}"
+REQUESTED_CONFIG="Debug_x64"
+REQUESTED_MEMORY_BACKEND="system"
 BLUE_SYSTEM="macosx"
+
+print_usage()
+{
+	echo "Usage:"
+	echo "  ./scripts/run-tests-macos.sh [Debug_x64|Release_x64|Profile_x64|Shipping_x64] [--memory-backend=system|mimalloc]"
+	echo ""
+	echo "Examples:"
+	echo "  ./scripts/run-tests-macos.sh"
+	echo "  ./scripts/run-tests-macos.sh Debug_x64"
+	echo "  ./scripts/run-tests-macos.sh Debug_x64 --memory-backend=mimalloc"
+	echo "  ./scripts/run-tests-macos.sh --memory-backend=mimalloc"
+}
 
 require_command()
 {
@@ -28,6 +41,39 @@ normalize_config()
 			;;
 	esac
 }
+
+normalize_memory_backend()
+{
+	case "$1" in
+		system) echo "system" ;;
+		mimalloc) echo "mimalloc" ;;
+		*)
+			echo "[BlueBuild] Unsupported memory backend: $1" >&2
+			echo "[BlueBuild] Supported: system, mimalloc" >&2
+			exit 1
+			;;
+	esac
+}
+
+for arg in "$@"; do
+	case "$arg" in
+		-h|--help)
+			print_usage
+			exit 0
+			;;
+		--memory-backend=*)
+			REQUESTED_MEMORY_BACKEND="${arg#*=}"
+			;;
+		--*)
+			echo "[BlueBuild] Unknown option: $arg" >&2
+			print_usage >&2
+			exit 1
+			;;
+		*)
+			REQUESTED_CONFIG="$arg"
+			;;
+	esac
+done
 
 require_command ninja
 
@@ -61,19 +107,26 @@ chmod +x "${CLANG_WRAPPER_DIR}/clang" "${CLANG_WRAPPER_DIR}/clang++"
 export PATH="${CLANG_WRAPPER_DIR}:$PATH"
 
 CONFIG="$(normalize_config "$REQUESTED_CONFIG")"
+MEMORY_BACKEND="$(normalize_memory_backend "$REQUESTED_MEMORY_BACKEND")"
 BUILD_CONFIG="${CONFIG%%_*}"
 BUILD_PLATFORM="${CONFIG#*_}"
 TARGET="BlueRunTests_${CONFIG}"
 BIN_DIR="${ROOT_DIR}/out/bin/${BLUE_SYSTEM}/${BUILD_PLATFORM}/${BUILD_CONFIG}"
 RUNNER="${BIN_DIR}/BlueRunTests"
 
+echo "[BlueBuild] Configuration      : $CONFIG"
+echo "[BlueBuild] Memory backend     : $MEMORY_BACKEND"
 echo "[BlueBuild] Generating Ninja build graph"
-"${ROOT_DIR}/scripts/premake-macos.sh" ninja --toolchain=clang --blue-platforms=macos --blue-build-platforms=x64 --memory-backend=system --blue-startup=BlueRunTests
+
+"${ROOT_DIR}/scripts/premake-macos.sh" ninja \
+	--toolchain=clang \
+	--blue-platforms=macos \
+	--blue-build-platforms="$BUILD_PLATFORM" \
+	--memory-backend="$MEMORY_BACKEND" \
+	--blue-startup=BlueRunTests
 
 echo "[BlueBuild] Building all test executables"
 ninja -C "${ROOT_DIR}/out/build/ninja" "$TARGET"
-
-
 
 if [[ ! -x "$RUNNER" ]]; then
 	echo "[BlueBuild] Test runner was not built or is not executable: $RUNNER" >&2
