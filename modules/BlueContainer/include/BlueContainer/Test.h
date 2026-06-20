@@ -1,3 +1,3 @@
-// Copyright (c) BlueByte. All rights reserved.
+// Copyright (c) Khaled Shawki. All rights reserved.
 
 #pragma once

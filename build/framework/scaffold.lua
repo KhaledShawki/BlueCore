@@ -55,7 +55,7 @@ local function write_file_if_missing(filename, content)
 end
 
 local function license_header()
-    return "// Copyright (c) BlueByte. All rights reserved.\n\n"
+    return "// Copyright (c) Khaled Shawki. All rights reserved.\n\n"
 end
 
 local function include_guard_path(projectName, headerName)
