@@ -1,5 +1,5 @@
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
-#include <Blue/Memory/Backend/SystemMemoryBackend.h>
+#include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/System/Alignment.h>
 #include <Blue/System/Threading/Atomic.h>
 
@@ -101,7 +101,7 @@ Bool RegisterSlab( void* base, Size classSize ) noexcept
 Bool RefillThreadCache( Uint32 classIndex ) noexcept
 {
   const Size classSize = SmallBlockClassSizes[ classIndex ];
-  void* slab = SystemMemoryBackend::Allocate( BlueSmallBlockSlabSize, classSize );
+  void* slab = MemoryBackend::Allocate( BlueSmallBlockSlabSize, classSize );
   if ( !slab )
   {
     s_FailedRefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
@@ -110,7 +110,7 @@ Bool RefillThreadCache( Uint32 classIndex ) noexcept
 
   if ( !RegisterSlab( slab, classSize ) )
   {
-    SystemMemoryBackend::Free( slab, BlueSmallBlockSlabSize, classSize );
+    MemoryBackend::Free( slab, BlueSmallBlockSlabSize, classSize );
     s_FailedRefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
     return false;
   }
@@ -141,7 +141,7 @@ void ShutdownSmallBlockAllocator( ) noexcept
   {
     if ( s_Slabs[ index ].Base )
     {
-      SystemMemoryBackend::Free( s_Slabs[ index ].Base, BlueSmallBlockSlabSize, s_Slabs[ index ].ClassSize );
+      MemoryBackend::Free( s_Slabs[ index ].Base, BlueSmallBlockSlabSize, s_Slabs[ index ].ClassSize );
       s_Slabs[ index ] = { };
     }
   }
@@ -210,7 +210,7 @@ void FreeSmallBlock( void* pointer, Size size, Size alignment ) noexcept
   const Uint32 classIndex = GetSmallBlockClassIndex( size, alignment );
   if ( classIndex == InvalidSmallBlockClass || !IsPowerOfTwo( alignment ) )
   {
-    SystemMemoryBackend::Free( pointer, size, alignment );
+    MemoryBackend::Free( pointer, size, alignment );
     return;
   }
 
