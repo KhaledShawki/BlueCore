@@ -7,12 +7,11 @@
 #endif
 
 #if BLUE_MEMORY_USE_MIMALLOC
-#  if __has_include( <mimalloc.h>)
-#    include <mimalloc.h>
-#    define BLUE_MIMALLOC_AVAILABLE 1
-#  else
-#    define BLUE_MIMALLOC_AVAILABLE 0
+#  if !__has_include( <mimalloc.h>)
+#    error "BLUE_MEMORY_USE_MIMALLOC=1 but mimalloc.h was not found. Initialize the mimalloc submodule."
 #  endif
+#  include <mimalloc.h>
+#  define BLUE_MIMALLOC_AVAILABLE 1
 #else
 #  define BLUE_MIMALLOC_AVAILABLE 0
 #endif
