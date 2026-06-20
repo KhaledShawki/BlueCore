@@ -1,3 +1,4 @@
+#include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Oom/OomReporter.h>
@@ -5,9 +6,38 @@
 #include <Blue/Memory/PoolAllocator.h>
 #include <Blue/System/Types.h>
 
+#include <cstddef>
+
 #include <gtest/gtest.h>
 
 
+namespace
+{
+struct MemorySystemTestScope
+{
+  MemorySystemTestScope( )
+  {
+    Blue::MemorySystemDesc desc = { };
+    desc.OomReportBuffer = Reports;
+    desc.OomReportCapacity = ReportCapacity;
+
+    Initialized = Blue::InitializeMemorySystem( desc ).Succeeded( );
+  }
+
+  ~MemorySystemTestScope( )
+  {
+    if ( Initialized )
+    {
+      Blue::ShutdownMemorySystem( );
+    }
+  }
+
+  static constexpr Blue::Size ReportCapacity = 8;
+
+  Blue::OomReport Reports[ ReportCapacity ] = { };
+  bool Initialized = false;
+};
+} // namespace
 static void VerifyHeapReallocatePreservesExistingBytes( )
 {
   Blue::Allocator allocator = Blue::GetDefaultAllocator( );
@@ -131,4 +161,43 @@ TEST( BlueMemoryRuntimeAllocationTests, RunsSuccessfully )
   ASSERT_TRUE( captured[ 0 ].NativeThreadId != 0 );
 
   Blue::ShutdownMemorySystem( );
+}
+
+TEST( BlueMemoryRuntimeAllocationTests, RejectsZeroAlignment )
+{
+  Blue::AllocationRequest request =
+    BLUE_POOL_ALLOCATION_REQUEST( 64, 0, Blue::AllocationTag::Test, Blue::MemoryPoolId::Test );
+
+  void* pointer = Blue::BlueTryAllocate( request );
+
+  EXPECT_EQ( pointer, nullptr );
+}
+
+TEST( BlueMemoryRuntimeAllocationTests, RejectsNonPowerOfTwoAlignment )
+{
+  Blue::AllocationRequest request =
+    BLUE_POOL_ALLOCATION_REQUEST( 64, 3, Blue::AllocationTag::Test, Blue::MemoryPoolId::Test );
+
+  void* pointer = Blue::BlueTryAllocate( request );
+
+  EXPECT_EQ( pointer, nullptr );
+}
+
+TEST( BlueMemoryRuntimeAllocationTests, NormalizesSmallPowerOfTwoAlignment )
+{
+  MemorySystemTestScope memory;
+  ASSERT_TRUE( memory.Initialized );
+
+  Blue::AllocationRequest request =
+    BLUE_POOL_ALLOCATION_REQUEST( 64, 1, Blue::AllocationTag::Test, Blue::MemoryPoolId::Test );
+
+  void* pointer = Blue::BlueTryAllocate( request );
+
+  ASSERT_NE( pointer, nullptr );
+
+  Blue::BlueFree( Blue::AllocationFreeRequest{ pointer,
+                                               64,
+                                               Blue::MinimumAllocationAlignment( ),
+                                               Blue::MemoryPoolId::Test,
+                                               Blue::AllocationTag::Test } );
 }

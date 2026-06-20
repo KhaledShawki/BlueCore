@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/AllocationFailurePolicy.h>
 #include <Blue/Memory/AllocationFlags.h>
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
@@ -10,7 +11,6 @@
 #include <Blue/Memory/Pool/MemoryPoolPolicy.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
-
 
 namespace Blue
 {
@@ -44,6 +44,8 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
     ( void ) flags;
 #endif
 
+    const Size normalizedAlignment = NormalizeAllocationAlignment( alignment );
+
     MemoryPoolRegistry& registry = GetMemoryPoolRegistry( );
     AllocationFailureReason reason = AllocationFailureReason::None;
 
@@ -52,12 +54,13 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
       registry.RecordFailure( Pool, reason );
       Metrics::RecordFailure( Pool, AllocatorKind::Default );
       RecordOomReport(
-        MakeAllocationFailureInfo( Pool, AllocatorKind::Default, tag, size, alignment, reason, location ) );
+        MakeAllocationFailureInfo( Pool, AllocatorKind::Default, tag, size, normalizedAlignment, reason, location ) );
       return nullptr;
     }
 
-    void* pointer = IsSmallBlockAllocationSupported( size, alignment ) ? AllocateSmallBlock( size, alignment )
-                                                                       : MemoryBackend::Allocate( size, alignment );
+    void* pointer = IsSmallBlockAllocationSupported( size, normalizedAlignment )
+                    ? AllocateSmallBlock( size, normalizedAlignment )
+                    : MemoryBackend::Allocate( size, normalizedAlignment );
     if ( !pointer )
     {
       registry.CancelReservation( Pool, size );
@@ -67,7 +70,7 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
                                                   AllocatorKind::Default,
                                                   tag,
                                                   size,
-                                                  alignment,
+                                                  normalizedAlignment,
                                                   AllocationFailureReason::BackendFailure,
                                                   location ) );
       return nullptr;
@@ -77,7 +80,7 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
     if ( !HasAllocationFlag( flags, AllocationFlag_NoTracking ) )
     {
       TrackMemoryAllocation(
-        MemoryAllocationRecord{ pointer, size, alignment, Pool, tag, AllocatorKind::Default, location } );
+        MemoryAllocationRecord{ pointer, size, normalizedAlignment, Pool, tag, AllocatorKind::Default, location } );
     }
 #endif
 

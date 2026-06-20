@@ -2,6 +2,7 @@
 
 #include "Pch.h"
 
+#include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Alignment.h>
@@ -32,6 +33,7 @@ constexpr Size DefaultTrackerCapacity = 4096;
 constexpr Size MinimumTrackerCapacity = 16;
 constexpr Size TrackerLeakLogMessageCapacity = 320;
 
+
 enum class TrackerSlotState : Uint8
 {
   Empty,
@@ -58,6 +60,8 @@ struct MemoryAllocationTrackerState
   Bool Enabled = false;
   SpinLock Lock = { };
 };
+
+constexpr Size trackerAlignment = NormalizeAllocationAlignment( alignof( MemoryAllocationTrackerSlot ) );
 
 MemoryAllocationTrackerState s_Tracker = { };
 
@@ -198,7 +202,8 @@ Bool InitializeMemoryAllocationTracker( Size capacity ) noexcept
 
   const Size normalizedCapacity = NormalizeTrackerCapacity( capacity );
   const Size byteSize = sizeof( MemoryAllocationTrackerSlot ) * normalizedCapacity;
-  void* memory = MemoryBackend::Allocate( byteSize, alignof( MemoryAllocationTrackerSlot ) );
+
+  void* memory = MemoryBackend::Allocate( byteSize, trackerAlignment );
   if ( !memory )
   {
     return false;
@@ -225,7 +230,7 @@ void ShutdownMemoryAllocationTracker( ) noexcept
   {
     MemoryBackend::Free( s_Tracker.Slots,
                          sizeof( MemoryAllocationTrackerSlot ) * s_Tracker.Capacity,
-                         alignof( MemoryAllocationTrackerSlot ) );
+                         trackerAlignment );
   }
 
   s_Tracker.Slots = nullptr;

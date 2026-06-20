@@ -2,6 +2,7 @@
 
 #include "Pch.h"
 
+#include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/HeapAllocator.h>
 #include <Blue/Memory/MemoryMetrics.h>
@@ -15,69 +16,72 @@
 
 namespace Blue
 {
+
 AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
 {
+  const AllocationRequest normalizedRequest = NormalizeAllocationRequest( request );
+
   MemoryPoolRegistry& registry = GetMemoryPoolRegistry( );
   AllocationFailureReason reason = AllocationFailureReason::None;
   Bool reserved = false;
 
   if ( registry.IsInitialized( ) )
   {
-    reserved = registry.TryReserve( request.Pool, request.ByteSize, reason );
+    reserved = registry.TryReserve( normalizedRequest.Pool, normalizedRequest.ByteSize, reason );
     if ( !reserved )
     {
-      registry.RecordFailure( request.Pool, reason );
-      RecordOomReport( MakeAllocationFailureInfo( request.Pool,
-                                                  AllocatorKind::Heap,
-                                                  request.Tag,
-                                                  request.ByteSize,
-                                                  request.Alignment,
-                                                  reason,
-                                                  { request.File, request.Function, request.Line } ) );
+      registry.RecordFailure( normalizedRequest.Pool, reason );
+      RecordOomReport(
+        MakeAllocationFailureInfo( normalizedRequest.Pool,
+                                   AllocatorKind::Heap,
+                                   normalizedRequest.Tag,
+                                   normalizedRequest.ByteSize,
+                                   normalizedRequest.Alignment,
+                                   reason,
+                                   { normalizedRequest.File, normalizedRequest.Function, normalizedRequest.Line } ) );
       return { nullptr, 0 };
     }
   }
 
-  void* pointer = MemoryBackend::Allocate( request.ByteSize, request.Alignment );
+  void* pointer = MemoryBackend::Allocate( normalizedRequest.ByteSize, normalizedRequest.Alignment );
   if ( !pointer )
   {
     if ( reserved )
     {
-      registry.CancelReservation( request.Pool, request.ByteSize );
-      registry.RecordFailure( request.Pool, AllocationFailureReason::BackendFailure );
+      registry.CancelReservation( normalizedRequest.Pool, normalizedRequest.ByteSize );
+      registry.RecordFailure( normalizedRequest.Pool, AllocationFailureReason::BackendFailure );
     }
     return { nullptr, 0 };
   }
 
-  if ( HasAllocationFlag( request.Flags, AllocationFlag_ZeroMemory ) )
+  if ( HasAllocationFlag( normalizedRequest.Flags, AllocationFlag_ZeroMemory ) )
   {
-    memset( pointer, 0, request.ByteSize );
+    memset( pointer, 0, normalizedRequest.ByteSize );
   }
 
   if ( reserved )
   {
-    registry.CommitAllocation( request.Pool, request.ByteSize );
+    registry.CommitAllocation( normalizedRequest.Pool, normalizedRequest.ByteSize );
   }
 
 #if BLUE_ENABLE_MEMORY_TRACKING
-  if ( !HasAllocationFlag( request.Flags, AllocationFlag_NoTracking ) )
+  if ( !HasAllocationFlag( normalizedRequest.Flags, AllocationFlag_NoTracking ) )
   {
     TrackMemoryAllocation( MemoryAllocationRecord{
       pointer,
-      request.ByteSize,
-      request.Alignment,
-      request.Pool,
-      request.Tag,
+      normalizedRequest.ByteSize,
+      normalizedRequest.Alignment,
+      normalizedRequest.Pool,
+      normalizedRequest.Tag,
       AllocatorKind::Heap,
-      { request.File, request.Function, request.Line }
+      { normalizedRequest.File, normalizedRequest.Function, normalizedRequest.Line }
     } );
   }
 #endif
 
-  RecordMemoryAllocation( request.ByteSize );
-  return { pointer, request.ByteSize };
+  RecordMemoryAllocation( normalizedRequest.ByteSize );
+  return { pointer, normalizedRequest.ByteSize };
 }
-
 AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const AllocationRequest& request )
 {
 #if BLUE_ENABLE_MEMORY_TRACKING

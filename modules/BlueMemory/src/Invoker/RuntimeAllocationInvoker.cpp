@@ -26,7 +26,8 @@ void* RuntimeAllocationInvoker::TryAllocate( const AllocationRequest& request ) 
     return nullptr;
   }
 
-  return RuntimeAllocationProxy::Allocate( request );
+  const AllocationRequest normalizedRequest = NormalizeAllocationRequest( request );
+  return RuntimeAllocationProxy::Allocate( normalizedRequest );
 }
 
 void* RuntimeAllocationInvoker::Allocate( const AllocationRequest& request ) noexcept
