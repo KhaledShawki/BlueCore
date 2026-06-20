@@ -16,8 +16,8 @@ void* AllocateRuntimeDefaultPool( MemoryPoolId pool, const AllocationRequest& re
       request.ByteSize,                                                                                                \
       request.Alignment,                                                                                               \
       request.Tag,                                                                                                     \
-      request.Flags,                                                                                                   \
-      { request.File, request.Function, request.Line } );
+      { request.File, request.Function, request.Line },                                                                \
+      request.Flags );
 #include <Blue/Memory/Pool/MemoryPools.def>
 #undef BLUE_MEMORY_POOL
     case MemoryPoolId::Count :

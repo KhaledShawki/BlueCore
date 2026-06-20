@@ -34,11 +34,15 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
   static void* Allocate( Size size,
                          Size alignment,
                          AllocationTag tag,
-                         AllocationFlags flags,
-                         SourceLocation location ) noexcept
+                         SourceLocation location,
+                         AllocationFlags flags = AllocationFlag_None ) noexcept
   {
     using Policy = MemoryPoolPolicy< Pool >;
     using Metrics = MetricsProxy< Policy::Metrics >;
+
+#if !BLUE_ENABLE_MEMORY_TRACKING
+    ( void ) flags;
+#endif
 
     MemoryPoolRegistry& registry = GetMemoryPoolRegistry( );
     AllocationFailureReason reason = AllocationFailureReason::None;
