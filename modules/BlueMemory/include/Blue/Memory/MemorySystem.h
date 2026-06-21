@@ -3,6 +3,7 @@
 #include <Blue/Memory/AllocationFailureInfo.h>
 #include <Blue/Memory/Allocator.h>
 #include <Blue/Memory/Api.h>
+#include <Blue/Memory/Config/BlueMemorySettings.h>
 #include <Blue/Memory/HeapAllocator.h>
 #include <Blue/Memory/MemoryMetrics.h>
 #include <Blue/Memory/MemoryMetricsMode.h>
@@ -13,8 +14,11 @@
 
 namespace Blue
 {
+
 struct MemorySystemDesc
 {
+  BlueMemorySettings Settings = { };
+
   bool EnableMetrics = true;
   bool EnableTracking = false;
   bool EnableLeakDetection = false;

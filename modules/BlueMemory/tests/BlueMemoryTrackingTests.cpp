@@ -31,7 +31,7 @@ Blue::MemorySystemDesc MakeTrackingMemorySystemDesc( ) noexcept
 
 TEST_F( BlueMemoryTrackingTests, CompileTimeConfigurationMatchesBuildProfile )
 {
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
   EXPECT_TRUE( Blue::IsMemoryAllocationTrackingCompiledIn( ) );
 #else
   EXPECT_FALSE( Blue::IsMemoryAllocationTrackingCompiledIn( ) );
@@ -51,7 +51,7 @@ TEST_F( BlueMemoryTrackingTests, TrackingIsDisabledByDefault )
   EXPECT_EQ( stats.ActiveCount, 0u );
 }
 
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
 TEST_F( BlueMemoryTrackingTests, TrackingCapturesAndRemovesRuntimeAllocations )
 {
   ASSERT_TRUE( Blue::InitializeMemorySystem( MakeTrackingMemorySystemDesc( ) ).Succeeded( ) );

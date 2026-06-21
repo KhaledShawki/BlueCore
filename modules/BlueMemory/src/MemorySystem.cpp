@@ -4,6 +4,7 @@
 
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/AllocatorInvoker.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Metrics/MemoryThreadContext.h>
 #include <Blue/Memory/Oom/OomReporter.h>
@@ -13,13 +14,6 @@
 
 #include <stdio.h>
 
-#ifndef BLUE_MEMORY_ENABLE_LEAK_DETECTION
-#  if defined( BLUE_SHIPPING )
-#    define BLUE_MEMORY_ENABLE_LEAK_DETECTION 0
-#  else
-#    define BLUE_MEMORY_ENABLE_LEAK_DETECTION BLUE_ENABLE_LOGGING
-#  endif
-#endif
 
 namespace Blue
 {
@@ -37,7 +31,7 @@ struct MemorySystemState
 
 static MemorySystemState s_Memory = { };
 
-#if BLUE_MEMORY_ENABLE_LEAK_DETECTION
+#if BLUE_MEMORY_ENABLE_LEAK_REPORTS
 
 constexpr Size MemoryLeakLogMessageCapacity = 256;
 
@@ -115,7 +109,7 @@ void RunShutdownLeakDetection( ) noexcept
     return;
   }
 
-#  if BLUE_ENABLE_MEMORY_TRACKING
+#  if BLUE_MEMORY_ENABLE_TRACKING
   if ( IsMemoryAllocationTrackingEnabled( ) )
   {
     ReportLiveTrackedMemoryAllocations( );
@@ -146,7 +140,7 @@ Result InitializeMemorySystem( const MemorySystemDesc& desc )
     return Failure( ResultCode::UnknownFailure );
   }
 
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
   if ( desc.EnableTracking && !InitializeMemoryAllocationTracker( desc.TrackingCapacity ) )
   {
     GetMemoryPoolRegistry( ).Shutdown( );
@@ -159,7 +153,7 @@ Result InitializeMemorySystem( const MemorySystemDesc& desc )
   if ( !InitializeSmallBlockAllocator( ) )
   {
     GetMemoryPoolRegistry( ).Shutdown( );
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
     ShutdownMemoryAllocationTracker( );
 #endif
     UnregisterMemoryThread( );
@@ -185,7 +179,7 @@ void ShutdownMemorySystem( )
   RunShutdownLeakDetection( );
 
   ShutdownSmallBlockAllocator( );
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
   ShutdownMemoryAllocationTracker( );
 #endif
   GetMemoryPoolRegistry( ).Shutdown( );

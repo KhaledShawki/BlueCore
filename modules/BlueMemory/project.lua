@@ -57,6 +57,8 @@ bb.module {
             "include/Blue/Memory/Proxy/TypedAllocationProxy.h",
             "include/Blue/Memory/UniquePtr.h",
             "include/Blue/Memory/VirtualMemoryBlock.h",
+            "include/Blue/Memory/Config/BlueMemoryConfig.h",
+            "include/Blue/Memory/Config/BlueMemorySettings.h",
             "include/BlueMemory/BlueMemory.h",
             "include/BlueMemory/BlueMemoryApi.h",
 
@@ -82,6 +84,7 @@ bb.module {
             "src/Backend/MemoryBackend.cpp",
             "src/Backend/MimallocMemoryBackend.cpp",
             "src/Backend/SystemMemoryBackend.cpp",
+            "src/Config/BlueMemorySettings.cpp",
             "src/HeapAllocator.cpp",
             "src/Invoker/RuntimeAllocationInvoker.cpp",
             "src/LinearAllocator.cpp",
@@ -145,6 +148,7 @@ bb.module_tests {
 
     tests = {
         "BlueMemoryBackendContractTests",
+        "BlueMemoryConfigTests",
         "BlueMemoryContractTests",
         "BlueMemoryLeakDetectionTests",
         "BlueMemoryPoolResolverTests",

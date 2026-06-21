@@ -56,7 +56,7 @@ void RuntimeAllocationInvoker::Free( const AllocationFreeRequest& request ) noex
   }
 
   AllocationFreeRequest effectiveRequest = request;
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
   MemoryAllocationRecord tracked = { };
   if ( TryFindTrackedMemoryAllocation( request.Pointer, tracked ) )
   {

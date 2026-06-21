@@ -4,6 +4,7 @@
 
 #include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Alignment.h>
 #include <Blue/System/Log/LogMacros.h>
@@ -16,14 +17,14 @@ namespace Blue
 {
 Bool IsMemoryAllocationTrackingCompiledIn( ) noexcept
 {
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
   return true;
 #else
   return false;
 #endif
 }
 
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
 BLUE_DECLARE_LOG_CATEGORY( LogMemory );
 
 namespace

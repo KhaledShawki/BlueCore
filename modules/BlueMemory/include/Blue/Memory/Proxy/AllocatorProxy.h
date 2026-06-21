@@ -40,7 +40,7 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
     using Policy = MemoryPoolPolicy< Pool >;
     using Metrics = MetricsProxy< Policy::Metrics >;
 
-#if !BLUE_ENABLE_MEMORY_TRACKING
+#if !BLUE_MEMORY_ENABLE_TRACKING
     ( void ) flags;
 #endif
 
@@ -76,7 +76,7 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
       return nullptr;
     }
 
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
     if ( !HasAllocationFlag( flags, AllocationFlag_NoTracking ) )
     {
       TrackMemoryAllocation(
@@ -99,7 +99,7 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
       return;
     }
 
-#if BLUE_ENABLE_MEMORY_TRACKING
+#if BLUE_MEMORY_ENABLE_TRACKING
     MemoryAllocationRecord tracked = { };
     if ( UntrackMemoryAllocation( pointer, tracked ) )
     {

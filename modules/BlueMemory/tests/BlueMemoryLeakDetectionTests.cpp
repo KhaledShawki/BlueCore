@@ -1,4 +1,5 @@
 #include <Blue/Memory/BlueNew.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
@@ -94,11 +95,20 @@ static void BlueMemoryLeakDetection_DetectsTypedAllocationLeak( )
   Blue::MemoryPoolStats afterAllocate = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterAllocate ) );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   ASSERT_TRUE( afterAllocate.CurrentBytes == before.CurrentBytes + sizeof( LeakTestObject ) );
+#else
+  static_cast< void >( before );
+  static_cast< void >( afterAllocate );
+#endif
 
   Blue::ShutdownMemorySystem( );
 
+#if BLUE_MEMORY_ENABLE_LEAK_REPORTS
   ASSERT_TRUE( logContext.SawMemoryLeakError );
+#else
+  ASSERT_FALSE( logContext.SawMemoryLeakError );
+#endif
 
   ShutdownLeakTestLogger( );
 }
@@ -127,11 +137,20 @@ static void BlueMemoryLeakDetection_DetectsRuntimeAllocationLeak( )
   Blue::MemoryPoolStats afterAllocate = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( pool, afterAllocate ) );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   ASSERT_TRUE( afterAllocate.CurrentBytes == before.CurrentBytes + byteSize );
+#else
+  static_cast< void >( before );
+  static_cast< void >( afterAllocate );
+#endif
 
   Blue::ShutdownMemorySystem( );
 
+#if BLUE_MEMORY_ENABLE_LEAK_REPORTS
   ASSERT_TRUE( logContext.SawMemoryLeakError );
+#else
+  ASSERT_FALSE( logContext.SawMemoryLeakError );
+#endif
 
   ShutdownLeakTestLogger( );
 }

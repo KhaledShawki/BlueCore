@@ -9,6 +9,7 @@
 BLUE_DEFINE_LOG_CATEGORY( LogLoggerTest, Blue::LogLevel::Trace );
 BLUE_DEFINE_LOG_CATEGORY( LogLoggerWarningOnlyTest, Blue::LogLevel::Warning );
 
+#if BLUE_ENABLE_LOGGING
 namespace
 {
 struct CountingSinkContext final
@@ -220,12 +221,16 @@ static void TestLoggerRecursionGuard( )
 
   Blue::ShutdownLogger( );
 }
-
+#endif
 TEST( BlueSystemLoggerThreadSafetyTests, RunsSuccessfully )
 {
+#if BLUE_ENABLE_LOGGING
   TestLoggerRegisterClearAndFlush( );
   TestLoggerLevelFiltering( );
   TestLoggerSinkMinimumLevelFiltering( );
   TestLoggerThreadSafety( );
   TestLoggerRecursionGuard( );
+#else
+  GTEST_SKIP( ) << "Logger thread-safety tests require BLUE_ENABLE_LOGGING.";
+#endif
 }

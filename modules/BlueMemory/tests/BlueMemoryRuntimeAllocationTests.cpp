@@ -1,4 +1,5 @@
 #include <Blue/Memory/Allocation/AllocationValidation.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Oom/OomReporter.h>
@@ -68,17 +69,21 @@ static void VerifyAllocatorFreeUsesRequestPool( )
 {
   Blue::Allocator allocator = Blue::GetDefaultAllocator( );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats before = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Resources, before ) );
+#endif
 
   Blue::AllocationResult allocation =
     Blue::Allocate( allocator,
                     BLUE_POOL_ALLOCATION_REQUEST( 96, 16, Blue::AllocationTag::Test, Blue::MemoryPoolId::Resources ) );
   ASSERT_TRUE( allocation.Pointer != nullptr );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats during = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Resources, during ) );
   ASSERT_TRUE( during.CurrentBytes == before.CurrentBytes + 96 );
+#endif
 
   Blue::Free( allocator,
               Blue::AllocationFreeRequest{ allocation.Pointer,
@@ -87,9 +92,11 @@ static void VerifyAllocatorFreeUsesRequestPool( )
                                            Blue::MemoryPoolId::Resources,
                                            Blue::AllocationTag::Test } );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats after = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Resources, after ) );
   ASSERT_TRUE( after.CurrentBytes == before.CurrentBytes );
+#endif
 }
 
 static void VerifyPoolAllocatorAlignmentAndBoundsHardening( )
@@ -141,10 +148,12 @@ TEST( BlueMemoryRuntimeAllocationTests, RunsSuccessfully )
   void* pointer = Blue::BlueTryAllocate( request );
   ASSERT_TRUE( pointer != nullptr );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats during = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Resources, during ) );
   ASSERT_TRUE( during.CurrentBytes >= 128 );
   ASSERT_TRUE( during.AllocationCount >= 1 );
+#endif
 
   Blue::BlueFree(
     Blue::AllocationFreeRequest{ pointer, 128, 16, Blue::MemoryPoolId::Resources, Blue::AllocationTag::Test } );
@@ -154,11 +163,13 @@ TEST( BlueMemoryRuntimeAllocationTests, RunsSuccessfully )
   void* invalidPointer = Blue::BlueTryAllocate( invalid );
   ASSERT_TRUE( invalidPointer == nullptr );
 
+#if BLUE_MEMORY_ENABLE_OOM_REPORTS
   Blue::OomReport captured[ 8 ] = { };
   const Blue::Size reportCount = Blue::CaptureOomReports( captured, 8 );
   ASSERT_TRUE( reportCount > 0 );
   ASSERT_TRUE( captured[ 0 ].Reason == Blue::AllocationFailureReason::InvalidAlignment );
   ASSERT_TRUE( captured[ 0 ].NativeThreadId != 0 );
+#endif
 
   Blue::ShutdownMemorySystem( );
 }
@@ -217,7 +228,11 @@ TEST( BlueMemoryRuntimeAllocationTests, HeapReallocateToZeroFreesAllocation )
 
   Blue::MemoryPoolStats beforeReallocate = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, beforeReallocate ) );
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   ASSERT_EQ( beforeReallocate.CurrentBytes, 64 );
+#else
+  static_cast< void >( beforeReallocate );
+#endif
 
   Blue::AllocationResult reallocated =
     Blue::Reallocate( allocator,
@@ -230,6 +245,10 @@ TEST( BlueMemoryRuntimeAllocationTests, HeapReallocateToZeroFreesAllocation )
 
   Blue::MemoryPoolStats afterReallocate = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterReallocate ) );
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   EXPECT_EQ( afterReallocate.CurrentBytes, 0 );
   EXPECT_EQ( afterReallocate.FreeCount, beforeReallocate.FreeCount + 1 );
+#else
+  static_cast< void >( afterReallocate );
+#endif
 }

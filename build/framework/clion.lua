@@ -25,21 +25,21 @@ local CONFIG_DEFINES = {
         "BLUE_DEBUG=1",
         "BLUE_ENABLE_ASSERTS=1",
         "BLUE_ENABLE_LOGGING=1",
-        "BLUE_ENABLE_MEMORY_TRACKING=1",
+        "BLUE_MEMORY_ENABLE_TRACKING=1",
     },
     Release = {
         "BLUE_RELEASE=1",
         "NDEBUG",
         "BLUE_ENABLE_ASSERTS=0",
         "BLUE_ENABLE_LOGGING=1",
-        "BLUE_ENABLE_MEMORY_TRACKING=0",
+        "BLUE_MEMORY_ENABLE_TRACKING=0",
     },
     Profile = {
         "BLUE_PROFILE=1",
         "NDEBUG",
         "BLUE_ENABLE_ASSERTS=1",
         "BLUE_ENABLE_LOGGING=1",
-        "BLUE_ENABLE_MEMORY_TRACKING=1",
+        "BLUE_MEMORY_ENABLE_TRACKING=1",
         "BLUE_ENABLE_PROFILING=1",
     },
     Shipping = {
@@ -47,7 +47,7 @@ local CONFIG_DEFINES = {
         "NDEBUG",
         "BLUE_ENABLE_ASSERTS=0",
         "BLUE_ENABLE_LOGGING=0",
-        "BLUE_ENABLE_MEMORY_TRACKING=0",
+        "BLUE_MEMORY_ENABLE_TRACKING=0",
     },
 }
 

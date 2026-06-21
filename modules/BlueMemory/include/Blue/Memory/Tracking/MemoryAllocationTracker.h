@@ -1,15 +1,12 @@
 #pragma once
-
 #include <Blue/Memory/Allocation/AllocationFreeRequest.h>
 #include <Blue/Memory/AllocationFailureInfo.h>
 #include <Blue/Memory/AllocatorKind.h>
 #include <Blue/Memory/Api.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/System/SourceLocation.h>
 #include <Blue/System/Types.h>
 
-#ifndef BLUE_ENABLE_MEMORY_TRACKING
-#  define BLUE_ENABLE_MEMORY_TRACKING 0
-#endif
 
 namespace Blue
 {

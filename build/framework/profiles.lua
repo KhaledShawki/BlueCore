@@ -7,7 +7,7 @@ function bb.apply_profiles()
             "BLUE_DEBUG=1",
             "BLUE_ENABLE_ASSERTS=1",
             "BLUE_ENABLE_LOGGING=1",
-            "BLUE_ENABLE_MEMORY_TRACKING=1",
+            "BLUE_MEMORY_ENABLE_TRACKING=1",
         }
 
     filter "configurations:Release"
@@ -19,7 +19,7 @@ function bb.apply_profiles()
             "NDEBUG",
             "BLUE_ENABLE_ASSERTS=0",
             "BLUE_ENABLE_LOGGING=1",
-            "BLUE_ENABLE_MEMORY_TRACKING=0",
+            "BLUE_MEMORY_ENABLE_TRACKING=0",
         }
 
     filter "configurations:Profile"
@@ -31,7 +31,7 @@ function bb.apply_profiles()
             "NDEBUG",
             "BLUE_ENABLE_ASSERTS=1",
             "BLUE_ENABLE_LOGGING=1",
-            "BLUE_ENABLE_MEMORY_TRACKING=1",
+            "BLUE_MEMORY_ENABLE_TRACKING=1",
             "BLUE_ENABLE_PROFILING=1",
         }
 
@@ -44,7 +44,7 @@ function bb.apply_profiles()
             "NDEBUG",
             "BLUE_ENABLE_ASSERTS=0",
             "BLUE_ENABLE_LOGGING=0",
-            "BLUE_ENABLE_MEMORY_TRACKING=0",
+            "BLUE_MEMORY_ENABLE_TRACKING=0",
         }
 
     filter {}
