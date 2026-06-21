@@ -108,6 +108,9 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
     }
 #endif
 
+    alignment = NormalizeAllocationAlignment( alignment );
+
+
     if ( IsSmallBlockAllocationSupported( size, alignment ) )
     {
       FreeSmallBlock( pointer, size, alignment );

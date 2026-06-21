@@ -2,6 +2,7 @@
 
 #include "Pch.h"
 
+#include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/System/Alignment.h>
@@ -212,10 +213,18 @@ void FreeSmallBlock( void* pointer, Size size, Size alignment ) noexcept
     return;
   }
 
-  const Uint32 classIndex = GetSmallBlockClassIndex( size, alignment );
-  if ( classIndex == InvalidSmallBlockClass || !IsPowerOfTwo( alignment ) )
+  if ( alignment == 0 || !IsPowerOfTwo( alignment ) )
   {
-    MemoryBackend::Free( pointer, size, alignment );
+    BLUE_ASSERT( false && "FreeSmallBlock received invalid allocation alignment." );
+    return;
+  }
+
+  alignment = NormalizeAllocationAlignment( alignment );
+
+  const Uint32 classIndex = GetSmallBlockClassIndex( size, alignment );
+  if ( classIndex == InvalidSmallBlockClass )
+  {
+    BLUE_ASSERT( false && "FreeSmallBlock received a non-small-block allocation." );
     return;
   }
 
