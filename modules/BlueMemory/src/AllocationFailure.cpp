@@ -2,15 +2,54 @@
 
 #include "Pch.h"
 
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/Memory/Proxy/AllocatorProxy.h>
 #include <Blue/System/Assert.h>
 
+#include <stdlib.h>
 
 namespace Blue
 {
+namespace
+{
+#if BLUE_MEMORY_ENABLE_OOM_REPORTS
+Bool ShouldRecordOomReport( OomPolicy policy ) noexcept
+{
+  return policy == OomPolicy::ReportAndReturnNull || policy == OomPolicy::Callback || policy == OomPolicy::Fatal;
+}
+#endif
+
+Bool ShouldAbortAllocationFailure( AllocationFailurePolicy policy, OomPolicy runtimePolicy ) noexcept
+{
+  return policy == AllocationFailurePolicy::Abort || policy == AllocationFailurePolicy::CallHandlerThenAbort ||
+         runtimePolicy == OomPolicy::Fatal;
+}
+
+Bool ShouldCallAllocationFailureHandler( AllocationFailurePolicy policy, OomPolicy runtimePolicy ) noexcept
+{
+  return policy == AllocationFailurePolicy::CallHandlerThenAbort || runtimePolicy == OomPolicy::Fatal;
+}
+
+void InvokeOomCallback( const AllocationFailureInfo& info, const BlueMemorySettings& settings ) noexcept
+{
+  if ( settings.OutOfMemoryPolicy != OomPolicy::Callback || !settings.OutOfMemoryCallback )
+  {
+    return;
+  }
+
+  settings.OutOfMemoryCallback( info.Reason, info.RequestedSize );
+}
+
+[[noreturn]] void AbortAllocationFailure( ) noexcept
+{
+  BLUE_ASSERT( false && "BlueMemory allocation failed." );
+  abort( );
+}
+} // namespace
+
 AllocationFailureInfo MakeAllocationFailureInfo( MemoryPoolId pool,
                                                  AllocatorKind allocator,
                                                  AllocationTag tag,
@@ -39,21 +78,38 @@ AllocationFailureInfo MakeAllocationFailureInfo( MemoryPoolId pool,
   return info;
 }
 
+void ReportAllocationFailure( const AllocationFailureInfo& info ) noexcept
+{
+  const BlueMemorySettings& settings = GetMemorySettings( );
+
+#if BLUE_MEMORY_ENABLE_OOM_REPORTS
+  if ( ShouldRecordOomReport( settings.OutOfMemoryPolicy ) )
+  {
+    RecordOomReport( info );
+  }
+#endif
+
+  InvokeOomCallback( info, settings );
+}
+
 void HandleAllocationFailure( const AllocationFailureInfo& info, AllocationFailurePolicy policy ) noexcept
 {
-  RecordOomReport( info );
+  const BlueMemorySettings& settings = GetMemorySettings( );
 
-  if ( policy == AllocationFailurePolicy::ReturnNull )
+  if ( ShouldCallAllocationFailureHandler( policy, settings.OutOfMemoryPolicy ) )
+  {
+    AllocationFailureHandler handler = GetMemoryAllocationFailureHandler( );
+    if ( handler )
+    {
+      handler( info );
+    }
+  }
+
+  if ( !ShouldAbortAllocationFailure( policy, settings.OutOfMemoryPolicy ) )
   {
     return;
   }
 
-  AllocationFailureHandler handler = GetMemoryAllocationFailureHandler( );
-  if ( handler )
-  {
-    handler( info );
-  }
-
-  BLUE_ASSERT( false && "BlueMemory allocation failed." );
+  AbortAllocationFailure( );
 }
 } // namespace Blue

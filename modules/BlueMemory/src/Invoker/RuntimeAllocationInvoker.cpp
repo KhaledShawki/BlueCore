@@ -3,7 +3,6 @@
 #include "Pch.h"
 
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
-#include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
 #include <Blue/System/Assert.h>
@@ -16,13 +15,13 @@ void* RuntimeAllocationInvoker::TryAllocate( const AllocationRequest& request ) 
   const AllocationValidationResult validation = ValidateAllocationRequest( request );
   if ( !validation.Valid )
   {
-    RecordOomReport( MakeAllocationFailureInfo( request.Pool,
-                                                AllocatorKind::Default,
-                                                request.Tag,
-                                                request.ByteSize,
-                                                request.Alignment,
-                                                validation.Reason,
-                                                { request.File, request.Function, request.Line } ) );
+    ReportAllocationFailure( MakeAllocationFailureInfo( request.Pool,
+                                                        AllocatorKind::Default,
+                                                        request.Tag,
+                                                        request.ByteSize,
+                                                        request.Alignment,
+                                                        validation.Reason,
+                                                        { request.File, request.Function, request.Line } ) );
     return nullptr;
   }
 

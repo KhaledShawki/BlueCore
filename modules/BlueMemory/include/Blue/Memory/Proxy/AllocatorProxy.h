@@ -7,7 +7,6 @@
 #include <Blue/Memory/Api.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/Metrics/MetricsProxy.h>
-#include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/Memory/Pool/MemoryPoolPolicy.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
@@ -21,6 +20,8 @@ BLUE_MEMORY_API AllocationFailureInfo MakeAllocationFailureInfo( MemoryPoolId po
                                                                  Size alignment,
                                                                  AllocationFailureReason reason,
                                                                  SourceLocation location ) noexcept;
+
+BLUE_MEMORY_API void ReportAllocationFailure( const AllocationFailureInfo& info ) noexcept;
 
 BLUE_MEMORY_API void HandleAllocationFailure( const AllocationFailureInfo& info,
                                               AllocationFailurePolicy policy ) noexcept;
@@ -53,7 +54,7 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
     {
       registry.RecordFailure( Pool, reason );
       Metrics::RecordFailure( Pool, AllocatorKind::Default );
-      RecordOomReport(
+      ReportAllocationFailure(
         MakeAllocationFailureInfo( Pool, AllocatorKind::Default, tag, size, normalizedAlignment, reason, location ) );
       return nullptr;
     }
@@ -66,13 +67,13 @@ struct AllocatorProxy< AllocatorKind::Default, Pool >
       registry.CancelReservation( Pool, size );
       registry.RecordFailure( Pool, AllocationFailureReason::BackendFailure );
       Metrics::RecordFailure( Pool, AllocatorKind::Default );
-      RecordOomReport( MakeAllocationFailureInfo( Pool,
-                                                  AllocatorKind::Default,
-                                                  tag,
-                                                  size,
-                                                  normalizedAlignment,
-                                                  AllocationFailureReason::BackendFailure,
-                                                  location ) );
+      ReportAllocationFailure( MakeAllocationFailureInfo( Pool,
+                                                          AllocatorKind::Default,
+                                                          tag,
+                                                          size,
+                                                          normalizedAlignment,
+                                                          AllocationFailureReason::BackendFailure,
+                                                          location ) );
       return nullptr;
     }
 

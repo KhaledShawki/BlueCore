@@ -33,6 +33,7 @@ BLUE_MEMORY_API Result InitializeMemorySystem( const MemorySystemDesc& desc );
 BLUE_MEMORY_API void ShutdownMemorySystem( );
 BLUE_MEMORY_API bool IsMemorySystemInitialized( );
 BLUE_MEMORY_API Allocator GetDefaultAllocator( );
+BLUE_MEMORY_API const BlueMemorySettings& GetMemorySettings( ) noexcept;
 BLUE_MEMORY_API AllocationFailureHandler GetMemoryAllocationFailureHandler( ) noexcept;
 BLUE_MEMORY_API Bool CaptureMemoryPoolStats( MemoryPoolId pool, MemoryPoolStats& outStats ) noexcept;
 } // namespace Blue

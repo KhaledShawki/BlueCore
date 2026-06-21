@@ -27,7 +27,27 @@ struct MemorySystemState
   HeapAllocator Heap = { };
   Allocator DefaultAllocator = { };
   MemorySystemDesc Desc = { };
+  BlueMemorySettings Settings = { };
 };
+
+BlueMemorySettings ResolveMemorySettings( const MemorySystemDesc& desc ) noexcept
+{
+  BlueMemorySettings settings = desc.Settings;
+
+#if !BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
+  settings.EnableRuntimePoolBudgets = false;
+#endif
+
+#if !BLUE_MEMORY_ENABLE_METRICS
+  settings.EnableRuntimeMetricsFlush = false;
+#endif
+
+#if !BLUE_MEMORY_ENABLE_LEAK_REPORTS
+  settings.EnableRuntimeLeakReportOnShutdown = false;
+#endif
+
+  return settings;
+}
 
 static MemorySystemState s_Memory = { };
 
@@ -104,7 +124,7 @@ Bool ReportLiveMemoryPoolAllocations( ) noexcept
 
 void RunShutdownLeakDetection( ) noexcept
 {
-  if ( !s_Memory.Desc.EnableLeakDetection )
+  if ( !s_Memory.Desc.EnableLeakDetection || !s_Memory.Settings.EnableRuntimeLeakReportOnShutdown )
   {
     return;
   }
@@ -130,6 +150,8 @@ Result InitializeMemorySystem( const MemorySystemDesc& desc )
   {
     return Failure( ResultCode::AlreadyInitialized );
   }
+
+  const BlueMemorySettings settings = ResolveMemorySettings( desc );
 
   ResetMemoryMetrics( );
   ConfigureOomReporter( desc.OomReportBuffer, desc.OomReportCapacity );
@@ -163,6 +185,8 @@ Result InitializeMemorySystem( const MemorySystemDesc& desc )
   s_Memory.Heap = HeapAllocator( );
   s_Memory.DefaultAllocator = AllocatorInvoker< HeapAllocator >::Make( s_Memory.Heap );
   s_Memory.Desc = desc;
+  s_Memory.Settings = settings;
+  s_Memory.Desc.Settings = settings;
   s_Memory.Initialized = true;
 
   BLUE_LOG_INFO( LogMemory, "BlueMemory initialized" );
@@ -199,6 +223,11 @@ Allocator GetDefaultAllocator( )
 {
   BLUE_ASSERT( s_Memory.Initialized );
   return s_Memory.DefaultAllocator;
+}
+
+const BlueMemorySettings& GetMemorySettings( ) noexcept
+{
+  return s_Memory.Settings;
 }
 
 AllocationFailureHandler GetMemoryAllocationFailureHandler( ) noexcept

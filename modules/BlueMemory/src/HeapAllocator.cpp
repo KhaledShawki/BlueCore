@@ -7,7 +7,6 @@
 #include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/HeapAllocator.h>
 #include <Blue/Memory/MemoryMetrics.h>
-#include <Blue/Memory/Oom/OomReporter.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
 #include <Blue/Memory/Proxy/AllocatorProxy.h>
 #include <Blue/Memory/Tracking/MemoryAllocationTracker.h>
@@ -22,15 +21,13 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
   const AllocationValidationResult validation = ValidateAllocationRequest( request );
   if ( !validation.Valid )
   {
-#  if BLUE_MEMORY_ENABLE_OOM_REPORTS
-    RecordOomReport( MakeAllocationFailureInfo( request.Pool,
-                                                AllocatorKind::Heap,
-                                                request.Tag,
-                                                request.ByteSize,
-                                                request.Alignment,
-                                                validation.Reason,
-                                                { request.File, request.Function, request.Line } ) );
-#  endif
+    ReportAllocationFailure( MakeAllocationFailureInfo( request.Pool,
+                                                        AllocatorKind::Heap,
+                                                        request.Tag,
+                                                        request.ByteSize,
+                                                        request.Alignment,
+                                                        validation.Reason,
+                                                        { request.File, request.Function, request.Line } ) );
 
     return { nullptr, 0 };
   }
@@ -50,8 +47,7 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
     {
       registry.RecordFailure( normalizedRequest.Pool, reason );
 
-#  if BLUE_MEMORY_ENABLE_OOM_REPORTS
-      RecordOomReport(
+      ReportAllocationFailure(
         MakeAllocationFailureInfo( normalizedRequest.Pool,
                                    AllocatorKind::Heap,
                                    normalizedRequest.Tag,
@@ -59,7 +55,6 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
                                    normalizedRequest.Alignment,
                                    reason,
                                    { normalizedRequest.File, normalizedRequest.Function, normalizedRequest.Line } ) );
-#  endif
 
       return { nullptr, 0 };
     }
@@ -77,8 +72,7 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
     }
 #endif
 
-#if BLUE_MEMORY_ENABLE_OOM_REPORTS
-    RecordOomReport(
+    ReportAllocationFailure(
       MakeAllocationFailureInfo( normalizedRequest.Pool,
                                  AllocatorKind::Heap,
                                  normalizedRequest.Tag,
@@ -86,7 +80,6 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
                                  normalizedRequest.Alignment,
                                  AllocationFailureReason::BackendFailure,
                                  { normalizedRequest.File, normalizedRequest.Function, normalizedRequest.Line } ) );
-#endif
 
     return { nullptr, 0 };
   }
@@ -131,15 +124,13 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
   const AllocationValidationResult validation = ValidateReallocationRequest( request );
   if ( !validation.Valid )
   {
-#  if BLUE_MEMORY_ENABLE_OOM_REPORTS
-    RecordOomReport( MakeAllocationFailureInfo( request.Pool,
-                                                AllocatorKind::Heap,
-                                                request.Tag,
-                                                request.ByteSize,
-                                                request.Alignment,
-                                                validation.Reason,
-                                                { request.File, request.Function, request.Line } ) );
-#  endif
+    ReportAllocationFailure( MakeAllocationFailureInfo( request.Pool,
+                                                        AllocatorKind::Heap,
+                                                        request.Tag,
+                                                        request.ByteSize,
+                                                        request.Alignment,
+                                                        validation.Reason,
+                                                        { request.File, request.Function, request.Line } ) );
 
     return { nullptr, 0 };
   }
@@ -181,11 +172,9 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
   }
 
 #if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
-  const bool grows = normalizedRequest.ByteSize > oldSize;
+  const Bool grows = normalizedRequest.ByteSize > oldSize;
   const Size delta = grows ? normalizedRequest.ByteSize - oldSize : oldSize - normalizedRequest.ByteSize;
-#endif
 
-#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   MemoryPoolRegistry& registry = GetMemoryPoolRegistry( );
   AllocationFailureReason reason = AllocationFailureReason::None;
 
@@ -195,8 +184,7 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
     {
       registry.RecordFailure( normalizedRequest.Pool, reason );
 
-#  if BLUE_MEMORY_ENABLE_OOM_REPORTS
-      RecordOomReport(
+      ReportAllocationFailure(
         MakeAllocationFailureInfo( normalizedRequest.Pool,
                                    AllocatorKind::Heap,
                                    normalizedRequest.Tag,
@@ -204,7 +192,6 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
                                    normalizedRequest.Alignment,
                                    reason,
                                    { normalizedRequest.File, normalizedRequest.Function, normalizedRequest.Line } ) );
-#  endif
 
       return { nullptr, 0 };
     }
@@ -224,8 +211,7 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
     }
 #endif
 
-#if BLUE_MEMORY_ENABLE_OOM_REPORTS
-    RecordOomReport(
+    ReportAllocationFailure(
       MakeAllocationFailureInfo( normalizedRequest.Pool,
                                  AllocatorKind::Heap,
                                  normalizedRequest.Tag,
@@ -233,7 +219,6 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
                                  normalizedRequest.Alignment,
                                  AllocationFailureReason::BackendFailure,
                                  { normalizedRequest.File, normalizedRequest.Function, normalizedRequest.Line } ) );
-#endif
 
     return { nullptr, 0 };
   }

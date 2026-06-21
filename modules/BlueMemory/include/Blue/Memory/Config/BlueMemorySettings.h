@@ -19,7 +19,7 @@ using OomCallback = void ( * )( AllocationFailureReason reason, Size size ) noex
 
 struct BlueMemorySettings
 {
-  OomPolicy OutOfMemoryPolicy = OomPolicy::ReturnNull;
+  OomPolicy OutOfMemoryPolicy = OomPolicy::ReportAndReturnNull;
   OomCallback OutOfMemoryCallback = nullptr;
 
   Bool EnableRuntimePoolBudgets = true;
