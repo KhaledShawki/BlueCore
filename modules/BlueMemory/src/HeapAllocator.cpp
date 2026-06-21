@@ -16,9 +16,21 @@
 
 namespace Blue
 {
-
 AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
 {
+  const AllocationValidationResult validation = ValidateAllocationRequest( request );
+  if ( !validation.Valid )
+  {
+    RecordOomReport( MakeAllocationFailureInfo( request.Pool,
+                                                AllocatorKind::Heap,
+                                                request.Tag,
+                                                request.ByteSize,
+                                                request.Alignment,
+                                                validation.Reason,
+                                                { request.File, request.Function, request.Line } ) );
+    return { nullptr, 0 };
+  }
+
   const AllocationRequest normalizedRequest = NormalizeAllocationRequest( request );
 
   MemoryPoolRegistry& registry = GetMemoryPoolRegistry( );
@@ -82,17 +94,56 @@ AllocationResult HeapAllocator::Allocate( const AllocationRequest& request )
   RecordMemoryAllocation( normalizedRequest.ByteSize );
   return { pointer, normalizedRequest.ByteSize };
 }
+
 AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const AllocationRequest& request )
 {
+  const AllocationValidationResult validation = ValidateReallocationRequest( request );
+  if ( !validation.Valid )
+  {
+    RecordOomReport( MakeAllocationFailureInfo( request.Pool,
+                                                AllocatorKind::Heap,
+                                                request.Tag,
+                                                request.ByteSize,
+                                                request.Alignment,
+                                                validation.Reason,
+                                                { request.File, request.Function, request.Line } ) );
+    return { nullptr, 0 };
+  }
+
   const AllocationRequest normalizedRequest = NormalizeAllocationRequest( request );
 
 #if BLUE_ENABLE_MEMORY_TRACKING
   MemoryAllocationRecord existingRecord = { };
-  if ( TryFindTrackedMemoryAllocation( pointer, existingRecord ) && existingRecord.ByteSize != 0 )
+  const Bool hadExistingRecord =
+    TryFindTrackedMemoryAllocation( pointer, existingRecord ) && existingRecord.ByteSize != 0;
+
+  if ( hadExistingRecord )
   {
     oldSize = existingRecord.ByteSize;
   }
 #endif
+
+  if ( normalizedRequest.ByteSize == 0 )
+  {
+    AllocationFreeRequest freeRequest{ pointer,
+                                       oldSize,
+                                       normalizedRequest.Alignment,
+                                       normalizedRequest.Pool,
+                                       normalizedRequest.Tag };
+
+#if BLUE_ENABLE_MEMORY_TRACKING
+    if ( hadExistingRecord )
+    {
+      freeRequest.ByteSize = existingRecord.ByteSize;
+      freeRequest.Alignment = existingRecord.Alignment;
+      freeRequest.Pool = existingRecord.Pool;
+      freeRequest.Tag = existingRecord.Tag;
+    }
+#endif
+
+    Free( freeRequest );
+    return { nullptr, 0 };
+  }
 
   MemoryPoolRegistry& registry = GetMemoryPoolRegistry( );
   AllocationFailureReason reason = AllocationFailureReason::None;
@@ -149,10 +200,10 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
   }
 
 #if BLUE_ENABLE_MEMORY_TRACKING
-  MemoryAllocationRecord tracked = { };
-  if ( UntrackMemoryAllocation( pointer, tracked ) && tracked.ByteSize != 0 )
+  if ( hadExistingRecord )
   {
-    oldSize = tracked.ByteSize;
+    MemoryAllocationRecord removed = { };
+    UntrackMemoryAllocation( pointer, removed );
   }
 
   if ( !HasAllocationFlag( normalizedRequest.Flags, AllocationFlag_NoTracking ) )
@@ -172,15 +223,16 @@ AllocationResult HeapAllocator::Reallocate( void* pointer, Size oldSize, const A
   RecordMemoryReallocation( oldSize, normalizedRequest.ByteSize );
   return { newPointer, normalizedRequest.ByteSize };
 }
+
 void HeapAllocator::Free( const AllocationFreeRequest& request )
 {
-  static_cast< void >( request.Alignment );
   if ( !request.Pointer )
   {
     return;
   }
 
   AllocationFreeRequest effectiveRequest = request;
+
 #if BLUE_ENABLE_MEMORY_TRACKING
   MemoryAllocationRecord tracked = { };
   if ( UntrackMemoryAllocation( request.Pointer, tracked ) )
@@ -195,10 +247,12 @@ void HeapAllocator::Free( const AllocationFreeRequest& request )
   effectiveRequest.Alignment = NormalizeAllocationAlignment( effectiveRequest.Alignment );
 
   MemoryBackend::Free( effectiveRequest.Pointer, effectiveRequest.ByteSize, effectiveRequest.Alignment );
+
   if ( GetMemoryPoolRegistry( ).IsInitialized( ) )
   {
     GetMemoryPoolRegistry( ).RecordFree( effectiveRequest.Pool, effectiveRequest.ByteSize );
   }
+
   RecordMemoryFree( effectiveRequest.ByteSize );
 }
 } // namespace Blue

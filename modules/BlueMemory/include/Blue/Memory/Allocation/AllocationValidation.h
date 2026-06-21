@@ -56,4 +56,19 @@ constexpr AllocationValidationResult ValidateAllocationRequest( const Allocation
 
   return { true, AllocationFailureReason::None };
 }
+
+constexpr AllocationValidationResult ValidateReallocationRequest( const AllocationRequest& request ) noexcept
+{
+  if ( !IsValidAllocationAlignment( request.Alignment ) )
+  {
+    return { false, AllocationFailureReason::InvalidAlignment };
+  }
+
+  if ( !IsValidMemoryPoolId( request.Pool ) )
+  {
+    return { false, AllocationFailureReason::InvalidPool };
+  }
+
+  return { true, AllocationFailureReason::None };
+}
 } // namespace Blue

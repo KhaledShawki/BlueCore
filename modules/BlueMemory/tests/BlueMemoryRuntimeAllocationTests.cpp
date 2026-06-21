@@ -201,3 +201,35 @@ TEST( BlueMemoryRuntimeAllocationTests, NormalizesSmallPowerOfTwoAlignment )
                                                Blue::MemoryPoolId::Test,
                                                Blue::AllocationTag::Test } );
 }
+
+TEST( BlueMemoryRuntimeAllocationTests, HeapReallocateToZeroFreesAllocation )
+{
+  MemorySystemTestScope memory;
+  ASSERT_TRUE( memory.Initialized );
+
+  Blue::Allocator allocator = Blue::GetDefaultAllocator( );
+
+  Blue::AllocationResult allocation =
+    Blue::Allocate( allocator,
+                    BLUE_POOL_ALLOCATION_REQUEST( 64, 16, Blue::AllocationTag::Test, Blue::MemoryPoolId::Test ) );
+
+  ASSERT_NE( allocation.Pointer, nullptr );
+
+  Blue::MemoryPoolStats beforeReallocate = { };
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, beforeReallocate ) );
+  ASSERT_EQ( beforeReallocate.CurrentBytes, 64 );
+
+  Blue::AllocationResult reallocated =
+    Blue::Reallocate( allocator,
+                      allocation.Pointer,
+                      allocation.ByteSize,
+                      BLUE_POOL_ALLOCATION_REQUEST( 0, 16, Blue::AllocationTag::Test, Blue::MemoryPoolId::Test ) );
+
+  EXPECT_EQ( reallocated.Pointer, nullptr );
+  EXPECT_EQ( reallocated.ByteSize, 0 );
+
+  Blue::MemoryPoolStats afterReallocate = { };
+  ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Test, afterReallocate ) );
+  EXPECT_EQ( afterReallocate.CurrentBytes, 0 );
+  EXPECT_EQ( afterReallocate.FreeCount, beforeReallocate.FreeCount + 1 );
+}
