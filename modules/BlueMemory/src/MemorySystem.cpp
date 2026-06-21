@@ -162,6 +162,8 @@ Result InitializeMemorySystem( const MemorySystemDesc& desc )
     return Failure( ResultCode::UnknownFailure );
   }
 
+  registry.SetBudgetEnforcementEnabled( settings.EnableRuntimePoolBudgets );
+
 #if BLUE_MEMORY_ENABLE_TRACKING
   if ( desc.EnableTracking && !InitializeMemoryAllocationTracker( desc.TrackingCapacity ) )
   {
