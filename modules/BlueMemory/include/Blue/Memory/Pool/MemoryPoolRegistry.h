@@ -18,6 +18,9 @@ class BLUE_MEMORY_API MemoryPoolRegistry
   void Shutdown( ) noexcept;
   Bool IsInitialized( ) const noexcept;
 
+  void SetBudgetEnforcementEnabled( Bool enabled ) noexcept;
+  Bool IsBudgetEnforcementEnabled( ) const noexcept;
+
   MemoryPoolState* GetState( MemoryPoolId pool ) noexcept;
   const MemoryPoolState* GetState( MemoryPoolId pool ) const noexcept;
 
@@ -32,6 +35,7 @@ class BLUE_MEMORY_API MemoryPoolRegistry
   private:
   MemoryPoolState m_Pools[ MemoryPoolCount ] = { };
   Bool m_Initialized = false;
+  Bool m_EnforceBudgets = true;
 };
 
 BLUE_MEMORY_API MemoryPoolRegistry& GetMemoryPoolRegistry( ) noexcept;

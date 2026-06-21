@@ -77,6 +77,7 @@ Bool MemoryPoolRegistry::Initialize( const MemoryPoolDesc* descs, Size count ) n
   }
 
   m_Initialized = true;
+  m_EnforceBudgets = true;
   return true;
 }
 
@@ -87,12 +88,23 @@ void MemoryPoolRegistry::Shutdown( ) noexcept
     ResetState( m_Pools[ index ], MemoryPoolDesc{ } );
   }
 
+  m_EnforceBudgets = true;
   m_Initialized = false;
 }
 
 Bool MemoryPoolRegistry::IsInitialized( ) const noexcept
 {
   return m_Initialized;
+}
+
+void MemoryPoolRegistry::SetBudgetEnforcementEnabled( Bool enabled ) noexcept
+{
+  m_EnforceBudgets = enabled;
+}
+
+Bool MemoryPoolRegistry::IsBudgetEnforcementEnabled( ) const noexcept
+{
+  return m_EnforceBudgets;
 }
 
 MemoryPoolState* MemoryPoolRegistry::GetState( MemoryPoolId pool ) noexcept
@@ -114,6 +126,7 @@ const MemoryPoolState* MemoryPoolRegistry::GetState( MemoryPoolId pool ) const n
 
   return &m_Pools[ ToMemoryPoolIndex( pool ) ];
 }
+
 
 Bool MemoryPoolRegistry::TryReserve( MemoryPoolId pool, Size size, AllocationFailureReason& outReason ) noexcept
 {
@@ -144,7 +157,7 @@ Bool MemoryPoolRegistry::TryReserve( MemoryPoolId pool, Size size, AllocationFai
       return false;
     }
 
-    if ( budget != 0 && next > static_cast< Uint64 >( budget ) )
+    if ( m_EnforceBudgets && budget != 0 && next > static_cast< Uint64 >( budget ) )
     {
       state->BudgetExceededCount.FetchAdd( 1, MemoryOrder::Relaxed );
       outReason = AllocationFailureReason::PoolBudgetExceeded;
