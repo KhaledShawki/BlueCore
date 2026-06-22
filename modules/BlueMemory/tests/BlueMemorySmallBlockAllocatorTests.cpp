@@ -76,9 +76,17 @@ TEST( BlueMemorySmallBlockAllocatorTests, RunsSuccessfully )
 #endif
 
   Blue::SmallBlockAllocatorStats finalStats = Blue::GetSmallBlockAllocatorStats( );
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
   ASSERT_TRUE( finalStats.AllocateCount >= initialStats.AllocateCount + 256 );
   ASSERT_TRUE( finalStats.FreeCount >= initialStats.FreeCount + 256 );
   ASSERT_TRUE( finalStats.RefillCount > initialStats.RefillCount );
+#else
+  ASSERT_TRUE( finalStats.AllocateCount == initialStats.AllocateCount );
+  ASSERT_TRUE( finalStats.FreeCount == initialStats.FreeCount );
+  ASSERT_TRUE( finalStats.RefillCount == initialStats.RefillCount );
+  ASSERT_TRUE( finalStats.FailedRefillCount == initialStats.FailedRefillCount );
+#endif
+
   ASSERT_TRUE( finalStats.SlabCount > initialStats.SlabCount );
 
   Blue::AllocationRequest request =

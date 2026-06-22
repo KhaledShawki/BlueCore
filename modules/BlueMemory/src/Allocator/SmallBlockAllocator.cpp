@@ -5,6 +5,7 @@
 #include <Blue/Memory/Allocation/AllocationValidation.h>
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/Backend/MemoryBackend.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/System/Alignment.h>
 #include <Blue/System/Threading/Atomic.h>
 
@@ -33,10 +34,13 @@ SmallBlockSlab s_Slabs[ MaxSmallBlockSlabs ] = { };
 AtomicUint32 s_Initialized( 0 );
 AtomicUint32 s_Generation( 1 );
 AtomicUint32 s_SlabCount( 0 );
+
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
 AtomicUint64 s_AllocateCount( 0 );
 AtomicUint64 s_FreeCount( 0 );
 AtomicUint64 s_RefillCount( 0 );
 AtomicUint64 s_FailedRefillCount( 0 );
+#endif
 
 thread_local SmallBlockThreadCache t_Cache = { };
 
@@ -71,6 +75,7 @@ BLUE_FORCE_INLINE void ResetThreadCacheIfNeeded( ) noexcept
   {
     t_Cache.FreeLists[ index ] = nullptr;
   }
+
   t_Cache.Generation = generation;
 }
 
@@ -87,7 +92,46 @@ BLUE_FORCE_INLINE void* PopBlock( Uint32 classIndex ) noexcept
   {
     t_Cache.FreeLists[ classIndex ] = *static_cast< void** >( pointer );
   }
+
   return pointer;
+}
+
+BLUE_FORCE_INLINE void RecordSmallBlockAllocate( ) noexcept
+{
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
+  s_AllocateCount.FetchAdd( 1, MemoryOrder::Relaxed );
+#endif
+}
+
+BLUE_FORCE_INLINE void RecordSmallBlockFree( ) noexcept
+{
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
+  s_FreeCount.FetchAdd( 1, MemoryOrder::Relaxed );
+#endif
+}
+
+BLUE_FORCE_INLINE void RecordSmallBlockRefill( ) noexcept
+{
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
+  s_RefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
+#endif
+}
+
+BLUE_FORCE_INLINE void RecordSmallBlockFailedRefill( ) noexcept
+{
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
+  s_FailedRefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
+#endif
+}
+
+void ResetSmallBlockStats( ) noexcept
+{
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
+  s_AllocateCount.Store( 0, MemoryOrder::Release );
+  s_FreeCount.Store( 0, MemoryOrder::Release );
+  s_RefillCount.Store( 0, MemoryOrder::Release );
+  s_FailedRefillCount.Store( 0, MemoryOrder::Release );
+#endif
 }
 
 Bool RegisterSlab( void* base, Size classSize ) noexcept
@@ -110,25 +154,26 @@ Bool RefillThreadCache( Uint32 classIndex ) noexcept
   void* slab = MemoryBackend::Allocate( BlueSmallBlockSlabSize, classSize );
   if ( !slab )
   {
-    s_FailedRefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
+    RecordSmallBlockFailedRefill( );
     return false;
   }
 
   if ( !RegisterSlab( slab, classSize ) )
   {
     MemoryBackend::Free( slab, BlueSmallBlockSlabSize, classSize );
-    s_FailedRefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
+    RecordSmallBlockFailedRefill( );
     return false;
   }
 
   const Size blockCount = BlueSmallBlockSlabSize / classSize;
   Byte* cursor = static_cast< Byte* >( slab );
+
   for ( Size index = 0; index < blockCount; ++index )
   {
     PushBlock( classIndex, cursor + index * classSize );
   }
 
-  s_RefillCount.FetchAdd( 1, MemoryOrder::Relaxed );
+  RecordSmallBlockRefill( );
   return true;
 }
 } // namespace
@@ -153,10 +198,7 @@ void ShutdownSmallBlockAllocator( ) noexcept
   }
 
   s_SlabCount.Store( 0, MemoryOrder::Release );
-  s_AllocateCount.Store( 0, MemoryOrder::Release );
-  s_FreeCount.Store( 0, MemoryOrder::Release );
-  s_RefillCount.Store( 0, MemoryOrder::Release );
-  s_FailedRefillCount.Store( 0, MemoryOrder::Release );
+  ResetSmallBlockStats( );
   s_Initialized.Store( 0, MemoryOrder::Release );
   s_Generation.FetchAdd( 1, MemoryOrder::AcquireRelease );
 }
@@ -199,10 +241,11 @@ void* AllocateSmallBlock( Size size, Size alignment ) noexcept
     {
       return nullptr;
     }
+
     pointer = PopBlock( classIndex );
   }
 
-  s_AllocateCount.FetchAdd( 1, MemoryOrder::Relaxed );
+  RecordSmallBlockAllocate( );
   return pointer;
 }
 
@@ -230,7 +273,7 @@ void FreeSmallBlock( void* pointer, Size size, Size alignment ) noexcept
 
   ResetThreadCacheIfNeeded( );
   PushBlock( classIndex, pointer );
-  s_FreeCount.FetchAdd( 1, MemoryOrder::Relaxed );
+  RecordSmallBlockFree( );
 }
 
 SmallBlockAllocatorStats GetSmallBlockAllocatorStats( ) noexcept
@@ -238,10 +281,14 @@ SmallBlockAllocatorStats GetSmallBlockAllocatorStats( ) noexcept
   SmallBlockAllocatorStats stats = { };
   stats.SlabCount = s_SlabCount.Load( MemoryOrder::Acquire );
   stats.SlabBytes = stats.SlabCount * BlueSmallBlockSlabSize;
+
+#if BLUE_MEMORY_ENABLE_SMALL_BLOCK_STATS
   stats.AllocateCount = s_AllocateCount.Load( MemoryOrder::Acquire );
   stats.FreeCount = s_FreeCount.Load( MemoryOrder::Acquire );
   stats.RefillCount = s_RefillCount.Load( MemoryOrder::Acquire );
   stats.FailedRefillCount = s_FailedRefillCount.Load( MemoryOrder::Acquire );
+#endif
+
   return stats;
 }
 } // namespace Blue
