@@ -1,5 +1,6 @@
 #include <Blue/Memory/Allocator/SmallBlockAllocator.h>
 #include <Blue/Memory/BlueNew.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
@@ -42,8 +43,10 @@ TEST( BlueMemorySmallBlockAllocatorTests, RunsSuccessfully )
   Blue::SmallBlockAllocatorStats initialStats = Blue::GetSmallBlockAllocatorStats( );
   SmallRendererObject* objects[ 256 ] = { };
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats before = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, before ) );
+#endif
 
   for ( Blue::Size index = 0; index < 256; ++index )
   {
@@ -53,20 +56,24 @@ TEST( BlueMemorySmallBlockAllocatorTests, RunsSuccessfully )
     ASSERT_TRUE( ( reinterpret_cast< Blue::NativeUInt >( objects[ index ] ) % alignof( SmallRendererObject ) ) == 0 );
   }
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats during = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, during ) );
   ASSERT_TRUE( during.CurrentBytes == before.CurrentBytes + sizeof( SmallRendererObject ) * 256 );
   ASSERT_TRUE( during.AllocationCount == before.AllocationCount + 256 );
+#endif
 
   for ( Blue::Size index = 0; index < 256; ++index )
   {
     Blue::BlueDelete( objects[ index ] );
   }
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   Blue::MemoryPoolStats after = { };
   ASSERT_TRUE( Blue::CaptureMemoryPoolStats( Blue::MemoryPoolId::Renderer, after ) );
   ASSERT_TRUE( after.CurrentBytes == before.CurrentBytes );
   ASSERT_TRUE( after.FreeCount == before.FreeCount + 256 );
+#endif
 
   Blue::SmallBlockAllocatorStats finalStats = Blue::GetSmallBlockAllocatorStats( );
   ASSERT_TRUE( finalStats.AllocateCount >= initialStats.AllocateCount + 256 );
