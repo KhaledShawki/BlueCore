@@ -1,7 +1,7 @@
 local benchmarkRoot = "third_party/benchmark"
 
 if not os.isfile(path.join(BLUE_ROOT, benchmarkRoot, "include/benchmark/benchmark.h")) then
-    error("Google Benchmark submodule is missing. Run: git submodule update --init --recursive third_party/googlebenchmark")
+    error("Google Benchmark submodule is missing. Run: git submodule update --init --recursive third_party/benchmark")
 end
 
 local benchmarkSources = {
@@ -20,12 +20,22 @@ local benchmarkSources = {
     "src/json_reporter.cc",
     "src/perf_counters.cc",
     "src/reporter.cc",
-    "src/sleep.cc",
     "src/statistics.cc",
     "src/string_util.cc",
     "src/sysinfo.cc",
     "src/timers.cc",
 }
+
+local function add_required_source(files, source)
+    local rootRelativePath = path.join(benchmarkRoot, source)
+    local absolutePath = path.join(BLUE_ROOT, rootRelativePath)
+
+    if not os.isfile(absolutePath) then
+        error("Required Google Benchmark source is missing: " .. rootRelativePath)
+    end
+
+    table.insert(files, rootRelativePath)
+end
 
 local benchmarkFiles = {
     path.join(benchmarkRoot, "include/benchmark/benchmark.h"),
@@ -33,7 +43,7 @@ local benchmarkFiles = {
 }
 
 for _, source in ipairs(benchmarkSources) do
-    table.insert(benchmarkFiles, path.join(benchmarkRoot, source))
+    add_required_source(benchmarkFiles, source)
 end
 
 bb.module {
