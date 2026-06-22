@@ -1,5 +1,6 @@
 #include <Blue/Memory/Backend/MemoryBackend.h>
 #include <Blue/Memory/BlueNew.h>
+#include <Blue/Memory/Config/BlueMemoryConfig.h>
 #include <Blue/Memory/Invoker/RuntimeAllocationInvoker.h>
 #include <Blue/Memory/MemorySystem.h>
 #include <Blue/Memory/Pool/MemoryPoolRegistry.h>
@@ -93,6 +94,7 @@ static void BlueMemoryContract_PoolStatsAreZeroAfterInitialization( )
   CheckPoolStatsAreZero( Blue::MemoryPoolId::Test );
 }
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
 static void BlueMemoryContract_TypedAllocationUpdatesPoolStats( )
 {
   Blue::MemoryPoolStats before = { };
@@ -171,6 +173,7 @@ static void BlueMemoryContract_RuntimeAllocationUpdatesSelectedPoolStats( )
   ASSERT_TRUE( afterFree.BudgetExceededCount == before.BudgetExceededCount );
   ASSERT_TRUE( afterFree.PeakBytes >= afterAllocate.CurrentBytes );
 }
+#endif
 
 static void BlueMemoryContract_InvalidSizeFails( )
 {
@@ -242,9 +245,11 @@ TEST( BlueMemoryContractTests, RunsSuccessfully )
 
   BlueMemoryContract_PoolStatsAreZeroAfterInitialization( );
 
+#if BLUE_MEMORY_ENABLE_POOL_ACCOUNTING
   BlueMemoryContract_TypedAllocationUpdatesPoolStats( );
 
   BlueMemoryContract_RuntimeAllocationUpdatesSelectedPoolStats( );
+#endif
 
   BlueMemoryContract_InvalidSizeFails( );
 

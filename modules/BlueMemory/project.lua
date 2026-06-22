@@ -156,6 +156,7 @@ bb.module_tests {
         "BlueMemoryInvokerTests",
         "BlueMemoryRuntimeAllocationTests",
         "BlueMemoryRuntimeSettingsTests",
+        "BlueMemoryShippingHotPathTests",
         "BlueMemorySmallBlockAllocatorTests",
         "BlueMemoryTrackingTests",
     },
