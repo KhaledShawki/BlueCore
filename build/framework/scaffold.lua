@@ -145,6 +145,30 @@ local function test_source_content()
     }, "\n")
 end
 
+local function benchmark_source_content()
+    return license_header() .. table.concat({
+        "#include <benchmark/benchmark.h>",
+        "",
+        "",
+        "namespace",
+        "{",
+        "void BM_Placeholder( benchmark::State& state )",
+        "{",
+        "  for ( auto _ : state )",
+        "  {",
+        "    benchmark::DoNotOptimize( state.iterations( ) );",
+        "  }",
+        "}",
+        "} // namespace",
+        "",
+        "",
+        "BENCHMARK( BM_Placeholder );",
+        "",
+        "BENCHMARK_MAIN( );",
+        "",
+    }, "\n")
+end
+
 local function project_template(projectName, root, projectType)
     if projectType == "library" then
         return table.concat({
@@ -280,6 +304,10 @@ local function manifest_file_content(projectName, projectRelativeFile)
 
     if projectRelativeFile:match("^tests/.+%.cpp$") then
         return test_source_content()
+    end
+
+    if projectRelativeFile:match("^benchmarks/.+%.cpp$") then
+        return benchmark_source_content()
     end
 
     if projectRelativeFile:match("%.c$") or projectRelativeFile:match("%.cpp$") or projectRelativeFile:match("%.cxx$") or projectRelativeFile:match("%.cc$") then

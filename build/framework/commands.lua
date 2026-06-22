@@ -109,11 +109,12 @@ local function with_prefix(prefix, value)
     return prefix .. "/" .. value
 end
 
-local function normalize_test_name(value)
+local function normalize_named_target(value, folderName, label)
     local normalized = normalize_project_relative_path(value)
 
-    if normalized:sub(1, 6) == "tests/" then
-        normalized = normalized:sub(7)
+    local folderPrefix = folderName .. "/"
+    if normalized:sub(1, #folderPrefix) == folderPrefix then
+        normalized = normalized:sub(#folderPrefix + 1)
     end
 
     normalized = normalized:gsub("%.cpp$", "")
@@ -121,19 +122,28 @@ local function normalize_test_name(value)
     normalized = normalized:gsub("%.cxx$", "")
 
     if normalized == "" then
-        error("Test name must not be empty")
+        error(label .. " name must not be empty")
     end
 
     if normalized:find("/") then
-        error("Test name must not contain directories: " .. value)
+        error(label .. " name must not contain directories: " .. value)
     end
 
     if not normalized:match("^[A-Za-z_][A-Za-z0-9_]*$") then
-        error("Invalid test name: " .. normalized)
+        error("Invalid " .. label .. " name: " .. normalized)
     end
 
     return normalized
 end
+
+local function normalize_test_name(value)
+    return normalize_named_target(value, "tests", "Test")
+end
+
+local function normalize_benchmark_name(value)
+    return normalize_named_target(value, "benchmarks", "Benchmark")
+end
+
 
 local function classify_file(projectName, kind, value)
     local normalizedKind = tostring(kind or ""):lower():gsub("_", "-")
@@ -180,6 +190,12 @@ local function classify_file(projectName, kind, value)
         sectionPath = { "tests" }
         category = "tests"
         manifestEntry = testName
+    elseif normalizedKind == "benchmark" or normalizedKind == "benchmarks" or normalizedKind == "bench" or normalizedKind == "perf" then
+        local benchmarkName = normalize_benchmark_name(relative)
+        relative = "benchmarks/" .. benchmarkName .. ".cpp"
+        sectionPath = { "benchmarks" }
+        category = "benchmarks"
+        manifestEntry = benchmarkName
     else
         error("Unsupported file kind: " .. tostring(kind))
     end
