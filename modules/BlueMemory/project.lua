@@ -161,3 +161,38 @@ bb.module_tests {
         "BlueMemoryTrackingTests",
     },
 }
+
+bb.module_benchmarks {
+    module = "BlueMemory",
+    root = "modules/BlueMemory",
+
+    deps = {
+        "BlueMemory",
+        "BlueSystem",
+        "benchmark",
+    },
+
+    platform = {
+        windows = {
+            private_links = {
+                "kernel32",
+            },
+        },
+        linux = {
+            private_links = {
+                "pthread",
+                "dl",
+                "rt",
+            },
+        },
+        macosx = {
+            private_links = {
+                "pthread",
+            },
+        },
+    },
+
+    benchmarks = {
+        "BlueMemoryHotPathBenchmarks",
+    },
+}

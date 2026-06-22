@@ -5,6 +5,8 @@ bb.registry = bb.registry or {
     tests = {},
     tests_by_name = {},
     test_runner_emitted = false,
+    benchmarks = {},
+    benchmarks_by_name = {},
 }
 
 function bb.registry_has_node(name)

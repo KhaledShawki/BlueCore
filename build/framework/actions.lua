@@ -125,6 +125,24 @@ function bb.load_actions()
         end
     }
 
+
+    newaction {
+        trigger = "list-benchmarks",
+        description = "List registered Blue benchmark executables",
+        execute = function()
+            bb.print_registered_benchmarks()
+        end
+    }
+
+    newaction {
+        trigger = "benchmark-metadata",
+        description = "Generate Blue registered benchmark metadata",
+        execute = function()
+            bb.generate_benchmark_manifest("generated/benchmarks/BlueBenchmarks.json")
+            bb.log.info("Benchmark metadata generated")
+        end
+    }
+
     newaction {
         trigger = "list-format-files",
         description = "List C/C++ files included in Blue formatting",

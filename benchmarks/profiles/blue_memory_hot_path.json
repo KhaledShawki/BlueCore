@@ -1,0 +1,83 @@
+{
+  "name": "blue_memory_hot_path",
+  "title": "BlueMemory hot-path benchmarks",
+  "unitLabel": "CPU time per operation pair (ns)",
+  "batchSize": 1024,
+  "caseUnitSuffix": "B",
+  "caseOrder": [
+    "16 B",
+    "64 B",
+    "128 B",
+    "256 B",
+    "512 B",
+    "Small object",
+    "Medium object"
+  ],
+  "implementationOrder": [
+    "Blue runtime",
+    "std::operator new/delete",
+    "BlueNew",
+    "new/delete",
+    "Blue small block",
+    "Blue small block batch"
+  ],
+  "benchmarks": {
+    "RuntimeAllocateFree": {
+      "label": "Blue runtime alloc/free",
+      "implementation": "Blue runtime",
+      "caseFromArgument": true,
+      "comparisons": ["config", "backend", "implementation"],
+      "order": 10
+    },
+    "StdOperatorNewDelete": {
+      "label": "std::operator new/delete",
+      "implementation": "std::operator new/delete",
+      "caseFromArgument": true,
+      "comparisons": ["config", "implementation"],
+      "order": 20
+    },
+    "BlueTryNewDeleteSmallObject": {
+      "label": "BlueNew small object",
+      "implementation": "BlueNew",
+      "case": "Small object",
+      "comparisons": ["config", "backend", "implementation"],
+      "order": 30
+    },
+    "StdNewDeleteSmallObject": {
+      "label": "new/delete small object",
+      "implementation": "new/delete",
+      "case": "Small object",
+      "comparisons": ["config", "implementation"],
+      "order": 40
+    },
+    "BlueTryNewDeleteMediumObject": {
+      "label": "BlueNew medium object",
+      "implementation": "BlueNew",
+      "case": "Medium object",
+      "comparisons": ["config", "backend", "implementation"],
+      "order": 50
+    },
+    "StdNewDeleteMediumObject": {
+      "label": "new/delete medium object",
+      "implementation": "new/delete",
+      "case": "Medium object",
+      "comparisons": ["config", "implementation"],
+      "order": 60
+    },
+    "SmallBlockAllocateFree": {
+      "label": "Small block alloc/free",
+      "implementation": "Blue small block",
+      "caseFromArgument": true,
+      "comparisons": ["config", "backend", "implementation"],
+      "order": 70
+    },
+    "SmallBlockBatchAllocateFree": {
+      "label": "Small block batch",
+      "implementation": "Blue small block batch",
+      "caseFromArgument": true,
+      "normalizeBy": "batchSize",
+      "comparisons": ["config", "backend"],
+      "order": 80
+    }
+  }
+}

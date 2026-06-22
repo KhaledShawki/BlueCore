@@ -77,7 +77,7 @@ function bb.load_options()
     newoption {
         trigger = "blue-kind",
         value = "KIND",
-        description = "File kind used by Blue file commands: source, public-header, private-header, windows-source, linux-source, macos-source, or posix-source."
+        description = "File kind used by Blue file commands: source, public-header, private-header, windows-source, linux-source, macos-source, posix-source, test, or benchmark."
     }
 
     newoption {
