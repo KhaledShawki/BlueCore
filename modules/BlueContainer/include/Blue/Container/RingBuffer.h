@@ -8,7 +8,7 @@ namespace Blue
 template< typename T, Size CapacityValue >
 class FixedRingBuffer
 {
-  public:
+public:
   bool Push( const T& value )
   {
     if ( m_Count == CapacityValue )
@@ -41,7 +41,7 @@ class FixedRingBuffer
 
   bool Full( ) const { return m_Count == CapacityValue; }
 
-  private:
+private:
   T m_Items[ CapacityValue ] = { };
   Size m_Head = 0;
   Size m_Tail = 0;

@@ -10,7 +10,7 @@ namespace Blue
 template< typename T >
 class DynamicArray
 {
-  public:
+public:
   explicit DynamicArray( Allocator allocator )
       : m_Data( nullptr )
       , m_Size( 0 )
@@ -118,7 +118,7 @@ class DynamicArray
 
   bool Empty( ) const { return m_Size == 0; }
 
-  private:
+private:
   T* m_Data;
   Size m_Size;
   Size m_Capacity;

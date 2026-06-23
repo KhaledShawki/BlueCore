@@ -17,7 +17,7 @@ struct JobDesc
 
 class BLUE_JOB_SYSTEM_API JobSystem
 {
-  public:
+public:
   bool Initialize( Allocator allocator, Uint32 workerCount );
   void Shutdown( );
 
@@ -25,7 +25,7 @@ class BLUE_JOB_SYSTEM_API JobSystem
   void ExecutePendingJobsOnCurrentThread( );
   bool IsInitialized( ) const;
 
-  private:
+private:
   FixedRingBuffer< JobDesc, 4096 > m_Queue;
   Allocator m_Allocator{ };
   Uint32 m_WorkerCount = 0;

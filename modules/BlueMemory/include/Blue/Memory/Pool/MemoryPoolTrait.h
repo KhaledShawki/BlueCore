@@ -11,7 +11,7 @@ struct MemoryPoolTrait
 };
 
 #define BLUE_USE_MEMORY_POOL( PoolName )                                                                               \
-  public:                                                                                                              \
+public:                                                                                                                \
   static constexpr ::Blue::MemoryPoolId BlueMemoryPoolIdValue = ::Blue::MemoryPoolId::PoolName;                        \
   static constexpr ::Blue::MemoryPoolId GetMemoryPoolId( ) noexcept                                                    \
   {                                                                                                                    \

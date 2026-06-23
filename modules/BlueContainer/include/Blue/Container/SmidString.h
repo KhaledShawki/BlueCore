@@ -8,7 +8,7 @@ namespace Blue
 {
 class BLUE_CONTAINER_API SmidString
 {
-  public:
+public:
   static constexpr Size InlineCapacity = 23;
 
   explicit SmidString( Allocator allocator );
@@ -32,7 +32,7 @@ class BLUE_CONTAINER_API SmidString
   bool Append( const char* text, Size size );
   StringView View( ) const;
 
-  private:
+private:
   union Storage
   {
     char Inline[ InlineCapacity + 1 ];

@@ -64,73 +64,81 @@ end
 
 local function api_header_content(projectName)
     local suffix = bb.get_module_define_suffix(projectName)
-    return license_header() .. table.concat({
-        "#pragma once",
-        "",
-        "#if defined( _WIN32 ) || defined( __CYGWIN__ )",
-        "#\tdefine " .. suffix .. "_API_EXPORT __declspec( dllexport )",
-        "#\tdefine " .. suffix .. "_API_IMPORT __declspec( dllimport )",
-        "#elif defined( __GNUC__ ) || defined( __clang__ )",
-        "#\tdefine " .. suffix .. "_API_EXPORT __attribute__( ( visibility( \"default\" ) ) )",
-        "#\tdefine " .. suffix .. "_API_IMPORT __attribute__( ( visibility( \"default\" ) ) )",
-        "#else",
-        "#\tdefine " .. suffix .. "_API_EXPORT",
-        "#\tdefine " .. suffix .. "_API_IMPORT",
-        "#endif",
-        "",
-        "#if defined( BLUE_SHARED_LIBRARY )",
-        "#\tif defined( " .. bb.get_module_build_define(projectName) .. " ) || defined( " .. bb.get_module_export_define(projectName) .. " )",
-        "#\t\tdefine " .. suffix .. "_API " .. suffix .. "_API_EXPORT",
-        "#\telse",
-        "#\t\tdefine " .. suffix .. "_API " .. suffix .. "_API_IMPORT",
-        "#\tendif",
-        "#else",
-        "#\tdefine " .. suffix .. "_API",
-        "#endif",
-        "",
-        "",
-    }, "\n")
+    return license_header()
+        .. table.concat({
+            "#pragma once",
+            "",
+            "#if defined( _WIN32 ) || defined( __CYGWIN__ )",
+            "#\tdefine " .. suffix .. "_API_EXPORT __declspec( dllexport )",
+            "#\tdefine " .. suffix .. "_API_IMPORT __declspec( dllimport )",
+            "#elif defined( __GNUC__ ) || defined( __clang__ )",
+            "#\tdefine " .. suffix .. '_API_EXPORT __attribute__( ( visibility( "default" ) ) )',
+            "#\tdefine " .. suffix .. '_API_IMPORT __attribute__( ( visibility( "default" ) ) )',
+            "#else",
+            "#\tdefine " .. suffix .. "_API_EXPORT",
+            "#\tdefine " .. suffix .. "_API_IMPORT",
+            "#endif",
+            "",
+            "#if defined( BLUE_SHARED_LIBRARY )",
+            "#\tif defined( "
+                .. bb.get_module_build_define(projectName)
+                .. " ) || defined( "
+                .. bb.get_module_export_define(projectName)
+                .. " )",
+            "#\t\tdefine " .. suffix .. "_API " .. suffix .. "_API_EXPORT",
+            "#\telse",
+            "#\t\tdefine " .. suffix .. "_API " .. suffix .. "_API_IMPORT",
+            "#\tendif",
+            "#else",
+            "#\tdefine " .. suffix .. "_API",
+            "#endif",
+            "",
+            "",
+        }, "\n")
 end
 
 local function public_header_content(projectName)
-    return license_header() .. table.concat({
-        "#pragma once",
-        "",
-        include_guard_path(projectName, projectName .. "Api.h"),
-        "",
-        "",
-    }, "\n")
+    return license_header()
+        .. table.concat({
+            "#pragma once",
+            "",
+            include_guard_path(projectName, projectName .. "Api.h"),
+            "",
+            "",
+        }, "\n")
 end
 
 local function private_header_content(projectName)
-    return license_header() .. table.concat({
-        "#pragma once",
-        "",
-        include_guard_path(projectName, projectName .. ".h"),
-        "",
-        "",
-    }, "\n")
+    return license_header()
+        .. table.concat({
+            "#pragma once",
+            "",
+            include_guard_path(projectName, projectName .. ".h"),
+            "",
+            "",
+        }, "\n")
 end
 
 local function pch_header_content(projectName)
-    return license_header() .. table.concat({
-        "#pragma once",
-        "",
-        "#include \"" .. projectName .. "Private.h\"",
-        "",
-        "#include <stddef.h>",
-        "#include <stdint.h>",
-        "",
-        "",
-    }, "\n")
+    return license_header()
+        .. table.concat({
+            "#pragma once",
+            "",
+            '#include "' .. projectName .. 'Private.h"',
+            "",
+            "#include <stddef.h>",
+            "#include <stdint.h>",
+            "",
+            "",
+        }, "\n")
 end
 
 local function pch_source_content()
-    return license_header() .. "#include \"Pch.h\"\n"
+    return license_header() .. '#include "Pch.h"\n'
 end
 
 local function cpp_source_content()
-    return license_header() .. "#include \"Pch.h\"\n"
+    return license_header() .. '#include "Pch.h"\n'
 end
 
 local function plain_header_content()
@@ -146,51 +154,52 @@ local function test_source_content()
 end
 
 local function benchmark_source_content()
-    return license_header() .. table.concat({
-        "#include <benchmark/benchmark.h>",
-        "",
-        "",
-        "namespace",
-        "{",
-        "void BM_Placeholder( benchmark::State& state )",
-        "{",
-        "  for ( auto _ : state )",
-        "  {",
-        "    benchmark::DoNotOptimize( state.iterations( ) );",
-        "  }",
-        "}",
-        "} // namespace",
-        "",
-        "",
-        "BENCHMARK( BM_Placeholder );",
-        "",
-        "BENCHMARK_MAIN( );",
-        "",
-    }, "\n")
+    return license_header()
+        .. table.concat({
+            "#include <benchmark/benchmark.h>",
+            "",
+            "",
+            "namespace",
+            "{",
+            "void BM_Placeholder( benchmark::State& state )",
+            "{",
+            "  for ( auto _ : state )",
+            "  {",
+            "    benchmark::DoNotOptimize( state.iterations( ) );",
+            "  }",
+            "}",
+            "} // namespace",
+            "",
+            "",
+            "BENCHMARK( BM_Placeholder );",
+            "",
+            "BENCHMARK_MAIN( );",
+            "",
+        }, "\n")
 end
 
 local function project_template(projectName, root, projectType)
     if projectType == "library" then
         return table.concat({
             "bb.module {",
-            "    name = \"" .. projectName .. "\",",
-            "    type = \"library\",",
-            "    linkage = \"auto\",",
-            "    root = \"" .. root .. "\",",
+            '    name = "' .. projectName .. '",',
+            '    type = "library",',
+            '    linkage = "auto",',
+            '    root = "' .. root .. '",',
             "",
             "    files = {",
             "        public_headers = {",
-            "            \"include/" .. projectName .. "/" .. projectName .. ".h\",",
-            "            \"include/" .. projectName .. "/" .. projectName .. "Api.h\",",
+            '            "include/' .. projectName .. "/" .. projectName .. '.h",',
+            '            "include/' .. projectName .. "/" .. projectName .. 'Api.h",',
             "        },",
             "",
             "        private_headers = {",
-            "            \"src/" .. projectName .. "Private.h\",",
-            "            \"src/Pch.h\",",
+            '            "src/' .. projectName .. 'Private.h",',
+            '            "src/Pch.h",',
             "        },",
             "",
             "        sources = {",
-            "            \"src/Pch.cpp\",",
+            '            "src/Pch.cpp",',
             "        },",
             "",
             "        platform = {",
@@ -218,18 +227,18 @@ local function project_template(projectName, root, projectType)
 
     return table.concat({
         "bb.module {",
-        "    name = \"" .. projectName .. "\",",
-        "    type = \"executable\",",
-        "    root = \"" .. root .. "\",",
+        '    name = "' .. projectName .. '",',
+        '    type = "executable",',
+        '    root = "' .. root .. '",',
         "",
         "    files = {",
         "        private_headers = {",
-        "            \"src/Pch.h\",",
+        '            "src/Pch.h",',
         "        },",
         "",
         "        sources = {",
-        "            \"src/Pch.cpp\",",
-        "            \"src/Main.cpp\",",
+        '            "src/Pch.cpp",',
+        '            "src/Main.cpp",',
         "        },",
         "    },",
         "}",
@@ -268,7 +277,8 @@ local function create_project_files(projectName, root, projectType)
         files[path.join(root, "src", "Main.cpp")] = cpp_source_content()
     end
 
-    files[path.join(root, "src", "Pch.h")] = projectType == "library" and pch_header_content(projectName) or plain_header_content()
+    files[path.join(root, "src", "Pch.h")] = projectType == "library" and pch_header_content(projectName)
+        or plain_header_content()
     files[path.join(root, "src", "Pch.cpp")] = pch_source_content()
 
     for relative, content in pairs(files) do
@@ -310,11 +320,20 @@ local function manifest_file_content(projectName, projectRelativeFile)
         return benchmark_source_content()
     end
 
-    if projectRelativeFile:match("%.c$") or projectRelativeFile:match("%.cpp$") or projectRelativeFile:match("%.cxx$") or projectRelativeFile:match("%.cc$") then
+    if
+        projectRelativeFile:match("%.c$")
+        or projectRelativeFile:match("%.cpp$")
+        or projectRelativeFile:match("%.cxx$")
+        or projectRelativeFile:match("%.cc$")
+    then
         return cpp_source_content()
     end
 
-    if projectRelativeFile:match("%.h$") or projectRelativeFile:match("%.hpp$") or projectRelativeFile:match("%.inl$") then
+    if
+        projectRelativeFile:match("%.h$")
+        or projectRelativeFile:match("%.hpp$")
+        or projectRelativeFile:match("%.inl$")
+    then
         return plain_header_content()
     end
 
@@ -352,7 +371,10 @@ function bb.scaffold.create_project(projectName, root, projectType, linkage)
 
     bb.log.info("Scaffolding missing " .. projectType .. " project: " .. root)
     create_project_files(projectName, root, projectType)
-    bb.fs.write_file(absoluteProjectFile, project_template(projectName, root, projectType):gsub('linkage = "auto"', 'linkage = "' .. linkage .. '"'))
+    bb.fs.write_file(
+        absoluteProjectFile,
+        project_template(projectName, root, projectType):gsub('linkage = "auto"', 'linkage = "' .. linkage .. '"')
+    )
     bb.log.info("Created " .. projectFile)
     return true
 end
@@ -370,7 +392,11 @@ function bb.scaffold.ensure_included_project(reference)
     end
 
     if not bb.scaffold.is_enabled() then
-        error("Included project does not exist: " .. projectFile .. "\nRun with --blue-scaffold to create missing included projects from Blue templates.")
+        error(
+            "Included project does not exist: "
+                .. projectFile
+                .. "\nRun with --blue-scaffold to create missing included projects from Blue templates."
+        )
     end
 
     if os.isdir(path.join(BLUE_ROOT, root)) and not is_empty_directory(root) then
@@ -391,7 +417,13 @@ function bb.scaffold.create_manifest_file(desc, rootRelativeFile, projectRelativ
     end
 
     if not bb.scaffold.is_enabled() then
-        error("Project '" .. desc.name .. "' lists missing file: " .. rootRelativeFile .. "\nRun with --blue-scaffold to create missing listed files from Blue templates.")
+        error(
+            "Project '"
+                .. desc.name
+                .. "' lists missing file: "
+                .. rootRelativeFile
+                .. "\nRun with --blue-scaffold to create missing listed files from Blue templates."
+        )
     end
 
     return bb.scaffold.create_authored_file(desc, rootRelativeFile, projectRelativeFile, category)

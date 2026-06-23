@@ -64,7 +64,8 @@ local function has_shared_platforms(workspaceDesc)
 end
 
 local function project_file_path(project)
-    local location = project.location or path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. project.name)
+    local location = project.location
+        or path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. project.name)
     local filename = project.filename or project.name
     return path.join(location, filename .. ".vcxproj")
 end
@@ -78,7 +79,9 @@ local function normalize_vcxproj_ide_version(projectFile, required)
         return false
     end
 
-    local projectVersion = bb.get_effective_visual_studio_project_version and bb.get_effective_visual_studio_project_version() or nil
+    local projectVersion = bb.get_effective_visual_studio_project_version
+            and bb.get_effective_visual_studio_project_version()
+        or nil
     if not projectVersion then
         return false
     end
@@ -87,7 +90,10 @@ local function normalize_vcxproj_ide_version(projectFile, required)
     local updated = content
     local replacements = 0
 
-    updated, replacements = updated:gsub("<VCProjectVersion>[^<]+</VCProjectVersion>", "<VCProjectVersion>" .. projectVersion .. "</VCProjectVersion>")
+    updated, replacements = updated:gsub(
+        "<VCProjectVersion>[^<]+</VCProjectVersion>",
+        "<VCProjectVersion>" .. projectVersion .. "</VCProjectVersion>"
+    )
 
     if replacements == 0 then
         updated, replacements = updated:gsub(
@@ -130,7 +136,10 @@ local function build_project_configuration_mappings(workspaceDesc)
             local solutionPair = buildProfile .. "|" .. sharedPlatform
             local projectBuildType = buildProfile .. " " .. sharedPlatform
 
-            table.insert(lines, '    <BuildType Solution="' .. solutionPair .. '" Project="' .. projectBuildType .. '" />')
+            table.insert(
+                lines,
+                '    <BuildType Solution="' .. solutionPair .. '" Project="' .. projectBuildType .. '" />'
+            )
             table.insert(lines, '    <Platform Solution="' .. solutionPair .. '" Project="x64" />')
         end
     end
@@ -140,11 +149,11 @@ end
 
 local function project_has_custom_mapping(projectBody, workspaceDesc)
     for _, sharedPlatform in ipairs(get_shared_platforms(workspaceDesc)) do
-        if projectBody:find('<BuildType[^>]-Solution="[^\"]*|' .. escape_lua_pattern(sharedPlatform) .. '"') then
+        if projectBody:find('<BuildType[^>]-Solution="[^"]*|' .. escape_lua_pattern(sharedPlatform) .. '"') then
             return true
         end
 
-        if projectBody:find('<Platform[^>]-Solution="[^\"]*|' .. escape_lua_pattern(sharedPlatform) .. '"') then
+        if projectBody:find('<Platform[^>]-Solution="[^"]*|' .. escape_lua_pattern(sharedPlatform) .. '"') then
             return true
         end
     end
@@ -203,13 +212,17 @@ local function normalize_slnx_project_mappings(workspaceDesc)
         return add_project_mapping_to_self_closing_project(projectTag, workspaceDesc)
     end)
 
-    updated, count = updated:gsub("(<Project [^>]->)(.-)(</Project>)", function(projectOpenTag, projectBody, projectCloseTag)
-        local normalized = add_project_mapping_to_open_project(projectOpenTag, projectBody, projectCloseTag, workspaceDesc)
-        if normalized ~= projectOpenTag .. projectBody .. projectCloseTag then
-            replacements = replacements + 1
+    updated, count = updated:gsub(
+        "(<Project [^>]->)(.-)(</Project>)",
+        function(projectOpenTag, projectBody, projectCloseTag)
+            local normalized =
+                add_project_mapping_to_open_project(projectOpenTag, projectBody, projectCloseTag, workspaceDesc)
+            if normalized ~= projectOpenTag .. projectBody .. projectCloseTag then
+                replacements = replacements + 1
+            end
+            return normalized
         end
-        return normalized
-    end)
+    )
 
     if replacements == 0 then
         return false

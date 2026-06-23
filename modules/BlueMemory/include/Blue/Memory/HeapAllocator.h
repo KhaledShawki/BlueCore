@@ -8,7 +8,7 @@ namespace Blue
 {
 class BLUE_MEMORY_API HeapAllocator
 {
-  public:
+public:
   AllocationResult Allocate( const AllocationRequest& request );
   AllocationResult Reallocate( void* pointer, Size oldSize, const AllocationRequest& request );
   void Free( const AllocationFreeRequest& request );

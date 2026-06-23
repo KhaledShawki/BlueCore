@@ -44,19 +44,19 @@ function bb.workspace(desc)
     bb.visual_studio.install_slnx_platform_axis_mapping(desc)
 
     workspace(desc.name)
-        location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none")))
-        startproject(_OPTIONS["blue-startup"] or desc.startproject or "")
-        configurations(desc.configurations)
-        platforms(desc.platforms)
-        defaultplatform("x64")
-        language "C++"
-        cppdialect(desc.cppdialect or "C++20")
-        staticruntime "Off"
-        targetdir(path.join(BLUE_ROOT, "out/bin/%{cfg.system}/%{cfg.platform}/%{cfg.buildcfg}"))
-        objdir(path.join(BLUE_ROOT, "out/obj/%{cfg.system}/%{cfg.platform}/%{cfg.buildcfg}/%{prj.name}"))
+    location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none")))
+    startproject(_OPTIONS["blue-startup"] or desc.startproject or "")
+    configurations(desc.configurations)
+    platforms(desc.platforms)
+    defaultplatform("x64")
+    language("C++")
+    cppdialect(desc.cppdialect or "C++20")
+    staticruntime("Off")
+    targetdir(path.join(BLUE_ROOT, "out/bin/%{cfg.system}/%{cfg.platform}/%{cfg.buildcfg}"))
+    objdir(path.join(BLUE_ROOT, "out/obj/%{cfg.system}/%{cfg.platform}/%{cfg.buildcfg}/%{prj.name}"))
 
     bb.apply_platforms()
     bb.apply_profiles()
     bb.apply_toolchains()
-    filter {}
+    filter({})
 end

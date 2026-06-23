@@ -1,5 +1,5 @@
 function bb.load_options()
-    newoption {
+    newoption({
         trigger = "toolchain",
         value = "TOOLCHAIN",
         description = "Select compiler toolchain",
@@ -9,10 +9,10 @@ function bb.load_options()
             { "msvc", "Microsoft Visual C++" },
             { "clang", "Clang / Apple Clang" },
             { "gcc", "GNU GCC" },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-platforms",
         value = "SET",
         description = "Select target OS/platform set. Auto picks the host/generator-safe target. Visual Studio uses canonical x64.",
@@ -23,10 +23,10 @@ function bb.load_options()
             { "windows", "Generate Windows x64 only" },
             { "linux", "Generate Linux x64 only" },
             { "macos", "Generate macOS Universal only" },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-build-platforms",
         value = "SET",
         description = "Select Blue build linkage platform set. Ninja currently supports x64 only; Visual Studio/gmake2 can generate x64 and x64_DLL.",
@@ -36,69 +36,69 @@ function bb.load_options()
             { "all", "Generate every declared Blue build platform." },
             { "x64", "Generate static x64 builds only." },
             { "x64_DLL", "Generate shared-library x64 builds only where supported." },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "macos-deployment-target",
         value = "VERSION",
         description = "Minimum macOS deployment target used by clang/Ninja builds.",
-        default = "11.0"
-    }
+        default = "11.0",
+    })
 
-    newoption {
+    newoption({
         trigger = "msvc-toolset",
         value = "TOOLSET",
-        description = "Explicitly override the Visual Studio MSVC platform toolset, for example v143, v145, msc-v143, or msc-v145. When omitted, Blue selects the default MSVC toolset for the requested Visual Studio generator."
-    }
+        description = "Explicitly override the Visual Studio MSVC platform toolset, for example v143, v145, msc-v143, or msc-v145. When omitted, Blue selects the default MSVC toolset for the requested Visual Studio generator.",
+    })
 
-    newoption {
+    newoption({
         trigger = "msvc-tools-version",
         value = "VERSION",
-        description = "Optional exact MSVC tools version, for example 14.50. Use only when that version is installed."
-    }
+        description = "Optional exact MSVC tools version, for example 14.50. Use only when that version is installed.",
+    })
 
-    newoption {
+    newoption({
         trigger = "strict",
-        description = "Treat warnings as errors"
-    }
+        description = "Treat warnings as errors",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-scaffold",
-        description = "Create missing included projects and missing strict manifest files from Blue templates. Normal generation validates and fails instead."
-    }
+        description = "Create missing included projects and missing strict manifest files from Blue templates. Normal generation validates and fails instead.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-project",
         value = "PROJECT",
-        description = "Project name used by Blue project-edit commands."
-    }
+        description = "Project name used by Blue project-edit commands.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-kind",
         value = "KIND",
-        description = "File kind used by Blue file commands: source, public-header, private-header, windows-source, linux-source, macos-source, posix-source, test, or benchmark."
-    }
+        description = "File kind used by Blue file commands: source, public-header, private-header, windows-source, linux-source, macos-source, posix-source, test, or benchmark.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-path",
         value = "PATH",
-        description = "File path used by Blue add/remove commands. Paths are project-relative or kind-relative."
-    }
+        description = "File path used by Blue add/remove commands. Paths are project-relative or kind-relative.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-from",
         value = "PATH",
-        description = "Source path used by Blue rename commands."
-    }
+        description = "Source path used by Blue rename commands.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-to",
         value = "PATH",
-        description = "Destination path used by Blue rename commands."
-    }
+        description = "Destination path used by Blue rename commands.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-type",
         value = "TYPE",
         description = "Project type used by Blue add-project. Supported values: library, executable.",
@@ -106,10 +106,10 @@ function bb.load_options()
         allowed = {
             { "library", "Create a module library under modules/." },
             { "executable", "Create an executable project under apps/." },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-linkage",
         value = "LINKAGE",
         description = "Library linkage used by Blue add-project.",
@@ -118,20 +118,20 @@ function bb.load_options()
             { "auto", "Use platform-selected linkage." },
             { "static", "Always generate a static library." },
             { "shared", "Always generate a shared library." },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-no-create",
-        description = "Update project manifests without creating or renaming physical files."
-    }
+        description = "Update project manifests without creating or renaming physical files.",
+    })
 
-    newoption {
+    newoption({
         trigger = "blue-delete-file",
-        description = "Delete the physical file when running blue-remove-file. The default removes from the manifest only."
-    }
+        description = "Delete the physical file when running blue-remove-file. The default removes from the manifest only.",
+    })
 
-    newoption {
+    newoption({
         trigger = "memory-backend",
         value = "BACKEND",
         description = "Select BlueMemory low-level backend",
@@ -139,23 +139,34 @@ function bb.load_options()
         allowed = {
             { "system", "Use system allocation backend" },
             { "mimalloc", "Use mimalloc backend" },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "format-path",
         value = "PATH",
-        description = "Optional path or command name for clang-format. If omitted, Blue resolves repo-local tools, LLVM install paths, then PATH."
-    }
+        description = "Optional path or command name for clang-format. If omitted, Blue resolves repo-local tools, LLVM install paths, then PATH.",
+    })
 
+    newoption({
+        trigger = "lua-format-path",
+        value = "PATH",
+        description = "Optional path or command name for stylua. If omitted, Blue resolves BLUE_STYLUA, repo-local tools, then PATH.",
+    })
 
-    newoption {
+    newoption({
+        trigger = "python-format-path",
+        value = "PATH",
+        description = "Optional path or command name for black. If omitted, Blue resolves BLUE_BLACK, repo-local tools, then PATH or python -m black.",
+    })
+
+    newoption({
         trigger = "blue-startup",
         value = "PROJECT",
-        description = "Override the generated solution startup project. Use BlueRunTests to run all tests from Visual Studio/IDE."
-    }
+        description = "Override the generated solution startup project. Use BlueRunTests to run all tests from Visual Studio/IDE.",
+    })
 
-    newoption {
+    newoption({
         trigger = "clion-config",
         value = "CONFIG",
         description = "Select configuration for CLion generation. Defaults to Debug; use all to generate every configuration.",
@@ -167,10 +178,10 @@ function bb.load_options()
             { "Release", "Generate Release only" },
             { "Profile", "Generate Profile only" },
             { "Shipping", "Generate Shipping only" },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "clion-platform",
         value = "PLATFORM",
         description = "Select build platform for CLion generation. Defaults to x64; use all to generate every build platform.",
@@ -180,10 +191,10 @@ function bb.load_options()
             { "default", "Generate the default x64 platform" },
             { "x64", "Generate x64 only" },
             { "x64_DLL", "Generate x64_DLL only" },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "clion-idea",
         value = "MODE",
         description = "Generate local CLion .idea custom build targets and run configurations.",
@@ -191,28 +202,26 @@ function bb.load_options()
         allowed = {
             { "on", "Generate local CLion run/debug integration files" },
             { "off", "Generate only compilation databases" },
-        }
-    }
+        },
+    })
 
-    newoption {
+    newoption({
         trigger = "clion-run-targets",
         value = "TARGETS",
         description = "Select CLion run targets: default, all, none, or comma-separated executable project names.",
         default = "default",
-    }
+    })
 
-
-    newoption {
+    newoption({
         trigger = "clion-build-targets",
         value = "TARGETS",
         description = "Select CLion build targets: default, workspace, all, none, or comma-separated buildable project names.",
         default = "default",
-    }
+    })
 
-
-    newoption {
+    newoption({
         trigger = "regen-action",
         value = "ACTION",
-        description = "Generation action whose build-graph token should be checked or updated, for example vs2026, vs2022, ninja, or gmake2."
-    }
+        description = "Generation action whose build-graph token should be checked or updated, for example vs2026, vs2022, ninja, or gmake2.",
+    })
 end

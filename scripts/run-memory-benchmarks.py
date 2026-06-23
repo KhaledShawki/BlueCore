@@ -7,7 +7,6 @@ import platform
 import subprocess
 from pathlib import Path
 
-
 BENCHMARK_NAME = "BlueMemoryHotPathBenchmarks"
 
 CONFIG_TO_DIR = {

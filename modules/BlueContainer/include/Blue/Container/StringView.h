@@ -7,7 +7,7 @@ namespace Blue
 {
 class StringView
 {
-  public:
+public:
   StringView( )
       : m_Data( nullptr )
       , m_Size( 0 )
@@ -30,7 +30,7 @@ class StringView
     return m_Data[ index ];
   }
 
-  private:
+private:
   const char* m_Data;
   Size m_Size;
 };

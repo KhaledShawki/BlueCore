@@ -89,7 +89,11 @@ function bb.test_executable(desc)
     desc.default_files = false
     desc.files = bb.table.as_list(desc.files)
     local normalizedRoot = normalize_path(desc.root)
-    desc.module = desc.module or normalizedRoot:match("^modules/([^/]+)") or normalizedRoot:match("^apps/([^/]+)") or normalizedRoot:match("^tests/([^/]+)") or desc.name
+    desc.module = desc.module
+        or normalizedRoot:match("^modules/([^/]+)")
+        or normalizedRoot:match("^apps/([^/]+)")
+        or normalizedRoot:match("^tests/([^/]+)")
+        or desc.name
     desc.group = desc.group or ("Tests/" .. desc.module)
 
     if #desc.files == 0 then
@@ -226,7 +230,7 @@ function bb.emit_test_runner_project()
         end
     end
 
-    bb.executable {
+    bb.executable({
         name = "BlueRunTests",
         root = "tools/BlueTestRunner",
         group = "Tests/Runner",
@@ -245,5 +249,5 @@ function bb.emit_test_runner_project()
                 enabled = false,
             },
         },
-    }
+    })
 end

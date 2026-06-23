@@ -21,153 +21,152 @@ local function run_test_script()
 end
 
 function bb.load_actions()
-    newaction {
+    newaction({
         trigger = "blue-add-file",
         description = "Add a file to a Blue project manifest and create it from the correct template unless --blue-no-create is used",
         execute = function()
             bb.commands.add_file()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "blue-remove-file",
         description = "Remove a file from a Blue project manifest. Use --blue-delete-file to also delete it from disk",
         execute = function()
             bb.commands.remove_file()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "blue-rename-file",
         description = "Rename a file in a Blue project manifest and on disk unless --blue-no-create is used",
         execute = function()
             bb.commands.rename_file()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "blue-add-project",
         description = "Add a project to build.lua and create its module/application template unless --blue-no-create is used",
         execute = function()
             bb.commands.add_project()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "validate",
         description = "Validate Blue build graph",
         execute = function()
             bb.validate_all()
             bb.log.info("Validation passed")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "format",
-        description = "Format all C/C++ files using clang-format",
+        description = "Format C/C++, Lua, and Python source files",
         execute = function()
             bb.run_format_action("format")
             bb.log.info("Formatting completed")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "check-format",
-        description = "Check C/C++ formatting using clang-format",
+        description = "Check C/C++, Lua, and Python source formatting",
         execute = function()
             bb.run_format_action("check")
             bb.log.info("Format check passed")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "clion",
         description = "Generate CLion compilation databases",
         execute = function()
             bb.clion.generate()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "graph",
         description = "Generate dependency graph",
         execute = function()
             bb.validate_all()
             bb.generate_graph("generated/graphs/dependencies.dot")
             bb.log.info("Dependency graph generated")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "metadata",
         description = "Generate project metadata",
         execute = function()
             bb.validate_all()
             bb.generate_metadata("generated/metadata/projects.json")
             bb.log.info("Metadata generated")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "list-tests",
         description = "List registered Blue test executables",
         execute = function()
             bb.print_registered_tests()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "test-metadata",
         description = "Generate Blue registered test metadata",
         execute = function()
             bb.generate_test_manifest("generated/tests/BlueTests.json")
             bb.log.info("Test metadata generated")
-        end
-    }
+        end,
+    })
 
-
-    newaction {
+    newaction({
         trigger = "list-benchmarks",
         description = "List registered Blue benchmark executables",
         execute = function()
             bb.print_registered_benchmarks()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "benchmark-metadata",
         description = "Generate Blue registered benchmark metadata",
         execute = function()
             bb.generate_benchmark_manifest("generated/benchmarks/BlueBenchmarks.json")
             bb.log.info("Benchmark metadata generated")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "list-format-files",
-        description = "List C/C++ files included in Blue formatting",
+        description = "List files included in Blue source formatting",
         execute = function()
             bb.run_format_action("list")
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "run-tests",
         description = "Generate, build, and run registered Blue tests for the host platform",
         execute = function()
             run_test_script()
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "build-graph-token",
         description = "Print the current Blue build graph regeneration token",
         execute = function()
             print(bb.regeneration.compute_token())
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "check-regeneration",
         description = "Check whether solution/project regeneration is required. Exit code 2 means regeneration is required.",
         execute = function()
@@ -176,16 +175,15 @@ function bb.load_actions()
                 os.exit(2)
             end
             os.exit(0)
-        end
-    }
+        end,
+    })
 
-    newaction {
+    newaction({
         trigger = "update-build-token",
         description = "Write the current Blue build graph regeneration token",
         execute = function()
             local token = bb.regeneration.write_current_token()
             bb.log.info("Updated build graph token: " .. token)
-        end
-    }
-
+        end,
+    })
 end

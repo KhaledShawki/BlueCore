@@ -1,6 +1,8 @@
 local function collect_deps(node)
     local result = {}
-    if not node or not node.deps then return result end
+    if not node or not node.deps then
+        return result
+    end
     bb.table.append_unique(result, node.deps.private)
     bb.table.append_unique(result, node.deps.public)
     bb.table.append_unique(result, node.deps.interface)
@@ -22,8 +24,12 @@ local function validate_references()
         end
     end
 
-    for name, node in pairs(bb.registry.projects) do validate_node(name, node) end
-    for name, node in pairs(bb.registry.dependencies) do validate_node(name, node) end
+    for name, node in pairs(bb.registry.projects) do
+        validate_node(name, node)
+    end
+    for name, node in pairs(bb.registry.dependencies) do
+        validate_node(name, node)
+    end
 end
 
 local function validate_no_cycles()
@@ -35,7 +41,9 @@ local function validate_no_cycles()
             table.insert(stack, name)
             error("Dependency cycle detected: " .. table.concat(stack, " -> "))
         end
-        if visited[name] then return end
+        if visited[name] then
+            return
+        end
         visiting[name] = true
         table.insert(stack, name)
         local node = bb.registry_get_node(name)
@@ -46,7 +54,9 @@ local function validate_no_cycles()
         visited[name] = true
     end
 
-    for name, _ in pairs(bb.registry.projects) do visit(name, {}) end
+    for name, _ in pairs(bb.registry.projects) do
+        visit(name, {})
+    end
 end
 
 function bb.validate_all()

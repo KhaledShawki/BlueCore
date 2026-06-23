@@ -1,4 +1,4 @@
-bb.module {
+bb.module({
     name = "BlueJobSystem",
     type = "library",
     linkage = "auto",
@@ -11,19 +11,16 @@ bb.module {
             "include/Blue/JobSystem/JobSystem.h",
             "include/BlueJobSystem/BlueJobSystem.h",
             "include/BlueJobSystem/BlueJobSystemApi.h",
-
         },
 
         private_headers = {
             "src/BlueJobSystemPrivate.h",
             "src/Pch.h",
-
         },
 
         sources = {
             "src/JobSystem.cpp",
             "src/Pch.cpp",
-
         },
     },
 
@@ -42,5 +39,4 @@ bb.module {
             "BlueContainer",
         },
     },
-}
-
+})

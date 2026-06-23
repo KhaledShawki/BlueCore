@@ -1,4 +1,3 @@
-
 local function sanitize_project_name(value)
     local text = tostring(value or "")
     text = text:gsub("[^%w%._%-]+", "")
@@ -71,7 +70,10 @@ local function build_option_arguments(options)
     add("blue-platforms", option_value("blue-platforms", "auto"))
     add("blue-build-platforms", option_value("blue-build-platforms", "default"))
     add("memory-backend", option_value("memory-backend", "system"))
-    add("blue-startup", option_value("blue-startup", (bb.registry.workspace and bb.registry.workspace.startproject) or ""))
+    add(
+        "blue-startup",
+        option_value("blue-startup", (bb.registry.workspace and bb.registry.workspace.startproject) or "")
+    )
     add("msvc-toolset", _OPTIONS["msvc-toolset"])
     add("msvc-tools-version", _OPTIONS["msvc-tools-version"])
 
@@ -158,7 +160,7 @@ function bb.emit_build_system_projects()
         return
     end
 
-    bb.project {
+    bb.project({
         name = bb.get_workspace_build_target_name(),
         kind = "Utility",
         root = ".",
@@ -169,9 +171,9 @@ function bb.emit_build_system_projects()
             "build.lua",
         },
         dependson = collect_workspace_build_dependencies(),
-    }
+    })
 
-    bb.project {
+    bb.project({
         name = "BlueBuildSystemFiles",
         kind = "Utility",
         root = ".",
@@ -191,9 +193,9 @@ function bb.emit_build_system_projects()
             ".clang-format",
             ".editorconfig",
         },
-    }
+    })
 
-    bb.project {
+    bb.project({
         name = "BlueRegenerateSolution",
         kind = "Utility",
         root = ".",
@@ -209,9 +211,9 @@ function bb.emit_build_system_projects()
             "scripts/regenerate-*",
         },
         platform = platform_postbuild(regenerate_command()),
-    }
+    })
 
-    bb.project {
+    bb.project({
         name = "BlueScaffoldSolution",
         kind = "Utility",
         root = ".",
@@ -227,9 +229,9 @@ function bb.emit_build_system_projects()
             "scripts/regenerate-*",
         },
         platform = platform_postbuild(regenerate_command({ force_scaffold = true })),
-    }
+    })
 
-    bb.project {
+    bb.project({
         name = "BlueValidateBuildGraph",
         kind = "Utility",
         root = ".",
@@ -242,11 +244,9 @@ function bb.emit_build_system_projects()
             "tests/**/project.lua",
         },
         platform = platform_postbuild(premake_action_command("validate")),
-    }
+    })
 
-
-
-    bb.project {
+    bb.project({
         name = "BlueListTests",
         kind = "Utility",
         root = ".",
@@ -260,5 +260,5 @@ function bb.emit_build_system_projects()
             "modules/**/tests/*.cpp",
         },
         platform = platform_postbuild(premake_action_command("list-tests")),
-    }
+    })
 end

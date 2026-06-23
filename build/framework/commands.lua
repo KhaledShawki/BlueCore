@@ -144,7 +144,6 @@ local function normalize_benchmark_name(value)
     return normalize_named_target(value, "benchmarks", "Benchmark")
 end
 
-
 local function classify_file(projectName, kind, value)
     local normalizedKind = tostring(kind or ""):lower():gsub("_", "-")
     local relative = value
@@ -176,7 +175,12 @@ local function classify_file(projectName, kind, value)
         relative = with_prefix("src/Platform/Linux", relative)
         sectionPath = { "files", "platform", "linux", "sources" }
         category = "sources"
-    elseif normalizedKind == "macos-source" or normalizedKind == "macos_source" or normalizedKind == "macosx-source" or normalizedKind == "macosx_source" then
+    elseif
+        normalizedKind == "macos-source"
+        or normalizedKind == "macos_source"
+        or normalizedKind == "macosx-source"
+        or normalizedKind == "macosx_source"
+    then
         relative = with_prefix("src/Platform/MacOS", relative)
         sectionPath = { "files", "platform", "macosx", "sources" }
         category = "sources"
@@ -184,13 +188,23 @@ local function classify_file(projectName, kind, value)
         relative = with_prefix("src/Platform/POSIX", relative)
         sectionPath = { "files", "platform", "linux", "sources" }
         category = "sources"
-    elseif normalizedKind == "test" or normalizedKind == "tests" or normalizedKind == "unit-test" or normalizedKind == "unit_test" then
+    elseif
+        normalizedKind == "test"
+        or normalizedKind == "tests"
+        or normalizedKind == "unit-test"
+        or normalizedKind == "unit_test"
+    then
         local testName = normalize_test_name(relative)
         relative = "tests/" .. testName .. ".cpp"
         sectionPath = { "tests" }
         category = "tests"
         manifestEntry = testName
-    elseif normalizedKind == "benchmark" or normalizedKind == "benchmarks" or normalizedKind == "bench" or normalizedKind == "perf" then
+    elseif
+        normalizedKind == "benchmark"
+        or normalizedKind == "benchmarks"
+        or normalizedKind == "bench"
+        or normalizedKind == "perf"
+    then
         local benchmarkName = normalize_benchmark_name(relative)
         relative = "benchmarks/" .. benchmarkName .. ".cpp"
         sectionPath = { "benchmarks" }
@@ -252,7 +266,9 @@ local function find_nested_block(lines, sectionPath)
         end
 
         if not found then
-            error("Manifest section not found: " .. table.concat(sectionPath, ".") .. " (missing " .. sectionName .. ")")
+            error(
+                "Manifest section not found: " .. table.concat(sectionPath, ".") .. " (missing " .. sectionName .. ")"
+            )
         end
 
         blockOpen = found
@@ -484,7 +500,9 @@ local function add_project_include(projectFile)
     local line = include_project_line(projectFile)
 
     for index = openLine + 1, closeLine - 1 do
-        if lines[index] == line or lines[index]:match('^%s*"' .. projectFile:gsub("([^%w])", "%%%1") .. '"%s*,%s*$') then
+        if
+            lines[index] == line or lines[index]:match('^%s*"' .. projectFile:gsub("([^%w])", "%%%1") .. '"%s*,%s*$')
+        then
             bb.log.info("Project include already exists: " .. projectFile)
             return false
         end

@@ -1,4 +1,4 @@
-bb.module {
+bb.module({
     name = "BlueSystem",
     type = "library",
     linkage = "auto",
@@ -68,13 +68,11 @@ bb.module {
             "include/Blue/System/Types.h",
             "include/BlueSystem/BlueSystem.h",
             "include/BlueSystem/BlueSystemApi.h",
-
         },
 
         private_headers = {
             "src/BlueSystemPrivate.h",
             "src/Pch.h",
-
         },
 
         sources = {
@@ -84,14 +82,12 @@ bb.module {
             "src/Processor.cpp",
             "src/Result.cpp",
             "src/Time.cpp",
-
         },
 
         platform = {
             windows = {
                 private_headers = {
                     "src/Platform/Windows/Windows_Synchronization.h",
-
                 },
 
                 sources = {
@@ -102,7 +98,6 @@ bb.module {
                     "src/Platform/Windows/Processor_Windows.cpp",
                     "src/Platform/Windows/Semaphore_Windows.cpp",
                     "src/Platform/Windows/Thread_Windows.cpp",
-
                 },
             },
 
@@ -110,7 +105,6 @@ bb.module {
                 private_headers = {
                     "src/Platform/POSIX/POSIX_Synchronization.h",
                     "src/Platform/POSIX/POSIX_Thread.h",
-
                 },
 
                 sources = {
@@ -123,7 +117,6 @@ bb.module {
                     "src/Platform/POSIX/POSIX_Synchronization.cpp",
                     "src/Platform/POSIX/Semaphore_POSIX.cpp",
                     "src/Platform/POSIX/Thread_POSIX.cpp",
-
                 },
             },
 
@@ -131,7 +124,6 @@ bb.module {
                 private_headers = {
                     "src/Platform/POSIX/POSIX_Synchronization.h",
                     "src/Platform/POSIX/POSIX_Thread.h",
-
                 },
 
                 sources = {
@@ -144,7 +136,6 @@ bb.module {
                     "src/Platform/POSIX/POSIX_Synchronization.cpp",
                     "src/Platform/POSIX/Semaphore_POSIX.cpp",
                     "src/Platform/POSIX/Thread_POSIX.cpp",
-
                 },
             },
         },
@@ -178,9 +169,9 @@ bb.module {
             },
         },
     },
-}
+})
 
-bb.module_tests {
+bb.module_tests({
     module = "BlueSystem",
     root = "modules/BlueSystem",
 
@@ -212,7 +203,7 @@ bb.module_tests {
     },
 
     tests = {
-	    "BlueSystemBaseContractTests",
+        "BlueSystemBaseContractTests",
         "BlueSystemAtomicTests",
         "BlueSystemPhase2Tests",
         "BlueSystemThreadingTests",
@@ -226,4 +217,4 @@ bb.module_tests {
         "BlueSystemConditionVariableTests",
         "BlueSystemSynchronizationStressTests",
     },
-}
+})

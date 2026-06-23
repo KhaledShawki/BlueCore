@@ -12,7 +12,7 @@ package.path = table.concat({
     package.path,
 }, ";")
 
-require "build.framework.init"
+require("build.framework.init")
 
 bb.load_options()
 bb.load_actions()

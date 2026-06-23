@@ -40,14 +40,14 @@ local function normalize(desc)
 end
 
 local function emit_default_files(desc)
-    files {
+    files({
         path.join(BLUE_ROOT, desc.root .. "/include/**.h"),
         path.join(BLUE_ROOT, desc.root .. "/include/**.hpp"),
         path.join(BLUE_ROOT, desc.root .. "/include/**.inl"),
         path.join(BLUE_ROOT, desc.root .. "/src/**.h"),
         path.join(BLUE_ROOT, desc.root .. "/src/**.cpp"),
         path.join(BLUE_ROOT, desc.root .. "/src/**.c"),
-    }
+    })
 end
 
 local function emit_project_files(desc)
@@ -93,22 +93,54 @@ end
 
 local function emit_platform_rule(desc, platformName, rule)
     local platformFiles = bb.files.platform_files(desc, platformName)
-    if #platformFiles > 0 then files(bb.path.to_root_paths(platformFiles)) end
-    if rule.files then files(bb.path.to_root_paths(rule.files)) end
-    if rule.remove_files then removefiles(bb.path.to_root_paths(rule.remove_files)) end
-    if rule.defines then defines(rule.defines) end
-    if rule.include_dirs then includedirs(bb.path.to_root_paths(rule.include_dirs)) end
-    if rule.external_include_dirs then externalincludedirs(bb.path.to_root_paths(rule.external_include_dirs)) end
-    if rule.lib_dirs then libdirs(bb.path.to_root_paths(rule.lib_dirs)) end
-    if rule.private_links then links(rule.private_links) end
-    if rule.links then links(rule.links) end
-    if rule.build_options then buildoptions(rule.build_options) end
-    if rule.link_options then linkoptions(rule.link_options) end
-    if rule.prebuildcommands then prebuildcommands(rule.prebuildcommands) end
-    if rule.postbuildcommands then postbuildcommands(rule.postbuildcommands) end
-    if rule.debugcommand then debugcommand(rule.debugcommand) end
-    if rule.debugdir then debugdir(rule.debugdir) end
-    if rule.debugargs then debugargs(rule.debugargs) end
+    if #platformFiles > 0 then
+        files(bb.path.to_root_paths(platformFiles))
+    end
+    if rule.files then
+        files(bb.path.to_root_paths(rule.files))
+    end
+    if rule.remove_files then
+        removefiles(bb.path.to_root_paths(rule.remove_files))
+    end
+    if rule.defines then
+        defines(rule.defines)
+    end
+    if rule.include_dirs then
+        includedirs(bb.path.to_root_paths(rule.include_dirs))
+    end
+    if rule.external_include_dirs then
+        externalincludedirs(bb.path.to_root_paths(rule.external_include_dirs))
+    end
+    if rule.lib_dirs then
+        libdirs(bb.path.to_root_paths(rule.lib_dirs))
+    end
+    if rule.private_links then
+        links(rule.private_links)
+    end
+    if rule.links then
+        links(rule.links)
+    end
+    if rule.build_options then
+        buildoptions(rule.build_options)
+    end
+    if rule.link_options then
+        linkoptions(rule.link_options)
+    end
+    if rule.prebuildcommands then
+        prebuildcommands(rule.prebuildcommands)
+    end
+    if rule.postbuildcommands then
+        postbuildcommands(rule.postbuildcommands)
+    end
+    if rule.debugcommand then
+        debugcommand(rule.debugcommand)
+    end
+    if rule.debugdir then
+        debugdir(rule.debugdir)
+    end
+    if rule.debugargs then
+        debugargs(rule.debugargs)
+    end
 end
 
 local function find_project_pch(desc)
@@ -150,11 +182,11 @@ local function emit_project_pch(desc)
         return
     end
 
-    files {
+    files({
         path.join(BLUE_ROOT, pch.header),
         path.join(BLUE_ROOT, pch.source),
-    }
-    includedirs { path.join(BLUE_ROOT, pch.include_dir) }
+    })
+    includedirs({ path.join(BLUE_ROOT, pch.include_dir) })
 
     -- Premake's Ninja exporter currently emits inconsistent relative paths for
     -- PCH inputs when projects are generated below out/build/ninja/<project>.
@@ -165,22 +197,22 @@ local function emit_project_pch(desc)
         return
     end
 
-    forceincludes { "Pch.h" }
-    pchheader "Pch.h"
+    forceincludes({ "Pch.h" })
+    pchheader("Pch.h")
     pchsource(path.join(BLUE_ROOT, pch.source))
 end
 
 local function apply_library_linkage_kind(desc)
     if bb.supports_shared_linkage(desc) then
-        filter "platforms:x64_DLL"
-            kind "SharedLib"
-            defines {
-                bb.get_module_build_define(desc.name) .. "=1",
-                bb.get_module_export_define(desc.name) .. "=1",
-            }
-        filter "platforms:not x64_DLL"
-            kind "StaticLib"
-        filter {}
+        filter("platforms:x64_DLL")
+        kind("SharedLib")
+        defines({
+            bb.get_module_build_define(desc.name) .. "=1",
+            bb.get_module_export_define(desc.name) .. "=1",
+        })
+        filter("platforms:not x64_DLL")
+        kind("StaticLib")
+        filter({})
     end
 end
 
@@ -194,21 +226,25 @@ function bb.project(desc)
     end
 
     project(desc.name)
-        kind(desc.kind)
-        apply_library_linkage_kind(desc)
-        language "C++"
-        location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. desc.name))
+    kind(desc.kind)
+    apply_library_linkage_kind(desc)
+    language("C++")
+    location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. desc.name))
 
-        emit_project_files(desc)
-        emit_project_pch(desc)
-        emit_project_commands(desc)
+    emit_project_files(desc)
+    emit_project_pch(desc)
+    emit_project_commands(desc)
 
-        -- Apply the target's own requirements before exporting usage blocks.
-        bb.emit_usage_fields(desc, "private")
-        bb.emit_usage_fields(desc, "public")
+    -- Apply the target's own requirements before exporting usage blocks.
+    bb.emit_usage_fields(desc, "private")
+    bb.emit_usage_fields(desc, "public")
 
     -- Platform rules must be emitted in project scope, before usage scopes.
-    for platformName, filterName in pairs({ windows = "system:windows", linux = "system:linux", macosx = "system:macosx" }) do
+    for platformName, filterName in pairs({
+        windows = "system:windows",
+        linux = "system:linux",
+        macosx = "system:macosx",
+    }) do
         local rule = desc.platform and desc.platform[platformName]
         local hasFiles = #bb.files.platform_files(desc, platformName) > 0
         if rule or hasFiles then
@@ -218,24 +254,24 @@ function bb.project(desc)
     end
 
     bb.emit_filters(desc)
-    filter {}
+    filter({})
 
-    usage "PRIVATE"
-        bb.emit_usage_fields(desc, "private")
+    usage("PRIVATE")
+    bb.emit_usage_fields(desc, "private")
 
-    usage "PUBLIC"
-        bb.emit_usage_fields(desc, "public")
+    usage("PUBLIC")
+    bb.emit_usage_fields(desc, "public")
 
-    usage "INTERFACE"
-        bb.emit_usage_fields(desc, "interface")
-        if desc.kind == "StaticLib" or desc.kind == "SharedLib" then
-            links { desc.name }
-        end
+    usage("INTERFACE")
+    bb.emit_usage_fields(desc, "interface")
+    if desc.kind == "StaticLib" or desc.kind == "SharedLib" then
+        links({ desc.name })
+    end
 
-    filter {}
+    filter({})
 
     if desc.group then
-        group ""
+        group("")
     end
 end
 

@@ -13,7 +13,7 @@ namespace Blue
 {
 class BLUE_MEMORY_API MemoryPoolRegistry
 {
-  public:
+public:
   Bool Initialize( const MemoryPoolDesc* descs, Size count ) noexcept;
   void Shutdown( ) noexcept;
   Bool IsInitialized( ) const noexcept;
@@ -32,7 +32,7 @@ class BLUE_MEMORY_API MemoryPoolRegistry
 
   Bool CaptureStats( MemoryPoolId pool, MemoryPoolStats& outStats ) const noexcept;
 
-  private:
+private:
   MemoryPoolState m_Pools[ MemoryPoolCount ] = { };
   Bool m_Initialized = false;
   Bool m_EnforceBudgets = true;

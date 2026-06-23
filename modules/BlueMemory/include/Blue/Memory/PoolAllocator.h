@@ -17,7 +17,7 @@ struct PoolAllocatorDesc
 
 class BLUE_MEMORY_API PoolAllocator
 {
-  public:
+public:
   PoolAllocator( );
 
   bool Initialize( const PoolAllocatorDesc& desc );
@@ -33,7 +33,7 @@ class BLUE_MEMORY_API PoolAllocator
   Size GetUsedCount( ) const;
   Size GetObjectStride( ) const;
 
-  private:
+private:
   MemoryBlock m_Block;
   void* m_FreeList;
   Size m_ObjectSize;

@@ -1,4 +1,4 @@
-bb.module {
+bb.module({
     name = "BlueContainer",
     type = "library",
     linkage = "auto",
@@ -15,19 +15,16 @@ bb.module {
             "include/Blue/Container/StringView.h",
             "include/BlueContainer/BlueContainer.h",
             "include/BlueContainer/BlueContainerApi.h",
-
         },
 
         private_headers = {
             "src/BlueContainerPrivate.h",
             "src/Pch.h",
-
         },
 
         sources = {
             "src/Pch.cpp",
             "src/SmidString.cpp",
-
         },
     },
 
@@ -45,5 +42,4 @@ bb.module {
             "BlueMemory",
         },
     },
-}
-
+})

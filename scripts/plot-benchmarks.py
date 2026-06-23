@@ -14,7 +14,6 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import matplotlib.pyplot as plt
 
-
 TIME_UNIT_TO_NS: dict[str, float] = {
     "ns": 1.0,
     "us": 1_000.0,
@@ -306,7 +305,9 @@ def collect_records(profile: BenchmarkProfile, inputs: Sequence[InputSource], ag
     return records
 
 
-def records_for_comparison(records: Sequence[BenchmarkRecord], profile: BenchmarkProfile, comparison: str) -> list[BenchmarkRecord]:
+def records_for_comparison(
+    records: Sequence[BenchmarkRecord], profile: BenchmarkProfile, comparison: str
+) -> list[BenchmarkRecord]:
     filtered: list[BenchmarkRecord] = []
 
     for record in records:
@@ -330,7 +331,9 @@ def records_for_comparison(records: Sequence[BenchmarkRecord], profile: Benchmar
 
 
 def build_config_points(records: Sequence[BenchmarkRecord]) -> list[SeriesPoint]:
-    return [SeriesPoint(category=record.benchmark, series=record.source, value_ns=record.value_ns) for record in records]
+    return [
+        SeriesPoint(category=record.benchmark, series=record.source, value_ns=record.value_ns) for record in records
+    ]
 
 
 def build_implementation_points(records: Sequence[BenchmarkRecord]) -> list[SeriesPoint]:
@@ -347,7 +350,9 @@ def build_implementation_points(records: Sequence[BenchmarkRecord]) -> list[Seri
     return points
 
 
-def sorted_categories(points: Sequence[SeriesPoint], profile: BenchmarkProfile, mode: str, records: Sequence[BenchmarkRecord]) -> list[str]:
+def sorted_categories(
+    points: Sequence[SeriesPoint], profile: BenchmarkProfile, mode: str, records: Sequence[BenchmarkRecord]
+) -> list[str]:
     categories = {point.category for point in points}
 
     if mode == "implementation":
@@ -357,7 +362,10 @@ def sorted_categories(points: Sequence[SeriesPoint], profile: BenchmarkProfile, 
     for record in records:
         order_by_category[record.benchmark] = min(record.order, order_by_category.get(record.benchmark, record.order))
 
-    return sorted(categories, key=lambda category: (order_by_category.get(category, 10_000), profile.case_sort_key(category), category))
+    return sorted(
+        categories,
+        key=lambda category: (order_by_category.get(category, 10_000), profile.case_sort_key(category), category),
+    )
 
 
 def sorted_series(points: Sequence[SeriesPoint], profile: BenchmarkProfile, mode: str) -> list[str]:

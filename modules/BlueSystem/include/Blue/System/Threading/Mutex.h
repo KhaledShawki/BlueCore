@@ -37,17 +37,17 @@ Bool IsMutexInitialized( const Mutex& mutex ) noexcept;
 
 class ScopedMutexLock final : private NonCopyable
 {
-  public:
+public:
   explicit ScopedMutexLock( Mutex& mutex ) noexcept;
   ~ScopedMutexLock( ) noexcept;
 
-  private:
+private:
   Mutex* m_Mutex;
 };
 
 class OwnedMutex final : private NonCopyable
 {
-  public:
+public:
   OwnedMutex( ) noexcept;
   ~OwnedMutex( ) noexcept;
 
@@ -59,7 +59,7 @@ class OwnedMutex final : private NonCopyable
   Bool TryAcquire( ) noexcept;
   void Release( ) noexcept;
 
-  private:
+private:
   Mutex m_Mutex = { };
 };
 } // namespace Blue

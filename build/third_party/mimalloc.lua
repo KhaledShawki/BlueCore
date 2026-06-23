@@ -42,7 +42,7 @@ for _, source in ipairs(mimallocSources) do
     table.insert(mimallocFiles, path.join(mimallocRoot, source))
 end
 
-bb.module {
+bb.module({
     name = "mimalloc",
     type = "library",
     linkage = "static",
@@ -106,4 +106,4 @@ bb.module {
             },
         },
     },
-}
+})

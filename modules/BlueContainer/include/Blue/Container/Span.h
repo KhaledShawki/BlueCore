@@ -8,7 +8,7 @@ namespace Blue
 template< typename T >
 class Span
 {
-  public:
+public:
   Span( )
       : m_Data( nullptr )
       , m_Size( 0 )
@@ -31,7 +31,7 @@ class Span
     return m_Data[ index ];
   }
 
-  private:
+private:
   T* m_Data;
   Size m_Size;
 };

@@ -60,7 +60,7 @@ function bb.emit_dependency_reference(name, visited)
     visited = visited or {}
 
     if bb.registry.projects[name] then
-        uses { name }
+        uses({ name })
         return
     end
 
@@ -130,5 +130,5 @@ function bb.emit_filters(desc, visited)
         bb.emit_dependency_list(rule.deps, visited)
     end
 
-    filter {}
+    filter({})
 end

@@ -1,6 +1,6 @@
 local googletestRoot = "third_party/googletest/googletest"
 
-bb.module {
+bb.module({
     name = "gtest",
     type = "library",
     linkage = "static",
@@ -23,10 +23,9 @@ bb.module {
     private_include_dirs = {
         googletestRoot,
     },
+})
 
-}
-
-bb.module {
+bb.module({
     name = "gtest_main",
     type = "library",
     linkage = "static",
@@ -53,4 +52,4 @@ bb.module {
             "gtest",
         },
     },
-}
+})

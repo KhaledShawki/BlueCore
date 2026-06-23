@@ -9,7 +9,7 @@ namespace Blue
 template< typename T >
 class UniquePtr
 {
-  public:
+public:
   UniquePtr( )
       : m_Pointer( nullptr )
       , m_Allocator{ }
@@ -51,7 +51,7 @@ class UniquePtr
 
   explicit operator bool( ) const { return m_Pointer != nullptr; }
 
-  private:
+private:
   T* m_Pointer;
   Allocator m_Allocator;
 };

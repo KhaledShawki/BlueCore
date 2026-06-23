@@ -50,7 +50,7 @@ Bool IsEventInitialized( const Event& event ) noexcept;
 
 class OwnedEvent final : private NonCopyable
 {
-  public:
+public:
   explicit OwnedEvent( const EventCreateDesc& desc = { } ) noexcept;
   ~OwnedEvent( ) noexcept;
 
@@ -64,7 +64,7 @@ class OwnedEvent final : private NonCopyable
   Bool TryWait( ) noexcept;
   Bool WaitFor( TimeDuration timeout ) noexcept;
 
-  private:
+private:
   Event m_Event = { };
 };
 } // namespace Blue

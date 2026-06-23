@@ -46,7 +46,7 @@ for _, source in ipairs(benchmarkSources) do
     add_required_source(benchmarkFiles, source)
 end
 
-bb.module {
+bb.module({
     name = "benchmark",
     type = "library",
     linkage = "static",
@@ -103,4 +103,4 @@ bb.module {
             },
         },
     },
-}
+})

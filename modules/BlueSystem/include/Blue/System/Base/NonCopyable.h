@@ -4,25 +4,25 @@ namespace Blue
 {
 class NonCopyable
 {
-  protected:
+protected:
   constexpr NonCopyable( ) = default;
   ~NonCopyable( ) = default;
 
   NonCopyable( NonCopyable&& ) = default;
   NonCopyable& operator=( NonCopyable&& ) = default;
 
-  private:
+private:
   NonCopyable( const NonCopyable& ) = delete;
   NonCopyable& operator=( const NonCopyable& ) = delete;
 };
 
 class NonMovable
 {
-  protected:
+protected:
   constexpr NonMovable( ) = default;
   ~NonMovable( ) = default;
 
-  private:
+private:
   NonMovable( const NonMovable& ) = delete;
   NonMovable& operator=( const NonMovable& ) = delete;
   NonMovable( NonMovable&& ) = delete;

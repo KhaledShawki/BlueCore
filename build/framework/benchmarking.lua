@@ -13,7 +13,9 @@ local function ensure_benchmark_source_policy(desc)
 
     for _, file in ipairs(desc.files) do
         if type(file) == "string" and not path_has_prefix(file, benchmarkRoot) then
-            error("Benchmark target '" .. desc.name .. "' includes file outside project-local benchmarks folder: " .. file)
+            error(
+                "Benchmark target '" .. desc.name .. "' includes file outside project-local benchmarks folder: " .. file
+            )
         end
     end
 end

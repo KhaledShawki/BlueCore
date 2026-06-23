@@ -13,7 +13,6 @@ local VISUAL_STUDIO_MSVC_DEFAULTS = {
     },
 }
 
-
 local function trim(value)
     return tostring(value or ""):gsub("^%s+", ""):gsub("%s+$", "")
 end
@@ -67,19 +66,19 @@ local function apply_macos_clang_sdk_policy()
 
     local deploymentTarget = get_macos_deployment_target()
 
-    buildoptions {
+    buildoptions({
         "-isysroot " .. sdkPath,
         "-stdlib=libc++",
         "-mmacosx-version-min=" .. deploymentTarget,
         "-pthread",
-    }
+    })
 
-    linkoptions {
+    linkoptions({
         "-isysroot " .. sdkPath,
         "-stdlib=libc++",
         "-mmacosx-version-min=" .. deploymentTarget,
         "-pthread",
-    }
+    })
 end
 
 local function normalize_msvc_toolset(value)
@@ -139,60 +138,59 @@ local function apply_msvc_toolset_policy()
     if has_option_value("msvc-tools-version") then
         toolsversion(_OPTIONS["msvc-tools-version"])
     end
-
 end
 
 function bb.apply_toolchains()
     local selectedToolchain = _OPTIONS["toolchain"] or "default"
 
     if selectedToolchain == "msvc" then
-        filter { "system:windows" }
-            apply_msvc_toolset_policy()
+        filter({ "system:windows" })
+        apply_msvc_toolset_policy()
     elseif selectedToolchain == "clang" then
-        filter { "system:windows or system:linux or system:macosx" }
-            toolset "clang"
+        filter({ "system:windows or system:linux or system:macosx" })
+        toolset("clang")
     elseif selectedToolchain == "gcc" then
-        filter { "system:linux" }
-            toolset "gcc"
+        filter({ "system:linux" })
+        toolset("gcc")
     end
 
-    filter { "system:macosx" }
-        apply_macos_clang_sdk_policy()
+    filter({ "system:macosx" })
+    apply_macos_clang_sdk_policy()
 
-    filter { "options:toolchain=msvc", "system:windows" }
-        warnings "Extra"
-        conformancemode "On"
-        exceptionhandling "Off"
-        rtti "Off"
-        defines {
-            "_CRT_SECURE_NO_WARNINGS",
-            "NOMINMAX",
-            "WIN32_LEAN_AND_MEAN",
-        }
+    filter({ "options:toolchain=msvc", "system:windows" })
+    warnings("Extra")
+    conformancemode("On")
+    exceptionhandling("Off")
+    rtti("Off")
+    defines({
+        "_CRT_SECURE_NO_WARNINGS",
+        "NOMINMAX",
+        "WIN32_LEAN_AND_MEAN",
+    })
 
-    filter { "options:toolchain=clang or gcc" }
-        warnings "Extra"
-        exceptionhandling "Off"
-        rtti "Off"
-        buildoptions {
-            "-Wall",
-            "-Wextra",
-            "-Wpedantic",
-            "-fno-exceptions",
-            "-fno-rtti",
-        }
+    filter({ "options:toolchain=clang or gcc" })
+    warnings("Extra")
+    exceptionhandling("Off")
+    rtti("Off")
+    buildoptions({
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+    })
 
-    filter { "options:strict", "options:toolchain=msvc", "system:windows" }
-        fatalwarnings { "All" }
+    filter({ "options:strict", "options:toolchain=msvc", "system:windows" })
+    fatalwarnings({ "All" })
 
-    filter { "options:strict", "options:toolchain=clang or gcc" }
-        buildoptions { "-Werror" }
+    filter({ "options:strict", "options:toolchain=clang or gcc" })
+    buildoptions({ "-Werror" })
 
-    filter { "options:memory-backend=mimalloc" }
-        defines { "BLUE_MEMORY_USE_MIMALLOC=1" }
+    filter({ "options:memory-backend=mimalloc" })
+    defines({ "BLUE_MEMORY_USE_MIMALLOC=1" })
 
-    filter { "options:memory-backend=system" }
-        defines { "BLUE_MEMORY_USE_MIMALLOC=0" }
+    filter({ "options:memory-backend=system" })
+    defines({ "BLUE_MEMORY_USE_MIMALLOC=0" })
 
-    filter {}
+    filter({})
 end

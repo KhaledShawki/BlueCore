@@ -7,7 +7,7 @@ namespace Blue
 template< typename T >
 class Atomic final
 {
-  private:
+private:
   using Policy = AtomicTypePolicy< T >;
   using StorageType = typename Policy::StorageType;
   using Primitive = AtomicPrimitive< StorageType, sizeof( StorageType ), Policy::Kind >;
@@ -18,7 +18,7 @@ class Atomic final
   static_assert( !Policy::IsWideAtomicWidth || Policy::Kind == AtomicKind::Value128,
                  "16-byte Blue::Atomic<T> is supported only through Blue::AtomicValue128." );
 
-  public:
+public:
   using ValueType = T;
 
   constexpr Atomic( ) noexcept
@@ -82,7 +82,7 @@ class Atomic final
       Primitive::FetchSub( &m_Value, Policy::ToStorage( static_cast< T >( value ) ), order ) );
   }
 
-  private:
+private:
   alignas( Policy::RequiredAlignment ) mutable StorageType m_Value;
 };
 

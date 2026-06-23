@@ -655,7 +655,17 @@ local function make_entry(desc, fields, context, sourceFile)
     return {
         directory = normalize_slashes(path.getabsolute(BLUE_ROOT)),
         file = sourceFile,
-        output = normalize_slashes(path.join(BLUE_ROOT, "out/obj", context.system, context.platform, context.configuration, desc.name, get_relative_path(sourceFile) .. ".o")),
+        output = normalize_slashes(
+            path.join(
+                BLUE_ROOT,
+                "out/obj",
+                context.system,
+                context.platform,
+                context.configuration,
+                desc.name,
+                get_relative_path(sourceFile) .. ".o"
+            )
+        ),
         command = command,
     }
 end
@@ -946,7 +956,15 @@ local function get_binary_output_system_name(targetSystem)
 end
 
 local function get_run_path(context, targetName)
-    return "$PROJECT_DIR$/out/bin/" .. get_binary_output_system_name(context.system) .. "/" .. context.platform .. "/" .. context.configuration .. "/" .. targetName .. get_executable_extension(context)
+    return "$PROJECT_DIR$/out/bin/"
+        .. get_binary_output_system_name(context.system)
+        .. "/"
+        .. context.platform
+        .. "/"
+        .. context.configuration
+        .. "/"
+        .. targetName
+        .. get_executable_extension(context)
 end
 
 local function get_idea_script_path(context, kind)
@@ -1096,7 +1114,10 @@ local function collect_build_configurations(targetSystem, platforms, configurati
             table.insert(result, make_workspace_build_configuration(context))
 
             for _, targetName in ipairs(selectedTargetNames) do
-                table.insert(result, make_project_build_configuration(targetName, buildableTargets[targetName], context))
+                table.insert(
+                    result,
+                    make_project_build_configuration(targetName, buildableTargets[targetName], context)
+                )
             end
         end
     end
@@ -1104,7 +1125,14 @@ local function collect_build_configurations(targetSystem, platforms, configurati
     return result
 end
 
-local function collect_run_configurations(targetSystem, targetNames, targetRecords, buildConfigurationsByKey, platforms, configurations)
+local function collect_run_configurations(
+    targetSystem,
+    targetNames,
+    targetRecords,
+    buildConfigurationsByKey,
+    platforms,
+    configurations
+)
     local result = {}
     local filePrefix = get_generated_file_prefix()
 
@@ -1117,7 +1145,8 @@ local function collect_run_configurations(targetSystem, targetNames, targetRecor
                     platform = platformName,
                     configuration = configurationName,
                 }
-                local name = get_clion_project_configuration_name(targetName, targetRecord, configurationName, platformName)
+                local name =
+                    get_clion_project_configuration_name(targetName, targetRecord, configurationName, platformName)
                 local buildConfiguration = buildConfigurationsByKey[name]
                 if not buildConfiguration then
                     error("Missing CLion build configuration for run target: " .. tostring(name))
@@ -1166,10 +1195,25 @@ local function write_external_tools_file(buildConfigurations)
 
     for _, config in ipairs(buildConfigurations) do
         for _, tool in ipairs({
-            { name = config.build_tool_name, description = "Build " .. config.name, command = get_idea_script_path(config.context, "build") },
-            { name = config.clean_tool_name, description = "Clean " .. config.name, command = get_idea_script_path(config.context, "clean") },
+            {
+                name = config.build_tool_name,
+                description = "Build " .. config.name,
+                command = get_idea_script_path(config.context, "build"),
+            },
+            {
+                name = config.clean_tool_name,
+                description = "Clean " .. config.name,
+                command = get_idea_script_path(config.context, "clean"),
+            },
         }) do
-            table.insert(lines, '  <tool name="' .. xml_escape(tool.name) .. '" description="' .. xml_escape(tool.description) .. '" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">')
+            table.insert(
+                lines,
+                '  <tool name="'
+                    .. xml_escape(tool.name)
+                    .. '" description="'
+                    .. xml_escape(tool.description)
+                    .. '" showInMainMenu="false" showInEditor="false" showInProject="false" showInSearchPopup="false" disabled="false" useConsole="true" showConsoleOnStdOut="true" showConsoleOnStdErr="true" synchronizeAfterRun="true">'
+            )
             table.insert(lines, "    <exec>")
             table.insert(lines, '      <option name="COMMAND" value="' .. xml_escape(tool.command) .. '" />')
             table.insert(lines, '      <option name="PARAMETERS" value="' .. xml_escape(config.parameters) .. '" />')
@@ -1187,24 +1231,34 @@ end
 
 local function build_custom_targets_component(buildConfigurations)
     local clionTargetName = get_clion_target_name()
-    local lines = {
-        '  <component name="CLionExternalBuildManager">',
-        '    <target id="' .. stable_uuid("clion-target", clionTargetName) .. '" name="' .. xml_escape(clionTargetName) .. '" defaultType="TOOL">',
-    }
+    local lines =
+        {
+            '  <component name="CLionExternalBuildManager">',
+            '    <target id="' .. stable_uuid("clion-target", clionTargetName) .. '" name="' .. xml_escape(
+                clionTargetName
+            ) .. '" defaultType="TOOL">',
+        }
 
     for _, config in ipairs(buildConfigurations) do
-        table.insert(lines, '      <configuration id="' .. stable_uuid("clion-configuration", clionTargetName .. ":" .. config.name) .. '" name="' .. xml_escape(config.name) .. '">')
+        table.insert(
+            lines,
+            '      <configuration id="'
+                .. stable_uuid("clion-configuration", clionTargetName .. ":" .. config.name)
+                .. '" name="'
+                .. xml_escape(config.name)
+                .. '">'
+        )
         table.insert(lines, '        <build type="TOOL">')
         table.insert(lines, '          <tool actionId="' .. xml_escape(config.build_action_id) .. '" />')
-        table.insert(lines, '        </build>')
+        table.insert(lines, "        </build>")
         table.insert(lines, '        <clean type="TOOL">')
         table.insert(lines, '          <tool actionId="' .. xml_escape(config.clean_action_id) .. '" />')
-        table.insert(lines, '        </clean>')
-        table.insert(lines, '      </configuration>')
+        table.insert(lines, "        </clean>")
+        table.insert(lines, "      </configuration>")
     end
 
-    table.insert(lines, '    </target>')
-    table.insert(lines, '  </component>')
+    table.insert(lines, "    </target>")
+    table.insert(lines, "  </component>")
     return table.concat(lines, "\n")
 end
 
@@ -1213,8 +1267,8 @@ local function write_custom_targets_file(buildConfigurations)
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<project version="4">',
         build_custom_targets_component(buildConfigurations),
-        '</project>',
-        '',
+        "</project>",
+        "",
     }
 
     bb.fs.write_file(path.join(BLUE_ROOT, ".idea/customTargets.xml"), table.concat(lines, "\n"))
@@ -1265,18 +1319,18 @@ end
 local function build_cmake_run_configuration_manager_component()
     return table.concat({
         '  <component name="CMakeRunConfigurationManager">',
-        '    <generated />',
-        '  </component>',
+        "    <generated />",
+        "  </component>",
     }, "\n")
 end
 
 local function build_disabled_cmake_settings_component()
     return table.concat({
         '  <component name="CMakeSettings">',
-        '    <configurations>',
+        "    <configurations>",
         '      <configuration PROFILE_NAME="Debug" ENABLED="false" CONFIG_NAME="Debug" />',
-        '    </configurations>',
-        '  </component>',
+        "    </configurations>",
+        "  </component>",
     }, "\n")
 end
 
@@ -1284,8 +1338,10 @@ local function write_clion_workspace_bridge_file(buildConfigurations)
     local workspacePath = path.join(BLUE_ROOT, ".idea/workspace.xml")
     local document = read_text_file(workspacePath)
 
-    document = replace_component(document, "CLionExternalBuildManager", build_custom_targets_component(buildConfigurations))
-    document = replace_component(document, "CMakeRunConfigurationManager", build_cmake_run_configuration_manager_component())
+    document =
+        replace_component(document, "CLionExternalBuildManager", build_custom_targets_component(buildConfigurations))
+    document =
+        replace_component(document, "CMakeRunConfigurationManager", build_cmake_run_configuration_manager_component())
     document = replace_component(document, "CMakeSettings", build_disabled_cmake_settings_component())
 
     bb.fs.write_file(workspacePath, document)
@@ -1310,7 +1366,17 @@ end
 local function write_run_configuration_file(config)
     local lines = {
         '<component name="ProjectRunConfigurationManager">',
-        '  <configuration default="false" name="' .. xml_escape(config.name) .. '" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="' .. xml_escape(config.project_name) .. '" TARGET_NAME="' .. xml_escape(config.target_name) .. '" CONFIG_NAME="' .. xml_escape(config.config_name) .. '" RUN_PATH="' .. xml_escape(config.run_path) .. '">',
+        '  <configuration default="false" name="'
+            .. xml_escape(config.name)
+            .. '" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="'
+            .. xml_escape(config.project_name)
+            .. '" TARGET_NAME="'
+            .. xml_escape(config.target_name)
+            .. '" CONFIG_NAME="'
+            .. xml_escape(config.config_name)
+            .. '" RUN_PATH="'
+            .. xml_escape(config.run_path)
+            .. '">',
         '    <option name="WORKING_DIRECTORY" value="' .. xml_escape(config.working_dir) .. '" />',
     }
 
@@ -1321,10 +1387,10 @@ local function write_run_configuration_file(config)
 
     table.insert(lines, '    <method v="2">')
     table.insert(lines, '      <option name="CLION.EXTERNAL.BUILD" enabled="true" />')
-    table.insert(lines, '    </method>')
-    table.insert(lines, '  </configuration>')
-    table.insert(lines, '</component>')
-    table.insert(lines, '')
+    table.insert(lines, "    </method>")
+    table.insert(lines, "  </configuration>")
+    table.insert(lines, "</component>")
+    table.insert(lines, "")
 
     bb.fs.write_file(path.join(BLUE_ROOT, ".idea/runConfigurations", config.file_name), table.concat(lines, "\n"))
 end
@@ -1347,7 +1413,14 @@ local function write_clion_idea_files(targetSystem, platforms, configurations)
     local runTargetNames, runTargetRecords = collect_requested_run_targets()
     local buildConfigurations = collect_build_configurations(targetSystem, platforms, configurations, runTargetNames)
     local buildConfigurationsByKey = index_build_configurations(buildConfigurations)
-    local runConfigurations = collect_run_configurations(targetSystem, runTargetNames, runTargetRecords, buildConfigurationsByKey, platforms, configurations)
+    local runConfigurations = collect_run_configurations(
+        targetSystem,
+        runTargetNames,
+        runTargetRecords,
+        buildConfigurationsByKey,
+        platforms,
+        configurations
+    )
 
     write_external_tools_file(buildConfigurations)
     write_custom_targets_file(buildConfigurations)
@@ -1379,7 +1452,10 @@ local function write_clion_readme(outputRoot, targetSystem, generatedDatabases, 
     end
 
     table.insert(lines, "")
-    table.insert(lines, "The repository root `compile_commands.json` is a copy of the default Debug/x64 database when that database is generated.")
+    table.insert(
+        lines,
+        "The repository root `compile_commands.json` is a copy of the default Debug/x64 database when that database is generated."
+    )
     table.insert(lines, "")
     local buildConfigurationCount = ideaStats and ideaStats.build_configurations or 0
     local runConfigurationCount = ideaStats and ideaStats.run_configurations or 0
@@ -1390,7 +1466,10 @@ local function write_clion_readme(outputRoot, targetSystem, generatedDatabases, 
     table.insert(lines, "Generated build configurations: `" .. tostring(buildConfigurationCount) .. "`")
     table.insert(lines, "Generated run configurations: `" .. tostring(runConfigurationCount) .. "`")
     table.insert(lines, "")
-    table.insert(lines, "The generated custom target is named after the Premake workspace. Its configurations build the workspace and any selected Premake projects. The exporter writes the same external-build target model to `customTargets.xml` and `workspace.xml` so CLion can resolve run configurations reliably after project reload.")
+    table.insert(
+        lines,
+        "The generated custom target is named after the Premake workspace. Its configurations build the workspace and any selected Premake projects. The exporter writes the same external-build target model to `customTargets.xml` and `workspace.xml` so CLion can resolve run configurations reliably after project reload."
+    )
     table.insert(lines, "")
 
     bb.fs.write_file(path.join(outputRoot, "README.md"), table.concat(lines, "\n"))
@@ -1402,8 +1481,16 @@ function bb.clion.generate()
     local targetSystem = get_target_system()
     local targetOsName = get_target_os_name(targetSystem)
     local workspaceDesc = bb.registry.workspace or {}
-    local configurations = select_requested_values("clion-config", workspaceDesc.configurations or bb.get_default_build_configurations(), DEFAULT_CONFIG)
-    local platforms = select_requested_values("clion-platform", workspaceDesc.platforms or bb.get_default_build_platforms(), DEFAULT_PLATFORM)
+    local configurations = select_requested_values(
+        "clion-config",
+        workspaceDesc.configurations or bb.get_default_build_configurations(),
+        DEFAULT_CONFIG
+    )
+    local platforms = select_requested_values(
+        "clion-platform",
+        workspaceDesc.platforms or bb.get_default_build_platforms(),
+        DEFAULT_PLATFORM
+    )
     local outputRoot = path.join(BLUE_ROOT, "out/ide/clion", targetOsName)
     local generatedDatabases = {}
     local defaultDatabaseContent = nil
@@ -1452,7 +1539,10 @@ function bb.clion.generate()
 
     bb.log.info("CLion compilation databases generated under " .. normalize_slashes(outputRoot))
     if option_value("clion-idea") ~= "off" then
-        bb.log.info("CLion custom targets and run configurations generated under " .. normalize_slashes(path.join(BLUE_ROOT, ".idea")))
+        bb.log.info(
+            "CLion custom targets and run configurations generated under "
+                .. normalize_slashes(path.join(BLUE_ROOT, ".idea"))
+        )
     end
     if defaultDatabasePath then
         bb.log.info("Root compile_commands.json copied from " .. normalize_slashes(defaultDatabasePath))

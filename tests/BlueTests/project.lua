@@ -1,4 +1,4 @@
-bb.module {
+bb.module({
     name = "BlueTests",
     type = "executable",
     root = "tests/BlueTests",
@@ -27,4 +27,4 @@ bb.module {
             "BlueJobSystem",
         },
     },
-}
+})

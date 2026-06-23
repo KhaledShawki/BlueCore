@@ -28,7 +28,6 @@ local BUILD_PLATFORMS = {
     },
 }
 
-
 local function is_ninja_action()
     return _ACTION == "ninja"
 end
@@ -74,8 +73,10 @@ function bb.get_default_build_platforms()
 
     if selected ~= "default" then
         if is_ninja_action() and selected ~= "x64" then
-            error("Premake Ninja generation currently supports only the x64 build platform. " ..
-                  "Use --blue-build-platforms=x64 for Ninja, or use Visual Studio/gmake2 for x64_DLL/shared-library matrix builds.")
+            error(
+                "Premake Ninja generation currently supports only the x64 build platform. "
+                    .. "Use --blue-build-platforms=x64 for Ninja, or use Visual Studio/gmake2 for x64_DLL/shared-library matrix builds."
+            )
         end
 
         return copy_selected_build_platforms(selected)

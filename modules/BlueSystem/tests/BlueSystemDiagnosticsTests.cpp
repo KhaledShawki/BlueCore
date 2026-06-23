@@ -42,7 +42,7 @@ void TestLogSinkWrite( void* context, const Blue::LogEvent& event )
 
 class AssertHandlerScope final
 {
-  public:
+public:
   explicit AssertHandlerScope( Blue::AssertHandler handler ) { Blue::SetAssertHandler( handler ); }
 
   ~AssertHandlerScope( ) { Blue::SetAssertHandler( nullptr ); }
@@ -53,7 +53,7 @@ class AssertHandlerScope final
 
 class LoggerScope final
 {
-  public:
+public:
   explicit LoggerScope( bool initialized )
       : Initialized( initialized )
   {}
@@ -69,7 +69,7 @@ class LoggerScope final
   LoggerScope( const LoggerScope& ) = delete;
   LoggerScope& operator=( const LoggerScope& ) = delete;
 
-  private:
+private:
   bool Initialized = false;
 };
 } // namespace

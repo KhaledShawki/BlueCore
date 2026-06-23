@@ -9,7 +9,7 @@ namespace
 {
 class BlueMemoryTrackingTests : public testing::Test
 {
-  protected:
+protected:
   void TearDown( ) override
   {
     if ( Blue::IsMemorySystemInitialized( ) )

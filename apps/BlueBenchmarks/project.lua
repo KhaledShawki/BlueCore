@@ -1,4 +1,4 @@
-bb.module {
+bb.module({
     name = "BlueBenchmarks",
     type = "executable",
     root = "apps/BlueBenchmarks",
@@ -25,4 +25,4 @@ bb.module {
             "BlueContainer",
         },
     },
-}
+})

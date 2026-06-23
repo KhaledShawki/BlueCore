@@ -7,7 +7,7 @@ namespace Blue
 {
 class SpinLock final
 {
-  public:
+public:
   SpinLock( ) noexcept;
 
   SpinLock( const SpinLock& ) = delete;
@@ -21,20 +21,20 @@ class SpinLock final
   Bool TryLock( ) noexcept;
   void Unlock( ) noexcept;
 
-  private:
+private:
   AtomicUint32 m_State;
 };
 
 class ScopedSpinLock final
 {
-  public:
+public:
   explicit ScopedSpinLock( SpinLock& lock ) noexcept;
   ~ScopedSpinLock( ) noexcept;
 
   ScopedSpinLock( const ScopedSpinLock& ) = delete;
   ScopedSpinLock& operator=( const ScopedSpinLock& ) = delete;
 
-  private:
+private:
   SpinLock* m_Lock;
 };
 } // namespace Blue

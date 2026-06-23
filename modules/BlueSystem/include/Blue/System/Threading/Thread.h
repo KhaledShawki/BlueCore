@@ -24,7 +24,7 @@ BLUE_SYSTEM_API Bool SetCurrentThreadAffinity( CpuAffinity affinity ) noexcept;
 
 class OwnedThread final : private NonCopyable
 {
-  public:
+public:
   OwnedThread( ) noexcept = default;
   explicit OwnedThread( const ThreadCreateInfo& createInfo ) noexcept;
   ~OwnedThread( ) noexcept;
@@ -42,7 +42,7 @@ class OwnedThread final : private NonCopyable
   Thread& Get( ) noexcept;
   const Thread& Get( ) const noexcept;
 
-  private:
+private:
   Thread m_Thread = { };
 };
 } // namespace Blue

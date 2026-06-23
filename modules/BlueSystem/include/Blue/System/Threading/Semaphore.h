@@ -42,7 +42,7 @@ Bool IsSemaphoreInitialized( const Semaphore& semaphore ) noexcept;
 
 class OwnedSemaphore final : private NonCopyable
 {
-  public:
+public:
   explicit OwnedSemaphore( const SemaphoreCreateDesc& desc = { } ) noexcept;
   ~OwnedSemaphore( ) noexcept;
 
@@ -55,7 +55,7 @@ class OwnedSemaphore final : private NonCopyable
   Bool AcquireFor( TimeDuration timeout ) noexcept;
   Bool Release( Uint32 count = 1 ) noexcept;
 
-  private:
+private:
   Semaphore m_Semaphore = { };
 };
 } // namespace Blue

@@ -6,7 +6,7 @@ if (_OPTIONS["memory-backend"] or "system") == "mimalloc" then
     table.insert(blueMemoryPublicDeps, "mimalloc")
 end
 
-bb.module {
+bb.module({
     name = "BlueMemory",
     type = "library",
     linkage = "auto",
@@ -61,12 +61,10 @@ bb.module {
             "include/Blue/Memory/Config/BlueMemorySettings.h",
             "include/BlueMemory/BlueMemory.h",
             "include/BlueMemory/BlueMemoryApi.h",
-
         },
 
         resources = {
             "include/Blue/Memory/Pool/MemoryPools.def",
-
         },
 
         private_headers = {
@@ -74,7 +72,6 @@ bb.module {
             "src/Backend/SystemMemoryBackend.h",
             "src/BlueMemoryPrivate.h",
             "src/Pch.h",
-
         },
 
         sources = {
@@ -98,7 +95,6 @@ bb.module {
             "src/Tracking/MemoryAllocationTracker.cpp",
             "src/Proxy/RuntimeAllocationProxy.cpp",
             "src/VirtualMemoryBlock.cpp",
-
         },
     },
 
@@ -113,9 +109,9 @@ bb.module {
     deps = {
         public = blueMemoryPublicDeps,
     },
-}
+})
 
-bb.module_tests {
+bb.module_tests({
     module = "BlueMemory",
     root = "modules/BlueMemory",
 
@@ -160,9 +156,9 @@ bb.module_tests {
         "BlueMemorySmallBlockAllocatorTests",
         "BlueMemoryTrackingTests",
     },
-}
+})
 
-bb.module_benchmarks {
+bb.module_benchmarks({
     module = "BlueMemory",
     root = "modules/BlueMemory",
 
@@ -195,4 +191,4 @@ bb.module_benchmarks {
     benchmarks = {
         "BlueMemoryHotPathBenchmarks",
     },
-}
+})

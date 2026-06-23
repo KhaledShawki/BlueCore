@@ -39,7 +39,7 @@ Bool IsConditionVariableInitialized( const ConditionVariable& conditionVariable 
 
 class OwnedConditionVariable final : private NonCopyable
 {
-  public:
+public:
   OwnedConditionVariable( ) noexcept;
   ~OwnedConditionVariable( ) noexcept;
 
@@ -52,7 +52,7 @@ class OwnedConditionVariable final : private NonCopyable
   void NotifyOne( ) noexcept;
   void NotifyAll( ) noexcept;
 
-  private:
+private:
   ConditionVariable m_ConditionVariable = { };
 };
 } // namespace Blue

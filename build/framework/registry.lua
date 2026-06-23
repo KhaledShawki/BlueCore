@@ -1,13 +1,14 @@
-bb.registry = bb.registry or {
-    workspace = nil,
-    projects = {},
-    dependencies = {},
-    tests = {},
-    tests_by_name = {},
-    test_runner_emitted = false,
-    benchmarks = {},
-    benchmarks_by_name = {},
-}
+bb.registry = bb.registry
+    or {
+        workspace = nil,
+        projects = {},
+        dependencies = {},
+        tests = {},
+        tests_by_name = {},
+        test_runner_emitted = false,
+        benchmarks = {},
+        benchmarks_by_name = {},
+    }
 
 function bb.registry_has_node(name)
     return bb.registry.projects[name] ~= nil or bb.registry.dependencies[name] ~= nil

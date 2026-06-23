@@ -264,7 +264,7 @@ void PrintHeader( std::size_t total, std::size_t workerCount )
 
 class UniqueHandle
 {
-  public:
+public:
   UniqueHandle( ) = default;
 
   explicit UniqueHandle( HANDLE handle )
@@ -311,7 +311,7 @@ class UniqueHandle
 
   explicit operator bool( ) const { return Handle != nullptr && Handle != INVALID_HANDLE_VALUE; }
 
-  private:
+private:
   HANDLE Handle = nullptr;
 };
 
@@ -456,7 +456,7 @@ ProcessResult RunProcess( const std::string& executablePath )
 
 class FileDescriptor
 {
-  public:
+public:
   FileDescriptor( ) = default;
 
   explicit FileDescriptor( int descriptor )
@@ -503,7 +503,7 @@ class FileDescriptor
 
   explicit operator bool( ) const { return Descriptor >= 0; }
 
-  private:
+private:
   int Descriptor = -1;
 };
 
