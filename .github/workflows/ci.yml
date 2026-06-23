@@ -15,10 +15,18 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install clang-format (LLVM 18)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install formatter dependencies
         shell: bash
         run: |
           set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y wget curl unzip
 
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
@@ -26,13 +34,24 @@ jobs:
           sudo apt-get install -y clang-format-18
           sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-18 100
 
+          python -m pip install --upgrade pip
+          python -m pip install black==25.1.0
+
+          curl -L https://github.com/JohnnyMorganz/StyLua/releases/download/v2.1.0/stylua-linux-x86_64.zip -o stylua-linux-x86_64.zip
+          unzip -q stylua-linux-x86_64.zip -d stylua-bin
+          sudo install stylua-bin/stylua /usr/local/bin/stylua
+
+          clang-format --version
+          stylua --version
+          black --version
+
       - name: Check formatting
         shell: bash
         run: |
           set -euo pipefail
 
-          chmod +x scripts/format-check-linux.sh
-          ./scripts/format-check-linux.sh
+          chmod +x tools/premake/linux/premake5 scripts/*.sh
+          ./scripts/premake-linux.sh check-format
 
   build-and-test:
     name: ${{ matrix.os }} ${{ matrix.config }}
