@@ -6,9 +6,10 @@ BlueCore uses a single repository-level `.clang-format` file for all C and C++ c
 
 - There is one formatter configuration at the repository root.
 - Nested `.clang-format` or `_clang-format` files are not allowed.
-- All formatting uses `clang-format --style=file` so the root configuration is discovered consistently.
-- Generated output, third-party code, and tool binaries are not formatted.
-- CI checks formatting but does not automatically rewrite source files.
+- C/C++ formatting uses `clang-format --style=file`.
+- Generated output, third-party code, and tool binaries are excluded.
+- CI checks formatting but does not rewrite source files.
+- Formatting orchestration is cross-platform Python; no platform formatter wrappers are required.
 
 ## Style Guidelines
 
@@ -17,30 +18,19 @@ BlueCore uses a single repository-level `.clang-format` file for all C and C++ c
 - Short switch cases may stay on one line.
 - Larger switch cases should use explicit braces.
 
-Example:
+## Tool resolution
 
-```cpp
-switch ( level )
-{
-case LogLevel::Trace: return "Trace";
-case LogLevel::Debug: return "Debug";
-default: return "Unknown";
-}
+The Blue CLI supports explicit tool overrides through CLI options or environment variables:
+
+```text
+--format-path / BLUE_CLANG_FORMAT
+--lua-format-path / BLUE_STYLUA
+--python-format-path / BLUE_BLACK
 ```
 
-## Tool Resolution
-
-Formatter implementations locate `clang-format` in the following order:
-
-1. `BLUE_CLANG_FORMAT` environment variable (if set)
-2. Repository-local binary under `tools/clang-format/<os>/`
-3. Standard LLVM installation locations
-4. Visual Studio LLVM toolchain path (on Windows)
-5. `clang-format` available in `PATH`
+Without an override, the CLI checks repository-local formatter binaries where available and then standard host installations/PATH. Black may also be executed as `python -m black`.
 
 ## Usage
-
-The public formatting interface is cross-platform:
 
 ```text
 python scripts/blue.py format
@@ -48,19 +38,10 @@ python scripts/blue.py format-check
 python scripts/blue.py list-format-files
 ```
 
-Premake dispatches those actions to two internal implementations:
+Premake `format`, `check-format`, and `list-format-files` actions invoke the same Python CLI, so CI, IDE utility projects, and terminal usage share one implementation.
 
-```text
-scripts/format-unix.sh
-scripts/format-windows.ps1
-```
-
-## Troubleshooting
-
-To see which configuration is being used for a specific file:
+To inspect the resolved clang-format configuration for a specific file:
 
 ```text
 clang-format --style=file -dump-config modules/BlueSystem/src/Log/Logger.cpp
 ```
-
-Only the repository root `.clang-format` file should exist.

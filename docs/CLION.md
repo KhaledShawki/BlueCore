@@ -103,18 +103,16 @@ Supported values:
 --clion-config=default|all|Debug|Release|Profile|Shipping
 ```
 
-## Internal Build Helpers
+## Build Command Integration
 
-Generated CLion build targets invoke these internal repository helpers:
+Generated CLion external tools call the semantic Blue CLI directly:
 
 ```text
-scripts/clion-build-windows.cmd
-scripts/clion-clean-windows.cmd
-scripts/clion-build-unix.sh
-scripts/clion-clean-unix.sh
+python/python3 scripts/blue.py build <target> --config=<config> --platform=<platform>
+python/python3 scripts/blue.py clean --config=<config> --platform=<platform>
 ```
 
-They regenerate the selected native backend through `scripts/blue.py premake` before invoking the native build tool.
+There are no CLion-specific Bash or CMD build wrappers. Build tools select a target, while clean tools intentionally clean the selected configuration on every backend. The CLI generates the selected native graph through Premake and then invokes GNU Make or MSBuild.
 
 ## Regeneration Policy
 

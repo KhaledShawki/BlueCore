@@ -127,7 +127,7 @@ function bb.regeneration.build_manifest()
         "apps/**/project.lua",
         "tests/**/project.lua",
         "scripts/blue.py",
-        "scripts/regenerate-*",
+        "scripts/blue_cli/**/*.py",
     })
 
     append_inventory_entries(lines, "SourceInventory", {
