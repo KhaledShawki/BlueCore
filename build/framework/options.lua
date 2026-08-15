@@ -143,6 +143,23 @@ function bb.load_options()
     })
 
     newoption({
+        trigger = "blue-test-manifest",
+        value = "PATH",
+        description = "Optional repository-relative path for generated registered test metadata.",
+    })
+
+    newoption({
+        trigger = "blue-test-postbuild",
+        value = "MODE",
+        description = "Control automatic BlueRunTests post-build execution for non-Ninja generators.",
+        default = "on",
+        allowed = {
+            { "on", "Run registered tests automatically after building BlueRunTests where supported." },
+            { "off", "Build BlueRunTests without automatically executing registered tests." },
+        },
+    })
+
+    newoption({
         trigger = "format-path",
         value = "PATH",
         description = "Optional path or command name for clang-format. If omitted, Blue resolves repo-local tools, LLVM install paths, then PATH.",

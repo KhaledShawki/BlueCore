@@ -1,14 +1,5 @@
-param(
-    [Parameter(Position = 0, Mandatory = $true)]
-    [ValidateSet("add-file", "remove-file", "rename-file", "add-project")]
-    [string] $Command,
-
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]] $RemainingArgs
-)
-
 $RootDir = Resolve-Path "$PSScriptRoot\.."
-$Premake = Join-Path $RootDir "scripts\premake-windows.cmd"
+$BlueCli = Join-Path $RootDir "scripts\blue.py"
 
-& $Premake "blue-$Command" @RemainingArgs
+& python $BlueCli @args
 exit $LASTEXITCODE

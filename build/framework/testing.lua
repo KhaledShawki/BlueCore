@@ -203,10 +203,16 @@ function bb.emit_test_runner_project()
 
     bb.registry.test_runner_emitted = true
 
+    local requestedManifest = _OPTIONS["blue-test-manifest"]
+    if requestedManifest and requestedManifest ~= "" then
+        bb.generate_test_manifest(requestedManifest)
+    end
+
     if #bb.registry.tests == 0 then
         return
     end
 
+    local enablePostBuild = (_OPTIONS["blue-test-postbuild"] or "on") ~= "off"
     local testNames = {}
     for _, test in ipairs(bb.registry.tests) do
         table.insert(testNames, test.name)
@@ -223,7 +229,7 @@ function bb.emit_test_runner_project()
         -- Ninja is driven by run-tests-*.sh scripts that build the runner target
         -- and then execute out/bin/.../BlueRunTests explicitly. This avoids
         -- generator-specific relative-path issues in post-build commands.
-        if _ACTION ~= "ninja" then
+        if _ACTION ~= "ninja" and enablePostBuild then
             platformRules[platformName].postbuildcommands = {
                 make_runner_command(extension),
             }
