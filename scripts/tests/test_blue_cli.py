@@ -334,16 +334,13 @@ class BlueCliTests(unittest.TestCase):
             self.assertIn("/t:Clean", command)
             self.assertNotIn("/t:BlueTests", command)
 
-    def test_windows_test_orchestration_uses_resolved_msbuild_for_static_and_shared(self) -> None:
+    def test_windows_test_orchestration_builds_solution_target_for_static_and_shared(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             build_root = root / "out" / "build" / "vs2026"
-            runner_project = build_root / "BlueRunTests" / "BlueRunTests.vcxproj"
-            test_project = build_root / "BlueSystemAtomicTests" / "BlueSystemAtomicTests.vcxproj"
-            runner_project.parent.mkdir(parents=True)
-            test_project.parent.mkdir(parents=True)
-            runner_project.write_text("", encoding="utf-8")
-            test_project.write_text("", encoding="utf-8")
+            build_root.mkdir(parents=True)
+            solution = build_root / "Blue.slnx"
+            solution.write_text("", encoding="utf-8")
 
             manifest = blue.test_manifest_path(root)
             manifest.parent.mkdir(parents=True)
@@ -376,11 +373,20 @@ class BlueCliTests(unittest.TestCase):
                         result = blue.run_windows_tests(root, request)
 
                     self.assertEqual(result, 0)
-                    self.assertEqual(run_command.call_count, 3)
-                    self.assertEqual(run_command.call_args_list[0].args[0][0], r"C:\VS\MSBuild.exe")
-                    self.assertEqual(run_command.call_args_list[1].args[0][0], r"C:\VS\MSBuild.exe")
-                    self.assertEqual(run_command.call_args_list[2].args[0][0], str(runner))
-                    self.assertIn(f"/p:Platform={build_platform}", run_command.call_args_list[0].args[0])
+                    self.assertEqual(run_command.call_count, 2)
+
+                    build_command = run_command.call_args_list[0].args[0]
+                    self.assertEqual(build_command[0], r"C:\VS\MSBuild.exe")
+                    self.assertEqual(build_command[1], str(solution))
+                    self.assertIn("/t:BlueRunTests", build_command)
+                    self.assertIn("/p:Configuration=Debug", build_command)
+                    self.assertIn(f"/p:Platform={build_platform}", build_command)
+                    self.assertFalse(any(part.endswith(".vcxproj") for part in build_command))
+
+                    runner_command = run_command.call_args_list[1].args[0]
+                    self.assertEqual(runner_command[0], str(runner))
+                    self.assertEqual(runner_command[1], "--jobs=auto")
+                    self.assertEqual(runner_command[2:], [str(test_executable)])
 
     def test_build_stops_when_premake_generation_fails(self) -> None:
         root = Path("/repo")

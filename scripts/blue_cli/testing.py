@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
+from .build import find_visual_studio_solution
 from .core import (
     BlueCliError,
     CONFIGURATIONS,
@@ -372,49 +373,23 @@ def run_windows_tests(root: Path, request: TestRequest) -> int:
         return result
 
     build_root = root / "out" / "build" / request.backend
-    runner_project = build_root / "BlueRunTests" / "BlueRunTests.vcxproj"
     bin_dir = test_binary_dir(root, request.host, request.build_platform, request.configuration)
     runner = bin_dir / "BlueRunTests.exe"
 
     if not build_root.is_dir():
         raise BlueCliError(f"Expected VS2026 build directory was not generated: {build_root}")
 
-    if not runner_project.is_file():
-        raise BlueCliError(f"Expected test runner project was not generated: {runner_project}")
-
+    solution = find_visual_studio_solution(build_root)
     test_names = load_registered_test_names(root)
-    for test_name in test_names:
-        project_file = build_root / test_name / f"{test_name}.vcxproj"
-        if not project_file.is_file():
-            raise BlueCliError(f"Registered test project was not generated: {project_file}")
 
-        print(f"[BlueBuild] Building {test_name}")
-        result = run_command(
-            [
-                msbuild,
-                str(project_file),
-                "/m",
-                "/nr:false",
-                "/t:Build",
-                f"/p:Configuration={request.configuration}",
-                f"/p:Platform={request.build_platform}",
-                "/v:minimal",
-            ],
-            cwd=root,
-        )
-        if result != 0:
-            return result
-
-    print(f"[BlueBuild] Built {len(test_names)} registered test projects.")
-    print("[BlueBuild] Building BlueRunTests")
-
+    print("[BlueBuild] Building all test executables through BlueRunTests")
     result = run_command(
         [
             msbuild,
-            str(runner_project),
+            str(solution),
             "/m",
             "/nr:false",
-            "/t:Build",
+            "/t:BlueRunTests",
             f"/p:Configuration={request.configuration}",
             f"/p:Platform={request.build_platform}",
             "/v:minimal",
