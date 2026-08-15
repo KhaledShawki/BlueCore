@@ -226,9 +226,9 @@ function bb.emit_test_runner_project()
         }
 
         -- Visual Studio/gmake can use post-build execution for IDE convenience.
-        -- Ninja is driven by run-tests-*.sh scripts that build the runner target
-        -- and then execute out/bin/.../BlueRunTests explicitly. This avoids
-        -- generator-specific relative-path issues in post-build commands.
+        -- Ninja test orchestration is driven by the Blue CLI, which builds the
+        -- runner target and then executes out/bin/.../BlueRunTests explicitly.
+        -- This avoids generator-specific relative-path issues in post-build commands.
         if _ACTION ~= "ninja" and enablePostBuild then
             platformRules[platformName].postbuildcommands = {
                 make_runner_command(extension),

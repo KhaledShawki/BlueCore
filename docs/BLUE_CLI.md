@@ -2,13 +2,14 @@
 
 `scripts/blue.py` is the single cross-platform developer entry point for BlueCore build tooling.
 
-The CLI is intentionally a control-plane layer. Premake and the Blue Lua framework remain the authoritative source for the project graph, dependencies, build options, test registration, formatting actions, and structural project mutations.
+The executable is intentionally small. Implementation lives in `scripts/blue_cli/`, while Premake and the Blue Lua framework remain authoritative for the project graph, dependencies, build options, test registration, generation policy, and structural project mutations.
 
 ## Requirements
 
 - Python 3.11 or newer
 - The bundled Premake executable for the current host under `tools/premake/<os>/`
-- Backend and compiler tools required by the selected operation, such as Ninja, GNU Make, Clang/GCC, or MSBuild
+- Native backend/compiler tools required by the selected operation
+- Formatting tools when running formatting commands: `clang-format`, StyLua, and Black
 
 Use the same entry point on every supported host:
 
@@ -16,30 +17,34 @@ Use the same entry point on every supported host:
 python scripts/blue.py <command> [arguments]
 ```
 
-On Unix, `scripts/blue.py` is executable and may also be invoked directly when `/usr/bin/env python3` resolves Python 3.11 or newer.
-
-## Commands
-
-The CLI exposes existing Blue Premake actions through one host-aware entry point:
+## Semantic commands
 
 ```text
-python scripts/blue.py validate
+python scripts/blue.py build [target]
+python scripts/blue.py clean
+python scripts/blue.py test
+python scripts/blue.py regenerate [premake-action]
+
 python scripts/blue.py format
 python scripts/blue.py format-check
 python scripts/blue.py list-format-files
 
+python scripts/blue.py validate
+python scripts/blue.py clion
+```
+
+Other graph/metadata actions remain available through the same CLI:
+
+```text
 python scripts/blue.py graph
 python scripts/blue.py metadata
-
 python scripts/blue.py list-tests
 python scripts/blue.py test-metadata
 python scripts/blue.py list-benchmarks
 python scripts/blue.py benchmark-metadata
-
-python scripts/blue.py clion
 ```
 
-Project mutation commands forward their existing `--blue-*` arguments unchanged:
+Project mutation commands forward their existing `--blue-*` arguments to Premake:
 
 ```text
 python scripts/blue.py add-file --blue-project=BlueSystem --blue-kind=source --blue-path=Log/FileLogger.cpp
@@ -48,9 +53,41 @@ python scripts/blue.py rename-file --blue-project=BlueSystem --blue-kind=source 
 python scripts/blue.py add-project --blue-project=BlueGraphics --blue-type=library --blue-linkage=auto
 ```
 
-## Running Tests
+## Build and clean
 
-Use the semantic test interface:
+`build` and `clean` provide the native-build operations used by editor integrations without platform wrapper scripts. `build` may select a target; `clean` is intentionally configuration-scoped on every backend so its semantics are identical across Ninja, GNU Make, and Visual Studio.
+
+```text
+python scripts/blue.py build BlueTests --config=Debug --platform=x64
+python scripts/blue.py clean --config=Debug --platform=x64
+```
+
+Supported build options:
+
+```text
+--config=Debug|Release|Profile|Shipping
+--platform=x64|x64_DLL
+--backend=ninja|gmake|vs2026
+--toolchain=clang|gcc|msvc
+--memory-backend=system|mimalloc
+```
+
+Unix build/clean defaults to GNU Make so workspace and CLion utility targets remain available. Ninja is supported for real static `x64` targets. Windows uses Visual Studio 2026/MSBuild. `clean` always cleans the selected configuration rather than pretending that every native backend supports target-scoped clean semantics. Premake still generates and owns the native graph; the CLI only selects and invokes it.
+
+For generic Unix `build`/`clean` commands, `BLUE_TOOLCHAIN` may be used to override the default Clang toolchain when `--toolchain` is omitted.
+
+## Regeneration
+
+Regeneration uses the existing Blue build-graph token rather than regenerating unconditionally:
+
+```text
+python scripts/blue.py regenerate ninja --toolchain=clang --blue-platforms=linux
+python scripts/blue.py regenerate vs2026 --toolchain=msvc --blue-platforms=windows
+```
+
+The command runs `check-regeneration`; return code `0` skips generation, return code `2` regenerates and updates the token, and any other return code is treated as a failure.
+
+## Running tests
 
 ```text
 python scripts/blue.py test
@@ -68,68 +105,60 @@ Supported options:
 --memory-backend=system|mimalloc
 ```
 
-Backend, toolchain, and linkage policy:
+Backend, toolchain, and linkage remain separate build axes. Windows defaults to Visual Studio 2026 + MSVC; macOS defaults to Ninja + Clang for static tests and gmake + Clang for shared tests; Linux defaults to Ninja + Clang for static tests and gmake for shared tests. `gmake2` remains accepted as a compatibility alias for `gmake`.
 
-- Backend, toolchain, and linkage are separate build axes. The CLI resolves defaults once and validates the resulting combination before generation.
-- Windows defaults to Visual Studio 2026 + MSVC. `static` maps to `x64`; `shared` maps to `x64_DLL`.
-- macOS defaults to Ninja + Clang for static `x64`; shared builds automatically select `gmake` + Clang.
-- Linux defaults to Ninja + Clang for static `x64`; `gmake` defaults to GCC and also accepts Clang. Shared builds automatically select `gmake`.
-- macOS test builds reject GCC/MSVC. Windows test builds reject GCC/Clang. Linux test builds accept GCC or Clang.
-- An explicit `--backend=ninja --linkage=shared` combination is rejected because the current BlueCore Ninja generator supports only static `x64`.
+Premake writes the authoritative registered-test manifest under `out/`. `blue test` builds and executes exactly those registered binaries once through `BlueRunTests`.
 
-Examples:
+## Formatting
+
+Formatting orchestration is implemented directly in `scripts/blue_cli/formatting.py`; there are no Bash, CMD, or PowerShell formatter wrappers.
 
 ```text
-python scripts/blue.py test --config=Debug --backend=ninja --toolchain=clang --linkage=static
-python scripts/blue.py test --config=Debug --backend=gmake --toolchain=gcc --linkage=static
-python scripts/blue.py test --config=Debug --backend=gmake --toolchain=clang --linkage=shared
-python scripts/blue.py test --config=Debug --linkage=shared
+python scripts/blue.py format
+python scripts/blue.py format-check
+python scripts/blue.py list-format-files
 ```
 
-The last command automatically resolves to `gmake` on Linux and macOS. The CLI preserves the existing generated output layout. Premake writes the authoritative registered-test manifest under `out/`, and `blue test` executes exactly those binaries once through `BlueRunTests`. Generator post-build test execution is disabled only for build graphs generated by the semantic `blue test` command so incremental test runs remain deterministic.
+Optional formatter overrides:
 
-## Raw Premake Escape Hatch
+```text
+--format-path=<clang-format>
+--lua-format-path=<stylua>
+--python-format-path=<black>
+```
 
-For build-system operations that do not yet have a semantic Blue CLI command, use:
+The corresponding `BLUE_CLANG_FORMAT`, `BLUE_STYLUA`, and `BLUE_BLACK` environment variables are also supported.
+
+## Raw Premake escape hatch
+
+For build-system operations that do not yet have a semantic command:
 
 ```text
 python scripts/blue.py premake <premake-action> [premake-options]
 ```
 
-Examples:
+The escape hatch invokes the bundled host Premake binary with `premake5.lua`. It is not a second build graph.
+
+## Structure and ownership
 
 ```text
-python scripts/blue.py premake ninja --toolchain=clang --blue-platforms=linux --blue-build-platforms=x64
-python scripts/blue.py premake gmake --toolchain=clang --blue-platforms=linux --blue-build-platforms=x64_DLL
-python scripts/blue.py premake vs2026 --toolchain=msvc --blue-platforms=windows
-```
-
-This command resolves the bundled Premake executable for the current host and invokes it directly with `premake5.lua`.
-
-The `premake` command is an escape hatch, not a second build graph. New developer workflows should prefer semantic Blue CLI commands as they are added.
-
-## Script Ownership
-
-`scripts/blue.py` is the public developer command surface. Platform-specific scripts that remain under `scripts/` are internal implementations used by Premake-generated IDE targets, formatting, regeneration, or benchmark tooling. They are not alternate public build interfaces.
-
-## Architecture
-
-```text
-Terminal / CI / Editor
-        |
-        v
 scripts/blue.py
-        |
-        v
+      |
+      v
+scripts/blue_cli/
+  core.py        host/tool/process primitives
+  build.py       build, clean, regeneration orchestration
+  testing.py     test build and execution orchestration
+  toolchains.py  host compiler/toolchain environment setup
+  formatting.py  formatter discovery and execution
+  cli.py         command routing and user-facing CLI
+      |
+      v
 Premake + Blue Lua framework
-        |
-        +--> Ninja + Clang/GCC      Linux static
-        |   Ninja + Clang          macOS static
-        |
-        +--> gmake + GCC/Clang     Linux static/shared
-        |   gmake + Clang          macOS static/shared
-        |
-        +--> Visual Studio + MSVC   Windows static/shared
+      |
+      +--> Ninja
+      +--> GNU Make
+      +--> MSBuild
 ```
 
-Platform-specific decisions belong behind the CLI boundary. Project graph semantics remain in Blue Lua and are not duplicated in Python.
+Python owns CLI UX, host/tool discovery, and process orchestration. Premake/Lua owns project and build semantics. Native tools perform compilation, linking, formatting, and execution.

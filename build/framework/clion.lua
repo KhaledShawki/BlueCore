@@ -967,12 +967,12 @@ local function get_run_path(context, targetName)
         .. get_executable_extension(context)
 end
 
-local function get_idea_script_path(context, kind)
+local function get_blue_cli_command(context)
     if context.system == "windows" then
-        return "$ProjectFileDir$/scripts/clion-" .. kind .. "-windows.cmd"
+        return "python"
     end
 
-    return "$ProjectFileDir$/scripts/clion-" .. kind .. "-unix.sh"
+    return "python3"
 end
 
 local BUILDABLE_PROJECT_KINDS = {
@@ -1003,8 +1003,26 @@ local function get_external_tool_action_id(kind, configName)
     return "Tool_External Tools_" .. get_external_tool_name(kind, configName)
 end
 
-local function get_external_tool_parameters(targetName, configurationName, platformName)
-    return targetName .. " " .. configurationName .. " " .. platformName
+local function get_external_tool_parameters(targetName, configurationName, platformName, context, includeTarget)
+    local toolchain = option_value("toolchain")
+    if toolchain == "default" then
+        toolchain = context.system == "windows" and "msvc" or "clang"
+    end
+
+    local parameters = "--config="
+        .. configurationName
+        .. " --platform="
+        .. platformName
+        .. " --toolchain="
+        .. toolchain
+        .. " --memory-backend="
+        .. option_value("memory-backend")
+
+    if includeTarget then
+        return targetName .. " " .. parameters
+    end
+
+    return parameters
 end
 
 local function make_build_configuration_record(name, targetName, context)
@@ -1019,7 +1037,20 @@ local function make_build_configuration_record(name, targetName, context)
         clean_tool_name = get_external_tool_name("Clean", name),
         build_action_id = get_external_tool_action_id("Build", name),
         clean_action_id = get_external_tool_action_id("Clean", name),
-        parameters = get_external_tool_parameters(targetName, context.configuration, context.platform),
+        build_parameters = get_external_tool_parameters(
+            targetName,
+            context.configuration,
+            context.platform,
+            context,
+            true
+        ),
+        clean_parameters = get_external_tool_parameters(
+            targetName,
+            context.configuration,
+            context.platform,
+            context,
+            false
+        ),
     }
 end
 
@@ -1196,14 +1227,18 @@ local function write_external_tools_file(buildConfigurations)
     for _, config in ipairs(buildConfigurations) do
         for _, tool in ipairs({
             {
+                kind = "build",
                 name = config.build_tool_name,
                 description = "Build " .. config.name,
-                command = get_idea_script_path(config.context, "build"),
+                command = get_blue_cli_command(config.context),
+                parameters = config.build_parameters,
             },
             {
+                kind = "clean",
                 name = config.clean_tool_name,
                 description = "Clean " .. config.name,
-                command = get_idea_script_path(config.context, "clean"),
+                command = get_blue_cli_command(config.context),
+                parameters = config.clean_parameters,
             },
         }) do
             table.insert(
@@ -1216,7 +1251,12 @@ local function write_external_tools_file(buildConfigurations)
             )
             table.insert(lines, "    <exec>")
             table.insert(lines, '      <option name="COMMAND" value="' .. xml_escape(tool.command) .. '" />')
-            table.insert(lines, '      <option name="PARAMETERS" value="' .. xml_escape(config.parameters) .. '" />')
+            local parameters = quote_shell_argument("$ProjectFileDir$/scripts/blue.py")
+                .. " "
+                .. tool.kind
+                .. " "
+                .. tool.parameters
+            table.insert(lines, '      <option name="PARAMETERS" value="' .. xml_escape(parameters) .. '" />')
             table.insert(lines, '      <option name="WORKING_DIRECTORY" value="$ProjectFileDir$" />')
             table.insert(lines, "    </exec>")
             table.insert(lines, "  </tool>")

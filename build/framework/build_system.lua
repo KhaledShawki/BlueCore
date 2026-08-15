@@ -96,12 +96,13 @@ local function build_option_arguments(options)
     return table.concat(args, " ")
 end
 
-local function command_for_script(scriptName, extra)
-    local command = quote(path.join(BLUE_ROOT, "scripts", scriptName))
-    if extra and extra ~= "" then
-        command = command .. " " .. extra
-    end
-    return command
+local function blue_cli_command(args)
+    local blueCli = quote(path.join(BLUE_ROOT, "scripts", "blue.py"))
+    return {
+        windows = "python " .. blueCli .. " " .. args,
+        linux = "python3 " .. blueCli .. " " .. args,
+        macosx = "python3 " .. blueCli .. " " .. args,
+    }
 end
 
 local function premake_action_command(actionName, options)
@@ -117,27 +118,18 @@ local function premake_action_command(actionName, options)
     end
     args = args .. " " .. actionName
 
-    local blueCli = quote(path.join(BLUE_ROOT, "scripts", "blue.py"))
-    return {
-        windows = "python " .. blueCli .. " " .. args,
-        linux = blueCli .. " " .. args,
-        macosx = blueCli .. " " .. args,
-    }
+    return blue_cli_command(args)
 end
 
 local function regenerate_command(options)
-    local actionName = _ACTION or "vs2022"
-    local args = actionName
+    local actionName = _ACTION or "vs2026"
+    local args = "regenerate " .. actionName
     local optionArgs = build_option_arguments(options)
     if optionArgs ~= "" then
         args = args .. " " .. optionArgs
     end
 
-    return {
-        windows = command_for_script("regenerate-windows.cmd", args),
-        linux = command_for_script("regenerate-linux.sh", args),
-        macosx = command_for_script("regenerate-macos.sh", args),
-    }
+    return blue_cli_command(args)
 end
 
 local function platform_postbuild(commandByPlatform)
@@ -189,9 +181,6 @@ function bb.emit_build_system_projects()
             "apps/**/project.lua",
             "tests/**/project.lua",
             "scripts/**/*.py",
-            "scripts/**.cmd",
-            "scripts/**.ps1",
-            "scripts/**.sh",
             "docs/**/*.md",
             ".clang-format",
             ".editorconfig",
@@ -211,7 +200,8 @@ function bb.emit_build_system_projects()
             "modules/**/project.lua",
             "apps/**/project.lua",
             "tests/**/project.lua",
-            "scripts/regenerate-*",
+            "scripts/blue.py",
+            "scripts/blue_cli/**/*.py",
         },
         platform = platform_postbuild(regenerate_command()),
     })
@@ -229,7 +219,8 @@ function bb.emit_build_system_projects()
             "modules/**/project.lua",
             "apps/**/project.lua",
             "tests/**/project.lua",
-            "scripts/regenerate-*",
+            "scripts/blue.py",
+            "scripts/blue_cli/**/*.py",
         },
         platform = platform_postbuild(regenerate_command({ force_scaffold = true })),
     })

@@ -50,7 +50,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          chmod +x tools/premake/linux/premake5 scripts/blue.py scripts/format-unix.sh
+          chmod +x tools/premake/linux/premake5
           python scripts/blue.py format-check
 
   validate:
@@ -73,7 +73,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          chmod +x tools/premake/linux/premake5 scripts/blue.py scripts/format-unix.sh
+          chmod +x tools/premake/linux/premake5
           python scripts/blue.py validate
 
       - name: Build static and shared configurations
@@ -81,7 +81,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          chmod +x tools/premake/linux/premake5 scripts/blue.py
+          chmod +x tools/premake/linux/premake5
           python scripts/blue.py premake gmake --blue-platforms=linux --blue-startup=BlueRunTests
           make -C out/build/gmake config=debug_x64 BlueRunTests BlueTests -j2
           make -C out/build/gmake config=debug_x64_dll BlueRunTests BlueTests -j2

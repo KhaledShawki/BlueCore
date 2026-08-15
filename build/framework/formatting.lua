@@ -16,14 +16,6 @@ local function command_argument(value)
     return text
 end
 
-local function get_host_format_script()
-    if os.host() == "windows" then
-        return path.join(BLUE_ROOT, "scripts/format-windows.ps1")
-    end
-
-    return path.join(BLUE_ROOT, "scripts/format-unix.sh")
-end
-
 local function get_explicit_tool_option(optionName)
     if not _OPTIONS then
         return nil
@@ -37,43 +29,33 @@ local function get_explicit_tool_option(optionName)
     return explicit
 end
 
-local function prepend_environment(command, variableName, value)
-    if value == nil or value == "" then
-        return command
+local function add_cli_option(args, name, value)
+    if value ~= nil and value ~= "" then
+        table.insert(args, "--" .. name .. "=" .. command_argument(value))
     end
-
-    if os.host() == "windows" then
-        return "set " .. quote(variableName .. "=" .. value) .. " && " .. command
-    end
-
-    return variableName .. "=" .. command_argument(value) .. " " .. command
 end
 
 local function make_format_command(mode)
-    local script = get_host_format_script()
-    local command
+    local commandByMode = {
+        format = "format",
+        check = "format-check",
+        list = "list-format-files",
+    }
+    local commandName = commandByMode[mode]
+    assert(commandName ~= nil, "unknown format action mode")
 
-    if os.host() == "windows" then
-        command = "powershell -NoProfile -ExecutionPolicy Bypass -File " .. quote(script) .. " -Mode " .. mode
-    else
-        local platformName = os.host() == "macosx" and "macos" or "linux"
-        command = quote(script) .. " " .. mode .. " " .. platformName
-    end
+    local args = { commandName }
+    add_cli_option(args, "format-path", get_explicit_tool_option("format-path"))
+    add_cli_option(args, "lua-format-path", get_explicit_tool_option("lua-format-path"))
+    add_cli_option(args, "python-format-path", get_explicit_tool_option("python-format-path"))
 
-    command = prepend_environment(command, "BLUE_CLANG_FORMAT", get_explicit_tool_option("format-path"))
-    command = prepend_environment(command, "BLUE_STYLUA", get_explicit_tool_option("lua-format-path"))
-    command = prepend_environment(command, "BLUE_BLACK", get_explicit_tool_option("python-format-path"))
-
-    return command
+    local python = os.host() == "windows" and "python" or "python3"
+    local blueCli = quote(path.join(BLUE_ROOT, "scripts", "blue.py"))
+    return python .. " " .. blueCli .. " " .. table.concat(args, " ")
 end
 
 function bb.run_format_action(mode)
     assert(mode == "format" or mode == "check" or mode == "list", "unknown format action mode")
-
-    local script = get_host_format_script()
-    if not os.isfile(script) then
-        error("Blue format script not found: " .. script)
-    end
 
     local command = make_format_command(mode)
     local result = os.execute(command)
@@ -102,9 +84,9 @@ local function collect_build_system_files()
         "modules/**/project.lua",
         "apps/**/project.lua",
         "tests/**/*.lua",
-        "scripts/*.py",
-        "scripts/format-unix.sh",
-        "scripts/format-windows.ps1",
+        "scripts/blue.py",
+        "scripts/blue_cli/**/*.py",
+        "scripts/tests/**/*.py",
         "docs/FORMATTING.md",
         "docs/IDE_FORMAT_ON_SAVE.md",
     }
