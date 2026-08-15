@@ -389,7 +389,7 @@ def run_windows_tests(root: Path, request: TestRequest) -> int:
             str(solution),
             "/m",
             "/nr:false",
-            r"/t:Tests\Runner\BlueRunTests:Build",
+            r"/t:Tests\Runner\BlueRunTests",
             f"/p:Configuration={request.configuration}",
             f"/p:Platform={request.build_platform}",
             "/v:minimal",

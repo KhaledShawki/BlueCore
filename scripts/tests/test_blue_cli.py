@@ -378,7 +378,7 @@ class BlueCliTests(unittest.TestCase):
                     build_command = run_command.call_args_list[0].args[0]
                     self.assertEqual(build_command[0], r"C:\VS\MSBuild.exe")
                     self.assertEqual(build_command[1], str(solution))
-                    self.assertIn(r"/t:Tests\Runner\BlueRunTests:Build", build_command)
+                    self.assertIn(r"/t:Tests\Runner\BlueRunTests", build_command)
                     self.assertIn("/p:Configuration=Debug", build_command)
                     self.assertIn(f"/p:Platform={build_platform}", build_command)
                     self.assertFalse(any(part.endswith(".vcxproj") for part in build_command))
