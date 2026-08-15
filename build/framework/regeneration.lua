@@ -126,7 +126,7 @@ function bb.regeneration.build_manifest()
         "modules/**/project.lua",
         "apps/**/project.lua",
         "tests/**/project.lua",
-        "scripts/premake-*",
+        "scripts/blue.py",
         "scripts/regenerate-*",
     })
 

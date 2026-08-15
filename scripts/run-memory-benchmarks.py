@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import platform
 import subprocess
+import sys
 from pathlib import Path
 
 BENCHMARK_NAME = "BlueMemoryHotPathBenchmarks"
@@ -14,12 +15,6 @@ CONFIG_TO_DIR = {
     "Release_x64": "Release",
     "Profile_x64": "Profile",
     "Shipping_x64": "Shipping",
-}
-
-HOST_TO_PREMAKE_SCRIPT = {
-    "macos": "premake-macos.sh",
-    "linux": "premake-linux.sh",
-    "windows": "premake-windows.cmd",
 }
 
 HOST_TO_PREMAKE_PLATFORM = {
@@ -69,17 +64,9 @@ def executable_suffix(host: str) -> str:
     return ".exe" if host == "windows" else ""
 
 
-def command_for_host(command: list[str], host: str) -> list[str]:
-    if host == "windows" and command and command[0].lower().endswith(".cmd"):
-        return ["cmd.exe", "/c", *command]
-
-    return command
-
-
-def run_command(command: list[str], cwd: Path, host: str) -> None:
-    resolved_command = command_for_host(command, host)
-    print("+ " + " ".join(resolved_command))
-    subprocess.run(resolved_command, cwd=cwd, check=True)
+def run_command(command: list[str], cwd: Path) -> None:
+    print("+ " + " ".join(command))
+    subprocess.run(command, cwd=cwd, check=True)
 
 
 def display_path(path_value: Path, root: Path) -> Path:
@@ -165,13 +152,15 @@ def main() -> int:
     )
 
     if not args.no_build:
-        premake = root / "scripts" / HOST_TO_PREMAKE_SCRIPT[host]
-        if not premake.exists():
-            raise FileNotFoundError(f"Premake script not found: {premake}")
+        blue_cli = root / "scripts" / "blue.py"
+        if not blue_cli.is_file():
+            raise FileNotFoundError(f"Blue CLI not found: {blue_cli}")
 
         run_command(
             [
-                str(premake),
+                sys.executable,
+                str(blue_cli),
+                "premake",
                 "ninja",
                 f"--blue-platforms={HOST_TO_PREMAKE_PLATFORM[host]}",
                 "--blue-build-platforms=x64",
@@ -179,7 +168,6 @@ def main() -> int:
                 f"--blue-startup={BENCHMARK_NAME}",
             ],
             cwd=root,
-            host=host,
         )
 
         run_command(
@@ -190,7 +178,6 @@ def main() -> int:
                 benchmark_target,
             ],
             cwd=root,
-            host=host,
         )
 
     if not benchmark_binary.exists():
@@ -207,7 +194,7 @@ def main() -> int:
     if args.benchmark_filter:
         command.append(f"--benchmark_filter={args.benchmark_filter}")
 
-    run_command(command, cwd=root, host=host)
+    run_command(command, cwd=root)
 
     print()
     print(f"Benchmark JSON written to: {display_path(json_output, root)}")

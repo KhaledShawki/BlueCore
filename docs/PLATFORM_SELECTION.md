@@ -32,26 +32,22 @@ Both platforms target the same CPU architecture. The only difference is whether 
 **Windows**
 
 ```cmd
-scripts\premake-windows.cmd vs2026 \
-    --toolchain=msvc \
-    --blue-platforms=windows \
+python scripts\blue.py premake vs2026 ^
+    --toolchain=msvc ^
+    --blue-platforms=windows ^
     --blue-startup=BlueRunTests
 ```
 
 **Linux**
 
 ```bash
-./scripts/premake-linux.sh gmake2 \
-    --toolchain=gcc \
-    --blue-platforms=linux \
-    --blue-startup=BlueRunTests
+python scripts/blue.py premake gmake     --toolchain=gcc     --blue-platforms=linux     --blue-startup=BlueRunTests
 ```
 
 **macOS**
 
 ```bash
-./scripts/premake-macos.sh xcode4 \
-    --toolchain=clang \
-    --blue-platforms=macos \
-    --blue-startup=BlueRunTests
+python scripts/blue.py premake ninja     --toolchain=clang     --blue-platforms=macos     --blue-build-platforms=x64     --blue-startup=BlueRunTests
 ```
+
+For semantic test builds, prefer `--linkage=static|shared` on `python scripts/blue.py test`; the CLI resolves the corresponding Blue build platform.

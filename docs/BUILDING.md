@@ -4,74 +4,75 @@ This document describes how to build BlueCore.
 
 ## Requirements
 
+- Python 3.11 or newer
 - A C++20 compatible compiler
-- [Premake 5](https://premake.github.io/)
+- The bundled Premake executable for the current host under `tools/premake/<os>/`
+- Backend tools required by the selected generator, such as Ninja, GNU Make, or MSBuild
 - Optional: `clang-format` for code formatting
 - Optional: Graphviz for visualizing build dependencies
 
-Place the Premake executable in the platform-specific directory:
+The developer-facing build entry point is:
 
 ```text
-tools/premake/windows/premake5.exe
-tools/premake/linux/premake5
-tools/premake/macos/premake5
+python scripts/blue.py <command> [arguments]
 ```
 
 ## Windows
 
-### Validate the build graph
+Validate the build graph:
 
 ```cmd
-scripts\premake-windows.cmd validate
+python scripts\blue.py validate
 ```
 
-### Generate Visual Studio projects
+Generate Visual Studio 2026 projects:
 
 ```cmd
-scripts\premake-windows.cmd vs2022 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
+python scripts\blue.py premake vs2026 --toolchain=msvc --blue-platforms=windows --blue-startup=BlueRunTests
 ```
 
-### Build
+Build:
 
 ```cmd
-msbuild out\build\vs2022\Blue.sln /p:Configuration=Debug /p:Platform=Win64
-```
-
-A helper script is also available to generate Visual Studio 2026 projects when supported:
-
-```cmd
-scripts\generate-vs-windows.cmd
+msbuild out\build\vs2026\Blue.slnx /m /p:Configuration=Debug /p:Platform=x64
 ```
 
 ## Linux
 
+Run tests with the default Ninja + Clang configuration:
+
 ```bash
-chmod +x tools/premake/linux/premake5 scripts/*.sh
+python scripts/blue.py test --config=Debug
+```
 
-./scripts/premake-linux.sh validate
-./scripts/premake-linux.sh gmake2 --toolchain=gcc --blue-platforms=linux --blue-startup=BlueRunTests
+Generate GNU Make files explicitly:
 
-make -C out/build/gmake2 config=debug_x64
+```bash
+python scripts/blue.py premake gmake --toolchain=gcc --blue-platforms=linux --blue-startup=BlueRunTests
+make -C out/build/gmake config=debug_x64
 ```
 
 ## macOS
 
-```bash
-chmod +x tools/premake/macos/premake5 scripts/*.sh
+Run tests with the default Ninja + Apple Clang configuration:
 
-./scripts/premake-macos.sh validate
-./scripts/premake-macos.sh xcode4 --toolchain=clang --blue-platforms=macos --blue-startup=BlueRunTests
+```bash
+python scripts/blue.py test --config=Debug
+```
+
+Generate a Ninja build explicitly:
+
+```bash
+python scripts/blue.py premake ninja --toolchain=clang --blue-platforms=macos --blue-build-platforms=x64 --blue-startup=BlueRunTests
 ```
 
 ## CLion
 
-Generate compilation databases for CLion:
+Generate CLion integration files:
 
-```cmd
-scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
+```text
+python scripts/blue.py clion --toolchain=<toolchain> --blue-platforms=<platform>
 ```
-
-On Linux and macOS, use the corresponding wrapper scripts.
 
 CLion output is written to `out/ide/clion/`. See `docs/CLION.md` for more details.
 
@@ -79,7 +80,7 @@ CLion output is written to `out/ide/clion/`. See `docs/CLION.md` for more detail
 
 All generated files are written under the `out/` directory and should not be committed to version control:
 
-```
+```text
 out/build/    Generated project files
 out/bin/      Executables and libraries
 out/obj/      Object files
@@ -94,7 +95,7 @@ The default memory backend is the system allocator:
 --memory-backend=system
 ```
 
-To use mimalloc instead, place the dependency under `third_party/mimalloc` and generate with:
+To use mimalloc instead, place the dependency under `third_party/mimalloc` and pass:
 
 ```text
 --memory-backend=mimalloc

@@ -16,36 +16,12 @@ local function command_argument(value)
     return text
 end
 
-local function get_host_format_script(mode)
-    local host = os.host()
-
-    if host == "windows" then
-        if mode == "check" then
-            return path.join(BLUE_ROOT, "scripts/format-check-windows.cmd")
-        elseif mode == "list" then
-            return path.join(BLUE_ROOT, "scripts/list-format-files-windows.cmd")
-        end
-
-        return path.join(BLUE_ROOT, "scripts/format-windows.cmd")
+local function get_host_format_script()
+    if os.host() == "windows" then
+        return path.join(BLUE_ROOT, "scripts/format-windows.ps1")
     end
 
-    if host == "macosx" then
-        if mode == "check" then
-            return path.join(BLUE_ROOT, "scripts/format-check-macos.sh")
-        elseif mode == "list" then
-            return path.join(BLUE_ROOT, "scripts/list-format-files-macos.sh")
-        end
-
-        return path.join(BLUE_ROOT, "scripts/format-macos.sh")
-    end
-
-    if mode == "check" then
-        return path.join(BLUE_ROOT, "scripts/format-check-linux.sh")
-    elseif mode == "list" then
-        return path.join(BLUE_ROOT, "scripts/list-format-files-linux.sh")
-    end
-
-    return path.join(BLUE_ROOT, "scripts/format-linux.sh")
+    return path.join(BLUE_ROOT, "scripts/format-unix.sh")
 end
 
 local function get_explicit_tool_option(optionName)
@@ -74,8 +50,15 @@ local function prepend_environment(command, variableName, value)
 end
 
 local function make_format_command(mode)
-    local script = get_host_format_script(mode)
-    local command = quote(script)
+    local script = get_host_format_script()
+    local command
+
+    if os.host() == "windows" then
+        command = "powershell -NoProfile -ExecutionPolicy Bypass -File " .. quote(script) .. " -Mode " .. mode
+    else
+        local platformName = os.host() == "macosx" and "macos" or "linux"
+        command = quote(script) .. " " .. mode .. " " .. platformName
+    end
 
     command = prepend_environment(command, "BLUE_CLANG_FORMAT", get_explicit_tool_option("format-path"))
     command = prepend_environment(command, "BLUE_STYLUA", get_explicit_tool_option("lua-format-path"))
@@ -87,7 +70,7 @@ end
 function bb.run_format_action(mode)
     assert(mode == "format" or mode == "check" or mode == "list", "unknown format action mode")
 
-    local script = get_host_format_script(mode)
+    local script = get_host_format_script()
     if not os.isfile(script) then
         error("Blue format script not found: " .. script)
     end
@@ -120,11 +103,8 @@ local function collect_build_system_files()
         "apps/**/project.lua",
         "tests/**/*.lua",
         "scripts/*.py",
-        "scripts/format-*.cmd",
-        "scripts/format-*.ps1",
-        "scripts/format-*.sh",
-        "scripts/list-format-files-*.cmd",
-        "scripts/list-format-files-*.sh",
+        "scripts/format-unix.sh",
+        "scripts/format-windows.ps1",
         "docs/FORMATTING.md",
         "docs/IDE_FORMAT_ON_SAVE.md",
     }
@@ -162,7 +142,7 @@ function bb.emit_formatting_projects()
     bb.registry.formatting_projects_emitted = true
 
     -- Ninja should not emit IDE utility projects. Formatting remains available
-    -- through `premake format`, `premake check-format`, and platform scripts.
+    -- through the Blue CLI and Premake formatting actions.
     if _ACTION == "ninja" then
         return
     end

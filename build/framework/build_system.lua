@@ -111,15 +111,17 @@ local function premake_action_command(actionName, options)
     end
 
     local optionArgs = build_option_arguments(options)
-    local args = actionName
+    local args = "premake"
     if optionArgs ~= "" then
-        args = optionArgs .. " " .. actionName
+        args = args .. " " .. optionArgs
     end
+    args = args .. " " .. actionName
 
+    local blueCli = quote(path.join(BLUE_ROOT, "scripts", "blue.py"))
     return {
-        windows = command_for_script("premake-windows.cmd", args),
-        linux = command_for_script("premake-linux.sh", args),
-        macosx = command_for_script("premake-macos.sh", args),
+        windows = "python " .. blueCli .. " " .. args,
+        linux = blueCli .. " " .. args,
+        macosx = blueCli .. " " .. args,
     }
 end
 
@@ -155,7 +157,7 @@ function bb.emit_build_system_projects()
 
     -- Ninja is used as a fast command-line backend. Visual Studio-style utility
     -- projects generate warnings and are not useful there; keep helper commands
-    -- as Premake actions/scripts for Ninja and emit only real build targets.
+    -- available through the Blue CLI and emit only real build targets.
     if _ACTION == "ninja" then
         return
     end
@@ -186,6 +188,7 @@ function bb.emit_build_system_projects()
             "modules/**/project.lua",
             "apps/**/project.lua",
             "tests/**/project.lua",
+            "scripts/**/*.py",
             "scripts/**.cmd",
             "scripts/**.ps1",
             "scripts/**.sh",

@@ -1,6 +1,6 @@
 # Blue CLI
 
-`scripts/blue.py` is the cross-platform developer entry point for BlueCore build tooling.
+`scripts/blue.py` is the single cross-platform developer entry point for BlueCore build tooling.
 
 The CLI is intentionally a control-plane layer. Premake and the Blue Lua framework remain the authoritative source for the project graph, dependencies, build options, test registration, formatting actions, and structural project mutations.
 
@@ -10,13 +10,13 @@ The CLI is intentionally a control-plane layer. Premake and the Blue Lua framewo
 - The bundled Premake executable for the current host under `tools/premake/<os>/`
 - Backend and compiler tools required by the selected operation, such as Ninja, GNU Make, Clang/GCC, or MSBuild
 
-The normal invocation is the same on every supported host:
+Use the same entry point on every supported host:
 
 ```text
 python scripts/blue.py <command> [arguments]
 ```
 
-If a Unix installation exposes Python only as `python3`, use `python3 scripts/blue.py ...`.
+On Unix, `scripts/blue.py` is executable and may also be invoked directly when `/usr/bin/env python3` resolves Python 3.11 or newer.
 
 ## Commands
 
@@ -68,8 +68,6 @@ Supported options:
 --memory-backend=system|mimalloc
 ```
 
-`gmake2` remains accepted as a compatibility alias for `gmake`, but new commands and documentation use the canonical `gmake` name.
-
 Backend, toolchain, and linkage policy:
 
 - Backend, toolchain, and linkage are separate build axes. The CLI resolves defaults once and validates the resulting combination before generation.
@@ -110,22 +108,9 @@ This command resolves the bundled Premake executable for the current host and in
 
 The `premake` command is an escape hatch, not a second build graph. New developer workflows should prefer semantic Blue CLI commands as they are added.
 
-## Compatibility Wrappers
+## Script Ownership
 
-The existing platform-named scripts remain as thin compatibility shims during migration:
-
-```text
-scripts/blue.sh
-scripts/blue.cmd
-scripts/blue.ps1
-scripts/run-tests-linux.sh
-scripts/run-tests-macos.sh
-scripts/run-tests-windows.cmd
-```
-
-They contain no build/test policy. Each delegates immediately to `scripts/blue.py`.
-
-This keeps existing local commands and external automation working while making `blue.py` the single implementation of the developer-facing command logic.
+`scripts/blue.py` is the public developer command surface. Platform-specific scripts that remain under `scripts/` are internal implementations used by Premake-generated IDE targets, formatting, regeneration, or benchmark tooling. They are not alternate public build interfaces.
 
 ## Architecture
 
@@ -142,7 +127,7 @@ Premake + Blue Lua framework
         |   Ninja + Clang          macOS static
         |
         +--> gmake + GCC/Clang     Linux static/shared
-        |   gmake + Clang         macOS static/shared
+        |   gmake + Clang          macOS static/shared
         |
         +--> Visual Studio + MSVC   Windows static/shared
 ```

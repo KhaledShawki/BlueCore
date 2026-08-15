@@ -10,13 +10,11 @@ macos/premake5
 
 These binaries are not committed to the repository by default.
 
-Use the wrapper scripts from the repository root for normal workflows:
+Normal developer workflows use the cross-platform Blue CLI, which resolves the correct bundled Premake binary for the current host:
 
-```cmd
-scripts\premake-windows.cmd validate
+```text
+python scripts/blue.py validate
+python scripts/blue.py premake <action> [options]
 ```
 
-```bash
-./scripts/premake-linux.sh validate
-./scripts/premake-macos.sh validate
-```
+Direct invocation of the bundled binaries is reserved for low-level debugging of Premake itself.

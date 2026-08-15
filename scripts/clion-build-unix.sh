@@ -16,11 +16,9 @@ fi
 case "$(uname -s)" in
     Darwin*)
         BLUE_PLATFORM="macos"
-        PREMAKE_SCRIPT="premake-macos.sh"
         ;;
     Linux*)
         BLUE_PLATFORM="linux"
-        PREMAKE_SCRIPT="premake-linux.sh"
         ;;
     *)
         echo "Unsupported CLion Unix build host: $(uname -s)" >&2
@@ -36,5 +34,5 @@ fi
 
 CONFIG_KEY="$(printf '%s_%s' "${CONFIGURATION}" "${PLATFORM}" | tr '[:upper:]' '[:lower:]')"
 
-"${ROOT_DIR}/scripts/${PREMAKE_SCRIPT}" gmake --toolchain="${TOOLCHAIN}" --blue-platforms="${BLUE_PLATFORM}" --memory-backend="${MEMORY_BACKEND}"
+"${ROOT_DIR}/scripts/blue.py" premake gmake --toolchain="${TOOLCHAIN}" --blue-platforms="${BLUE_PLATFORM}" --memory-backend="${MEMORY_BACKEND}"
 "${MAKE_COMMAND}" -C "${ROOT_DIR}/out/build/gmake" "${TARGET}" config="${CONFIG_KEY}"
