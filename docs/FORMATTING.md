@@ -30,7 +30,7 @@ default: return "Unknown";
 
 ## Tool Resolution
 
-Formatter scripts locate `clang-format` in the following order:
+Formatter implementations locate `clang-format` in the following order:
 
 1. `BLUE_CLANG_FORMAT` environment variable (if set)
 2. Repository-local binary under `tools/clang-format/<os>/`
@@ -40,51 +40,27 @@ Formatter scripts locate `clang-format` in the following order:
 
 ## Usage
 
-**Windows**
+The public formatting interface is cross-platform:
 
-```cmd
-scripts\format-windows.cmd
-scripts\format-check-windows.cmd
-scripts\list-format-files-windows.cmd
+```text
+python scripts/blue.py format
+python scripts/blue.py format-check
+python scripts/blue.py list-format-files
 ```
 
-**Linux**
+Premake dispatches those actions to two internal implementations:
 
-```bash
-./scripts/format-linux.sh
-./scripts/format-check-linux.sh
-./scripts/list-format-files-linux.sh
-```
-
-**macOS**
-
-```bash
-./scripts/format-macos.sh
-./scripts/format-check-macos.sh
-./scripts/list-format-files-macos.sh
-```
-
-**Premake Actions**
-
-```cmd
-scripts\premake-windows.cmd format
-scripts\premake-windows.cmd check-format
-scripts\premake-windows.cmd list-format-files
+```text
+scripts/format-unix.sh
+scripts/format-windows.ps1
 ```
 
 ## Troubleshooting
 
 To see which configuration is being used for a specific file:
 
-```cmd
-clang-format --style=file -dump-config modules\BlueSystem\src\Log\Logger.cpp
-```
-
-To check for accidental nested formatter files:
-
-```cmd
-dir /s /b .clang-format
-dir /s /b _clang-format
+```text
+clang-format --style=file -dump-config modules/BlueSystem/src/Log/Logger.cpp
 ```
 
 Only the repository root `.clang-format` file should exist.

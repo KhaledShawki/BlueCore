@@ -7,19 +7,19 @@ BlueCore supports CLion through generated compilation databases and local IDE in
 **Windows**
 
 ```cmd
-scripts\premake-windows.cmd clion --toolchain=msvc --blue-platforms=windows
+python scripts\blue.py clion --toolchain=msvc --blue-platforms=windows
 ```
 
 **Linux**
 
 ```bash
-./scripts/premake-linux.sh clion --toolchain=clang --blue-platforms=linux
+python scripts/blue.py clion --toolchain=clang --blue-platforms=linux
 ```
 
 **macOS**
 
 ```bash
-./scripts/premake-macos.sh clion --toolchain=clang --blue-platforms=macos
+python scripts/blue.py clion --toolchain=clang --blue-platforms=macos
 ```
 
 By default, the command generates the daily development view (`Debug` / `x64`). This includes the workspace build and the default executable run target.
@@ -69,9 +69,9 @@ Default run target selection follows this order:
 To control run configuration generation:
 
 ```bash
-./scripts/premake-linux.sh clion --clion-run-targets=all
-./scripts/premake-linux.sh clion --clion-run-targets=BlueTests,BlueBenchmarks
-./scripts/premake-linux.sh clion --clion-run-targets=none
+python scripts/blue.py clion --clion-run-targets=all
+python scripts/blue.py clion --clion-run-targets=BlueTests,BlueBenchmarks
+python scripts/blue.py clion --clion-run-targets=none
 ```
 
 ## Build Target Selection
@@ -92,14 +92,8 @@ The `default` mode generates the workspace build plus any configurations require
 
 ## Generating a Specific Database
 
-To generate a compilation database for a specific platform and configuration:
-
-```cmd
-scripts\premake-windows.cmd clion \
-    --blue-platforms=windows \
-    --toolchain=msvc \
-    --clion-platform=x64_DLL \
-    --clion-config=Release
+```text
+python scripts/blue.py clion     --blue-platforms=<platform>     --toolchain=<toolchain>     --clion-platform=x64_DLL     --clion-config=Release
 ```
 
 Supported values:
@@ -109,9 +103,9 @@ Supported values:
 --clion-config=default|all|Debug|Release|Profile|Shipping
 ```
 
-## Build Wrapper Behavior
+## Internal Build Helpers
 
-Generated CLion build targets invoke repository scripts rather than duplicating build logic:
+Generated CLion build targets invoke these internal repository helpers:
 
 ```text
 scripts/clion-build-windows.cmd
@@ -120,7 +114,7 @@ scripts/clion-build-unix.sh
 scripts/clion-clean-unix.sh
 ```
 
-These wrappers regenerate the native backend before building.
+They regenerate the selected native backend through `scripts/blue.py premake` before invoking the native build tool.
 
 ## Regeneration Policy
 

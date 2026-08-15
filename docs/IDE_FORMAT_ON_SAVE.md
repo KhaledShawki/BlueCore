@@ -14,18 +14,18 @@ Do not rely on Visual Studio’s native C++ formatter for BlueCore source files.
 
 - Enable ClangFormat support in CLion.
 - Ensure CLion discovers the root `.clang-format` file.
-- Run `BlueFormatCheck` or the script-based check before committing.
+- Run `BlueFormatCheck` or `python scripts/blue.py format-check` before committing.
 
 ## VS Code
 
-The repository includes workspace settings for `clang-format` integration. Developers can still run the script-based format check to verify the final result.
+The repository includes workspace settings for `clang-format` integration. Developers can run `python scripts/blue.py format-check` to verify the final result.
 
 ## Enforcement Path
 
 Formatting is enforced through the following mechanisms:
 
 ```text
-scripts/format-check-*.cmd/.sh
+python scripts/blue.py format-check
 BlueFormatCheck
 CI format check
 ```

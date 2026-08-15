@@ -6,8 +6,9 @@ Place the Windows Premake 5 executable in this folder:
 premake5.exe
 ```
 
-Use the repository wrapper script for normal generation and validation:
+Use the repository Blue CLI for normal generation and validation:
 
 ```cmd
-scripts\premake-windows.cmd validate
+python scripts\blue.py validate
+python scripts\blue.py premake vs2026 --toolchain=msvc --blue-platforms=windows
 ```

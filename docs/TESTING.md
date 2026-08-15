@@ -39,46 +39,31 @@ Each registered test is built as an independent executable. This isolation makes
 
 ## Running Tests
 
-The aggregate test runner `BlueRunTests` builds and executes all registered test executables.
-
-**Windows**
-
-```cmd
-scripts\run-tests-windows.cmd
-```
-
-**Linux**
-
-```bash
-./scripts/run-tests-linux.sh
-```
-
-**macOS**
-
-```bash
-./scripts/run-tests-macos.sh
-```
-
-## Premake Actions
-
-The following Premake actions are available for working with tests:
-
-```cmd
-scripts\premake-windows.cmd list-tests
-scripts\premake-windows.cmd test-metadata
-scripts\premake-windows.cmd run-tests
-```
-
-The `test-metadata` action generates a JSON file containing test information:
+Use the cross-platform semantic test command:
 
 ```text
-generated/tests/BlueTests.json
+python scripts/blue.py test
+python scripts/blue.py test --config=Release
+python scripts/blue.py test --config=Debug --linkage=shared
 ```
+
+`blue test` asks Premake to emit the authoritative registered-test manifest, builds the selected backend, and executes exactly those registered binaries through `BlueRunTests`.
+
+## Test Metadata
+
+The following commands expose the registered test model:
+
+```text
+python scripts/blue.py list-tests
+python scripts/blue.py test-metadata
+```
+
+The `test-metadata` action generates the existing test metadata output for tooling. The semantic `test` command separately requests an internal manifest under `out/metadata/` for deterministic execution.
 
 ## Design Policy
 
 - Every test builds as a separate executable to improve failure isolation.
 - Test registration is managed through Premake declarations rather than scripts.
-- `BlueRunTests` serves as the single entry point for running all tests in IDEs and CI.
+- `BlueRunTests` serves as the single test-runner implementation used by the CLI and generated IDE workflows.
 - The test runner may use the C++ standard library, as it is not part of the core runtime.
 - Runtime modules must not depend on the test runner implementation.

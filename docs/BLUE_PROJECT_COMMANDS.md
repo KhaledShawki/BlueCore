@@ -6,21 +6,13 @@ The Blue command layer provides a stable set of commands for modifying project s
 
 ## Command Model
 
-The command layer is implemented in Lua and exposed through Premake actions. Wrapper scripts provide a stable entry point:
+The command layer is implemented in Lua and exposed through the cross-platform Blue CLI:
 
-**Windows**
-
-```bat
-scripts\blue.cmd add-file --blue-project=BlueSystem --blue-kind=source --blue-path=Log/FileLogger.cpp
-scripts\blue.cmd remove-file --blue-project=BlueSystem --blue-kind=source --blue-path=Log/FileLogger.cpp
-scripts\blue.cmd rename-file --blue-project=BlueSystem --blue-kind=source --blue-from=Old.cpp --blue-to=New.cpp
-scripts\blue.cmd add-project --blue-project=BlueGraphics --blue-type=library --blue-linkage=auto
-```
-
-**Linux / macOS**
-
-```sh
-scripts/blue.sh add-file --blue-project=BlueSystem --blue-kind=source --blue-path=Log/FileLogger.cpp
+```text
+python scripts/blue.py add-file --blue-project=BlueSystem --blue-kind=source --blue-path=Log/FileLogger.cpp
+python scripts/blue.py remove-file --blue-project=BlueSystem --blue-kind=source --blue-path=Log/FileLogger.cpp
+python scripts/blue.py rename-file --blue-project=BlueSystem --blue-kind=source --blue-from=Old.cpp --blue-to=New.cpp
+python scripts/blue.py add-project --blue-project=BlueGraphics --blue-type=library --blue-linkage=auto
 ```
 
 ## Supported File Kinds
@@ -48,12 +40,4 @@ scripts/blue.sh add-file --blue-project=BlueSystem --blue-kind=source --blue-pat
 
 ## Usage from IDEs
 
-IDEs and editor extensions can use these commands to perform project mutations safely:
-
-- Add Source File → `scripts\blue.cmd add-file ...`
-- Add Public Header → `scripts\blue.cmd add-file --blue-kind=public-header ...`
-- Rename File → `scripts\blue.cmd rename-file ...`
-- Remove From Project → `scripts\blue.cmd remove-file ...`
-- Add Project → `scripts\blue.cmd add-project ...`
-
-After making changes, run a normal regeneration step so that generated project files are updated.
+IDEs and editor extensions should invoke `scripts/blue.py` directly for project mutations. After making changes, run the appropriate regeneration workflow so generated project files are updated.

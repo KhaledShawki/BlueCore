@@ -1,22 +1,10 @@
-local function quote(value)
-    return '"' .. value .. '"'
-end
-
 local function run_test_script()
-    local host = os.host()
-    local command
-
-    if host == "windows" then
-        command = quote(path.join(BLUE_ROOT, "scripts/run-tests-windows.cmd"))
-    elseif host == "macosx" then
-        command = quote(path.join(BLUE_ROOT, "scripts/run-tests-macos.sh"))
-    else
-        command = quote(path.join(BLUE_ROOT, "scripts/run-tests-linux.sh"))
-    end
+    local python = os.host() == "windows" and "python" or "python3"
+    local command = python .. ' "' .. path.join(BLUE_ROOT, "scripts/blue.py") .. '" test'
 
     local result = os.execute(command)
     if result ~= true and result ~= 0 then
-        error("Blue test script failed")
+        error("Blue test command failed")
     end
 end
 
