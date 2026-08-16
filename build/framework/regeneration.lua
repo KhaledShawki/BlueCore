@@ -90,7 +90,7 @@ function bb.regeneration.get_token_name()
 end
 
 function bb.regeneration.get_token_file()
-    return path.join(BLUE_ROOT, "out/build/.blue/premake", bb.regeneration.get_token_name() .. ".token")
+    return path.join(bb.get_build_output_root(), "build/.blue/premake", bb.regeneration.get_token_name() .. ".token")
 end
 
 function bb.regeneration.build_manifest()
@@ -105,6 +105,7 @@ function bb.regeneration.build_manifest()
     table.insert(lines, "MsvcToolset=" .. tostring(_OPTIONS["msvc-toolset"] or "auto"))
     table.insert(lines, "MsvcToolsVersion=" .. tostring(_OPTIONS["msvc-tools-version"] or "auto"))
     table.insert(lines, "MemoryBackend=" .. tostring(_OPTIONS["memory-backend"] or "system"))
+    table.insert(lines, "Sanitizer=" .. bb.sanitizer_value(bb.get_sanitizers()))
     table.insert(lines, "Strict=" .. tostring(_OPTIONS["strict"] and "true" or "false"))
     table.insert(lines, "BlueScaffold=" .. tostring(_OPTIONS["blue-scaffold"] and "true" or "false"))
     table.insert(lines, "Startup=" .. tostring(_OPTIONS["blue-startup"] or workspaceDesc.startproject or ""))
@@ -174,6 +175,7 @@ function bb.regeneration.write_current_token()
         "generationAction=" .. bb.regeneration.get_generation_action(),
         "platforms=" .. tostring(_OPTIONS["blue-platforms"] or "auto"),
         "toolchain=" .. tostring(_OPTIONS["toolchain"] or "default"),
+        "sanitizer=" .. bb.sanitizer_value(bb.get_sanitizers()),
         "startup=" .. tostring(_OPTIONS["blue-startup"] or "default"),
         "token=" .. token,
         "",

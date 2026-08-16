@@ -143,6 +143,13 @@ function bb.load_options()
     })
 
     newoption({
+        trigger = "sanitizer",
+        value = "SET",
+        description = "Select one or more sanitizers as a comma-separated set: asan, ubsan, tsan",
+        default = "none",
+    })
+
+    newoption({
         trigger = "blue-test-manifest",
         value = "PATH",
         description = "Optional repository-relative path for generated registered test metadata.",
