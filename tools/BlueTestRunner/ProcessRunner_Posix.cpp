@@ -4,6 +4,7 @@
 #include <csignal>
 #include <cstdint>
 #include <cstdlib>
+#include <mutex>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -25,6 +26,8 @@ constexpr std::chrono::milliseconds CleanupDrainLimit{ 1000 };
 constexpr std::chrono::milliseconds CleanupTerminationLimit{ 5000 };
 constexpr std::size_t MaximumDrainBytesPerIteration = 256U * 1024U;
 constexpr int TimeoutExitCode = 124;
+
+std::mutex ProcessLaunchMutex;
 
 class FileDescriptor
 {
@@ -151,7 +154,7 @@ void AppendError( std::string& destination, const std::string& message )
   destination.append( message );
 }
 
-bool KillProcessTree( const pid_t pid, std::string& errorMessage )
+bool KillLiveProcessTree( const pid_t pid, std::string& errorMessage )
 {
   bool success = true;
 
@@ -209,10 +212,61 @@ bool ReapProcessUntil( const pid_t pid,
   }
 }
 
-bool TerminateAndReap( const pid_t pid, int& status, std::string& errorMessage )
+bool TerminateExitedLeaderAndGroup( const pid_t pid, int& status, std::string& errorMessage )
 {
+  bool groupTerminated = true;
+  int groupError = 0;
+
+  if ( pid > 0 && kill( -pid, SIGKILL ) != 0 && errno != ESRCH )
+  {
+    groupError = errno;
+    groupTerminated = false;
+  }
+
+#if defined( __APPLE__ )
+  if ( groupError == EPERM )
+  {
+    // Darwin can report EPERM while the observed leader is still retained as a
+    // zombie by waitid(..., WNOWAIT). Reap that known-exited leader, then retry
+    // the process-group signal. ESRCH after the reap means no descendants remain;
+    // a second EPERM remains a real containment failure.
+    std::string reapError;
+    if ( !ReapProcessUntil( pid, status, std::chrono::steady_clock::now( ) + CleanupTerminationLimit, reapError ) )
+    {
+      AppendError( errorMessage, reapError );
+      return false;
+    }
+
+    if ( kill( -pid, SIGKILL ) != 0 && errno != ESRCH )
+    {
+      AppendError( errorMessage, "kill(process group) after leader reap failed: " + ErrorMessage( errno ) );
+      return false;
+    }
+    return true;
+  }
+#endif
+
+  if ( !groupTerminated )
+  {
+    AppendError( errorMessage, "kill(process group) failed: " + ErrorMessage( groupError ) );
+  }
+
+  std::string reapError;
+  const bool reaped =
+    ReapProcessUntil( pid, status, std::chrono::steady_clock::now( ) + CleanupTerminationLimit, reapError );
+  AppendError( errorMessage, reapError );
+  return groupTerminated && reaped;
+}
+
+bool TerminateAndReap( const pid_t pid, int& status, std::string& errorMessage, const bool leaderAlreadyExited = false )
+{
+  if ( leaderAlreadyExited )
+  {
+    return TerminateExitedLeaderAndGroup( pid, status, errorMessage );
+  }
+
   std::string killError;
-  const bool killed = KillProcessTree( pid, killError );
+  const bool killed = KillLiveProcessTree( pid, killError );
 
   std::string reapError;
   const bool reaped =
@@ -401,16 +455,6 @@ ProcessResult RunProcess( const std::filesystem::path& executablePath,
   FileDescriptor execErrorRead;
   FileDescriptor execErrorWrite;
 
-  if ( !CreatePipe( outputRead, outputWrite, result.errorMessage ) ||
-       !CreatePipe( execErrorRead, execErrorWrite, result.errorMessage ) ||
-       !SetNonBlocking( outputRead.Get( ), result.errorMessage ) ||
-       !SetNonBlocking( execErrorRead.Get( ), result.errorMessage ) ||
-       !SetCloseOnExec( execErrorWrite.Get( ), result.errorMessage ) )
-  {
-    result.status = ProcessStatus::RunnerError;
-    return result;
-  }
-
   const std::string executable = executablePath.string( );
   std::vector< char* > childArguments;
   childArguments.reserve( arguments.size( ) + 2 );
@@ -421,39 +465,64 @@ ProcessResult RunProcess( const std::filesystem::path& executablePath,
   }
   childArguments.push_back( nullptr );
 
-  const pid_t pid = fork( );
-  if ( pid < 0 )
+  pid_t pid = -1;
   {
-    result.status = ProcessStatus::LaunchFailed;
-    result.errorMessage = "fork failed: " + ErrorMessage( errno );
-    return result;
-  }
+    // pipe() plus FD_CLOEXEC is not atomic on every supported POSIX platform.
+    // Serialize pipe creation through fork so another worker cannot inherit a
+    // transient writer and keep this launch's pipes open.
+    const std::lock_guard< std::mutex > launchLock( ProcessLaunchMutex );
 
-  if ( pid == 0 )
-  {
-    outputRead.Reset( );
-    execErrorRead.Reset( );
-
-    if ( setpgid( 0, 0 ) != 0 )
+    if ( !CreatePipe( outputRead, outputWrite, result.errorMessage ) ||
+         !CreatePipe( execErrorRead, execErrorWrite, result.errorMessage ) ||
+         !SetNonBlocking( outputRead.Get( ), result.errorMessage ) ||
+         !SetNonBlocking( execErrorRead.Get( ), result.errorMessage ) ||
+         !SetCloseOnExec( outputRead.Get( ), result.errorMessage ) ||
+         !SetCloseOnExec( outputWrite.Get( ), result.errorMessage ) ||
+         !SetCloseOnExec( execErrorRead.Get( ), result.errorMessage ) ||
+         !SetCloseOnExec( execErrorWrite.Get( ), result.errorMessage ) )
     {
+      result.status = ProcessStatus::RunnerError;
+      return result;
+    }
+
+    pid = fork( );
+    if ( pid < 0 )
+    {
+      result.status = ProcessStatus::LaunchFailed;
+      result.errorMessage = "fork failed: " + ErrorMessage( errno );
+      return result;
+    }
+
+    if ( pid == 0 )
+    {
+      // Do not leave this scope in the child: the inherited std::mutex must not
+      // be unlocked after fork. Every child path below ends in execv() or _exit().
+      outputRead.Reset( );
+      execErrorRead.Reset( );
+
+      if ( setpgid( 0, 0 ) != 0 )
+      {
+        ReportChildLaunchFailure( execErrorWrite.Get( ), errno );
+        _exit( 127 );
+      }
+
+      if ( dup2( outputWrite.Get( ), STDOUT_FILENO ) < 0 || dup2( outputWrite.Get( ), STDERR_FILENO ) < 0 )
+      {
+        ReportChildLaunchFailure( execErrorWrite.Get( ), errno );
+        _exit( 127 );
+      }
+
+      outputWrite.Reset( );
+      execv( executable.c_str( ), childArguments.data( ) );
       ReportChildLaunchFailure( execErrorWrite.Get( ), errno );
       _exit( 127 );
     }
 
-    if ( dup2( outputWrite.Get( ), STDOUT_FILENO ) < 0 || dup2( outputWrite.Get( ), STDERR_FILENO ) < 0 )
-    {
-      ReportChildLaunchFailure( execErrorWrite.Get( ), errno );
-      _exit( 127 );
-    }
-
+    // Close the parent's writer ends before releasing the launch lock. This
+    // prevents a concurrently-forking worker from inheriting them.
     outputWrite.Reset( );
-    execv( executable.c_str( ), childArguments.data( ) );
-    ReportChildLaunchFailure( execErrorWrite.Get( ), errno );
-    _exit( 127 );
+    execErrorWrite.Reset( );
   }
-
-  outputWrite.Reset( );
-  execErrorWrite.Reset( );
 
   if ( setpgid( pid, pid ) != 0 && errno != EACCES && errno != ESRCH )
   {
@@ -540,7 +609,7 @@ ProcessResult RunProcess( const std::filesystem::path& executablePath,
           }
 
           std::string cleanupError;
-          TerminateAndReap( pid, processStatus, cleanupError );
+          TerminateAndReap( pid, processStatus, cleanupError, true );
           AppendError( result.errorMessage, cleanupError );
           result.status = ProcessStatus::RunnerError;
           break;
@@ -552,7 +621,7 @@ ProcessResult RunProcess( const std::filesystem::path& executablePath,
       // Terminate the process group before reaping it so descendants cannot outlive
       // the test or hold the captured-output pipe open indefinitely.
       std::string cleanupError;
-      if ( !TerminateAndReap( pid, processStatus, cleanupError ) )
+      if ( !TerminateAndReap( pid, processStatus, cleanupError, true ) )
       {
         result.status = ProcessStatus::RunnerError;
         result.errorMessage = cleanupError;

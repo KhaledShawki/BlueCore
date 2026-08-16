@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #include "BoundedOutputBuffer.h"
@@ -191,6 +192,34 @@ TEST( BlueTestRunnerProcessTests, SustainedOutputStillHonorsTimeout )
   EXPECT_EQ( result.exitCode, 124 );
   EXPECT_TRUE( result.outputTruncated );
   EXPECT_GT( result.producedOutputBytes, 128U );
+}
+
+TEST( BlueTestRunnerProcessTests, HandlesConcurrentProcessLaunches )
+{
+  constexpr std::size_t launchCount = 16;
+  std::vector< ProcessResult > results( launchCount );
+  std::vector< std::thread > workers;
+  workers.reserve( launchCount );
+
+  for ( std::size_t index = 0; index < launchCount; ++index )
+  {
+    workers.emplace_back(
+      [ &results, index ]
+      {
+        results[ index ] = RunShell( "exit 0" );
+      } );
+  }
+
+  for ( std::thread& worker : workers )
+  {
+    worker.join( );
+  }
+
+  for ( const ProcessResult& result : results )
+  {
+    EXPECT_EQ( result.status, ProcessStatus::Exited ) << result.errorMessage;
+    EXPECT_EQ( result.exitCode, 0 ) << result.errorMessage;
+  }
 }
 #endif
 
