@@ -65,7 +65,7 @@ end
 
 local function project_file_path(project)
     local location = project.location
-        or path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. project.name)
+        or path.join(bb.get_build_output_root(), "build/" .. (_ACTION or "none") .. "/" .. project.name)
     local filename = project.filename or project.name
     return path.join(location, filename .. ".vcxproj")
 end
@@ -124,7 +124,11 @@ local function normalize_vcxproj_ide_version(projectFile, required)
 end
 
 local function solution_file_path(workspaceDesc)
-    return path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none"), tostring(workspaceDesc.name) .. ".slnx")
+    return path.join(
+        bb.get_build_output_root(),
+        "build/" .. (_ACTION or "none"),
+        tostring(workspaceDesc.name) .. ".slnx"
+    )
 end
 
 local function build_project_configuration_mappings(workspaceDesc)

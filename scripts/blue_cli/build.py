@@ -17,7 +17,16 @@ from .core import (
     run_command,
     run_premake,
 )
-from .toolchains import prepare_unix_toolchain_environment
+
+from .sanitizers import (
+    parse_sanitizer_set,
+    sanitizer_output_root,
+    sanitizer_value,
+    plan_sanitizer_variants,
+    validate_sanitizer_request,
+)
+
+from .toolchains import find_msbuild, prepare_unix_toolchain_environment
 
 BUILD_PLATFORMS = ("x64", "x64_DLL")
 BUILD_BACKENDS = ("ninja", "gmake", "vs2026")
@@ -26,6 +35,7 @@ PREMAKE_VALUE_OPTIONS = {
     "--blue-platforms",
     "--blue-build-platforms",
     "--memory-backend",
+    "--sanitizer",
     "--blue-startup",
     "--msvc-toolset",
     "--msvc-tools-version",
@@ -114,6 +124,13 @@ def parse_build_args(argv: Sequence[str], *, command: str) -> argparse.Namespace
         type=lambda value: normalize_choice(value, MEMORY_BACKENDS, "--memory-backend"),
         metavar="BACKEND",
     )
+    parser.add_argument(
+        "--sanitizer",
+        default=(),
+        type=parse_sanitizer_set,
+        metavar="SANITIZERS",
+        help="Sanitizers: asan, ubsan, tsan, or a comma-separated combination.",
+    )
     return parser.parse_args(list(argv))
 
 
@@ -146,6 +163,7 @@ def build_generation_args(host: str, args: argparse.Namespace) -> list[str]:
         f"--blue-platforms={HOST_TO_BLUE_PLATFORM[host]}",
         f"--blue-build-platforms={args.platform}",
         f"--memory-backend={args.memory_backend}",
+        f"--sanitizer={sanitizer_value(args.sanitizer)}",
     ]
 
 
@@ -164,7 +182,7 @@ def run_ninja_build(root: Path, host: str, args: argparse.Namespace, *, clean: b
     if result != 0:
         return result
 
-    build_root = root / "out" / "build" / "ninja"
+    build_root = sanitizer_output_root(root, args.sanitizer) / "build" / "ninja"
     if not build_root.is_dir():
         raise BlueCliError(f"Expected Ninja build directory was not generated: {build_root}")
 
@@ -188,7 +206,7 @@ def run_gmake_build(root: Path, host: str, args: argparse.Namespace, *, clean: b
     if result != 0:
         return result
 
-    build_root = root / "out" / "build" / "gmake"
+    build_root = sanitizer_output_root(root, args.sanitizer) / "build" / "gmake"
     if not build_root.is_dir():
         raise BlueCliError(f"Expected gmake build directory was not generated: {build_root}")
 
@@ -203,16 +221,13 @@ def run_gmake_build(root: Path, host: str, args: argparse.Namespace, *, clean: b
 
 
 def run_windows_build(root: Path, args: argparse.Namespace, *, clean: bool) -> int:
-    msbuild = require_command(
-        "msbuild",
-        "Run from a Visual Studio Developer Command Prompt or ensure MSBuild is available in PATH.",
-    )
+    msbuild = find_msbuild()
 
     result = run_premake(root, "windows", build_generation_args("windows", args))
     if result != 0:
         return result
 
-    build_root = root / "out" / "build" / args.backend
+    build_root = sanitizer_output_root(root, args.sanitizer) / "build" / args.backend
     if not build_root.is_dir():
         raise BlueCliError(f"Expected Visual Studio build directory was not generated: {build_root}")
 
@@ -233,13 +248,57 @@ def run_windows_build(root: Path, args: argparse.Namespace, *, clean: bool) -> i
     return run_command(command, cwd=root)
 
 
-def run_build(root: Path, host: str, args: argparse.Namespace, *, clean: bool = False) -> int:
-    args = resolve_build_request(host, args)
+def run_build_variant(
+    root: Path,
+    host: str,
+    args: argparse.Namespace,
+    *,
+    clean: bool,
+) -> int:
     if host == "windows":
         return run_windows_build(root, args, clean=clean)
+
     if args.backend == "ninja":
         return run_ninja_build(root, host, args, clean=clean)
+
     return run_gmake_build(root, host, args, clean=clean)
+
+
+def run_build(
+    root: Path,
+    host: str,
+    args: argparse.Namespace,
+    *,
+    clean: bool = False,
+) -> int:
+    args = resolve_build_request(host, args)
+
+    validate_sanitizer_request(
+        host,
+        args.toolchain,
+        args.sanitizer,
+    )
+
+    variants = plan_sanitizer_variants(args.sanitizer)
+
+    for variant in variants:
+        variant_args = argparse.Namespace(**vars(args))
+        variant_args.sanitizer = variant
+
+        if len(variants) > 1:
+            print("[BlueBuild] Sanitizer variant    : " f"{sanitizer_value(variant)}")
+
+        result = run_build_variant(
+            root,
+            host,
+            variant_args,
+            clean=clean,
+        )
+
+        if result != 0:
+            return result
+
+    return 0
 
 
 def default_regeneration_action(host: str) -> str:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import os
 import stat
 import sys
@@ -15,6 +16,7 @@ if str(SCRIPTS_DIR) not in sys.path:
 import blue_cli as blue
 from blue_cli import cli as cli_module
 from blue_cli import build as build_module
+from blue_cli import sanitizers as sanitizers_module
 from blue_cli import formatting as formatting_module
 from blue_cli import testing as testing_module
 from blue_cli import toolchains as toolchains_module
@@ -230,6 +232,11 @@ class BlueCliTests(unittest.TestCase):
 
             with (
                 mock.patch.object(testing_module, "require_gnu_make", return_value="/usr/bin/gmake"),
+                mock.patch.object(
+                    testing_module,
+                    "prepare_unix_toolchain_environment",
+                    return_value={"PATH": "/toolchain"},
+                ),
                 mock.patch.object(testing_module, "run_premake", return_value=0) as run_premake,
                 mock.patch.object(testing_module, "run_command", return_value=0) as run_command,
                 mock.patch.object(testing_module.os, "cpu_count", return_value=4),
@@ -305,7 +312,7 @@ class BlueCliTests(unittest.TestCase):
                         command="build",
                     )
                     with (
-                        mock.patch.object(build_module, "require_command", return_value=r"C:\VS\MSBuild.exe"),
+                        mock.patch.object(build_module, "find_msbuild", return_value=r"C:\VS\MSBuild.exe"),
                         mock.patch.object(build_module, "run_premake", return_value=0),
                         mock.patch.object(build_module, "run_command", return_value=0) as run_command,
                     ):
@@ -323,7 +330,7 @@ class BlueCliTests(unittest.TestCase):
                 command="clean",
             )
             with (
-                mock.patch.object(build_module, "require_command", return_value=r"C:\VS\MSBuild.exe"),
+                mock.patch.object(build_module, "find_msbuild", return_value=r"C:\VS\MSBuild.exe"),
                 mock.patch.object(build_module, "run_premake", return_value=0),
                 mock.patch.object(build_module, "run_command", return_value=0) as run_command,
             ):
@@ -365,7 +372,7 @@ class BlueCliTests(unittest.TestCase):
                         build_platform=build_platform,
                     )
                     with (
-                        mock.patch.object(testing_module, "require_command", return_value=r"C:\VS\MSBuild.exe"),
+                        mock.patch.object(testing_module, "find_msbuild", return_value=r"C:\VS\MSBuild.exe"),
                         mock.patch.object(testing_module, "run_premake", return_value=0),
                         mock.patch.object(testing_module, "run_command", return_value=0) as run_command,
                         mock.patch("builtins.print"),
@@ -457,8 +464,10 @@ class BlueCliTests(unittest.TestCase):
 
             self.assertTrue(clang.is_file())
             self.assertTrue(clangxx.is_file())
-            self.assertTrue(clang.stat().st_mode & stat.S_IXUSR)
-            self.assertTrue(clangxx.stat().st_mode & stat.S_IXUSR)
+            if os.name != "nt":
+                self.assertTrue(clang.stat().st_mode & stat.S_IXUSR)
+                self.assertTrue(clangxx.stat().st_mode & stat.S_IXUSR)
+
             self.assertEqual(env["PATH"].split(os.pathsep)[0], str(wrapper_dir))
             self.assertIn("xcrun --sdk macosx clang", clang.read_text(encoding="utf-8"))
             self.assertIn("xcrun --sdk macosx clang++", clangxx.read_text(encoding="utf-8"))
@@ -590,6 +599,7 @@ class BlueCliTests(unittest.TestCase):
                 "--blue-platforms=macos",
                 "--blue-build-platforms=x64",
                 "--memory-backend=system",
+                "--sanitizer=none",
             ],
             env=env,
         )
@@ -735,6 +745,252 @@ class BlueCliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         run_format.assert_called_once()
         run_premake.assert_not_called()
+
+    def test_sanitizer_parser_normalizes_and_canonicalizes_sets(self) -> None:
+        self.assertEqual(
+            sanitizers_module.parse_sanitizer_set("asan"),
+            ("asan",),
+        )
+        self.assertEqual(
+            sanitizers_module.parse_sanitizer_set("UBSAN,ASAN"),
+            ("asan", "ubsan"),
+        )
+        self.assertEqual(
+            sanitizers_module.parse_sanitizer_set("tsan,asan,ubsan"),
+            ("asan", "ubsan", "tsan"),
+        )
+        self.assertEqual(
+            sanitizers_module.parse_sanitizer_set("none"),
+            (),
+        )
+
+    def test_sanitizer_parser_rejects_invalid_sets(self) -> None:
+        invalid_values = (
+            "",
+            "asan,",
+            "none,asan",
+            "asan,asan",
+            "memory",
+        )
+
+        for value in invalid_values:
+            with self.subTest(value=value):
+                with self.assertRaises(argparse.ArgumentTypeError):
+                    sanitizers_module.parse_sanitizer_set(value)
+
+    def test_sanitizer_planner_splits_only_asan_tsan_conflicts(self) -> None:
+        self.assertEqual(
+            sanitizers_module.plan_sanitizer_variants(("asan",)),
+            (("asan",),),
+        )
+        self.assertEqual(
+            sanitizers_module.plan_sanitizer_variants(("asan", "ubsan")),
+            (("asan", "ubsan"),),
+        )
+        self.assertEqual(
+            sanitizers_module.plan_sanitizer_variants(("ubsan", "tsan")),
+            (("ubsan", "tsan"),),
+        )
+        self.assertEqual(
+            sanitizers_module.plan_sanitizer_variants(("asan", "tsan")),
+            (("asan",), ("tsan",)),
+        )
+        self.assertEqual(
+            sanitizers_module.plan_sanitizer_variants(("asan", "ubsan", "tsan")),
+            (("asan", "ubsan"), ("tsan",)),
+        )
+
+    def test_sanitizer_output_root_isolates_instrumented_builds(self) -> None:
+        root = Path("/repo")
+
+        self.assertEqual(
+            sanitizers_module.sanitizer_output_root(root, ()),
+            root / "out",
+        )
+        self.assertEqual(
+            sanitizers_module.sanitizer_output_root(root, ("asan",)),
+            root / "out" / "sanitizers" / "asan",
+        )
+        self.assertEqual(
+            sanitizers_module.sanitizer_output_root(
+                root,
+                ("asan", "ubsan"),
+            ),
+            root / "out" / "sanitizers" / "asan-ubsan",
+        )
+
+    def test_build_executes_each_planned_sanitizer_variant(self) -> None:
+        root = Path("/repo")
+        args = build_module.parse_build_args(
+            [
+                "BlueSystem",
+                "--backend=ninja",
+                "--toolchain=clang",
+                "--sanitizer=asan,tsan",
+            ],
+            command="build",
+        )
+
+        with (
+            mock.patch.object(
+                build_module,
+                "run_build_variant",
+                return_value=0,
+            ) as run_variant,
+            mock.patch("builtins.print"),
+        ):
+            result = build_module.run_build(
+                root,
+                "linux",
+                args,
+            )
+
+        self.assertEqual(result, 0)
+        self.assertEqual(run_variant.call_count, 2)
+
+        first_request = run_variant.call_args_list[0].args[2]
+        second_request = run_variant.call_args_list[1].args[2]
+
+        self.assertEqual(first_request.sanitizer, ("asan",))
+        self.assertEqual(second_request.sanitizer, ("tsan",))
+
+    def test_windows_rejects_unsupported_sanitizers_before_building(self) -> None:
+        root = Path("/repo")
+        args = build_module.parse_build_args(
+            [
+                "BlueSystem",
+                "--sanitizer=asan,tsan",
+            ],
+            command="build",
+        )
+
+        with mock.patch.object(
+            build_module,
+            "run_build_variant",
+        ) as run_variant:
+            with self.assertRaisesRegex(
+                blue.BlueCliError,
+                "unsupported sanitizer",
+            ):
+                build_module.run_build(
+                    root,
+                    "windows",
+                    args,
+                )
+
+        run_variant.assert_not_called()
+
+    def test_test_arguments_accept_and_canonicalize_sanitizers(self) -> None:
+        args = blue.parse_test_args(["--sanitizer=tsan,asan,ubsan"])
+        self.assertEqual(args.sanitizer, ("asan", "ubsan", "tsan"))
+
+    def test_test_orchestration_executes_each_planned_sanitizer_variant(self) -> None:
+        root = Path("/repo")
+        args = blue.parse_test_args(
+            [
+                "--backend=ninja",
+                "--toolchain=clang",
+                "--sanitizer=asan,tsan",
+            ]
+        )
+
+        with (
+            mock.patch.object(testing_module, "run_test_variant", return_value=0) as run_variant,
+            mock.patch("builtins.print"),
+        ):
+            result = blue.run_tests(root, "linux", args)
+
+        self.assertEqual(result, 0)
+        self.assertEqual(run_variant.call_count, 2)
+        self.assertEqual(run_variant.call_args_list[0].args[1].sanitizer, ("asan",))
+        self.assertEqual(run_variant.call_args_list[1].args[1].sanitizer, ("tsan",))
+
+    def test_windows_test_rejects_unsupported_sanitizers_before_building(self) -> None:
+        root = Path("/repo")
+        args = blue.parse_test_args(["--sanitizer=asan,tsan"])
+
+        with mock.patch.object(testing_module, "run_test_variant") as run_variant:
+            with self.assertRaisesRegex(blue.BlueCliError, "unsupported sanitizer"):
+                blue.run_tests(root, "windows", args)
+
+        run_variant.assert_not_called()
+
+    def test_windows_asan_tests_use_isolated_paths_and_runtime_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            output_root = root / "out" / "sanitizers" / "asan"
+            build_root = output_root / "build" / "vs2026"
+            bin_dir = output_root / "bin" / "windows" / "x64" / "Debug"
+            manifest = output_root / "metadata" / "BlueTests.json"
+            build_root.mkdir(parents=True)
+            bin_dir.mkdir(parents=True)
+            manifest.parent.mkdir(parents=True)
+
+            solution = build_root / "Blue.slnx"
+            runner = bin_dir / "BlueRunTests.exe"
+            test_executable = bin_dir / "BlueSystemAtomicTests.exe"
+            solution.write_text("", encoding="utf-8")
+            runner.write_text("", encoding="utf-8")
+            test_executable.write_text("", encoding="utf-8")
+            manifest.write_text(
+                '{"tests":[{"name":"BlueSystemAtomicTests"}]}',
+                encoding="utf-8",
+            )
+
+            request = blue.TestRequest(
+                host="windows",
+                configuration="Debug",
+                backend="vs2026",
+                toolchain="msvc",
+                linkage="static",
+                memory_backend="system",
+                build_platform="x64",
+                sanitizer=("asan",),
+            )
+            runtime_env = {"PATH": r"C:\VS\ASan"}
+
+            with (
+                mock.patch.object(testing_module, "find_msbuild", return_value=r"C:\VS\MSBuild.exe"),
+                mock.patch.object(testing_module, "run_premake", return_value=0) as run_premake,
+                mock.patch.object(testing_module, "run_command", return_value=0) as run_command,
+                mock.patch.object(
+                    testing_module,
+                    "prepare_windows_sanitizer_environment",
+                    return_value=runtime_env,
+                ) as prepare_runtime,
+                mock.patch("builtins.print"),
+            ):
+                result = blue.run_windows_tests(root, request)
+
+        self.assertEqual(result, 0)
+        premake_args = run_premake.call_args.args[2]
+        self.assertIn("--sanitizer=asan", premake_args)
+        self.assertIn(
+            "--blue-test-manifest=out/sanitizers/asan/metadata/BlueTests.json",
+            premake_args,
+        )
+
+        build_command = run_command.call_args_list[0].args[0]
+        self.assertEqual(build_command[0], r"C:\VS\MSBuild.exe")
+        self.assertEqual(build_command[1], str(solution))
+
+        runner_call = run_command.call_args_list[1]
+        self.assertEqual(runner_call.args[0][0], str(runner))
+        self.assertEqual(runner_call.args[0][2:], [str(test_executable)])
+        self.assertEqual(runner_call.kwargs["env"], runtime_env)
+        prepare_runtime.assert_called_once_with(("asan",))
+
+    def test_windows_asan_environment_prepends_runtime_directory(self) -> None:
+        runtime = Path("runtime") / "asan" / "clang_rt.asan_dynamic-x86_64.dll"
+
+        with (
+            mock.patch.object(toolchains_module, "find_msvc_asan_runtime", return_value=runtime),
+            mock.patch.dict(os.environ, {"PATH": "existing-path"}, clear=True),
+        ):
+            env = toolchains_module.prepare_windows_sanitizer_environment(("asan",))
+
+        self.assertEqual(env["PATH"].split(os.pathsep)[0], str(runtime.parent))
+        self.assertIn("existing-path", env["PATH"])
 
 
 if __name__ == "__main__":

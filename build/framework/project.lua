@@ -229,7 +229,7 @@ function bb.project(desc)
     kind(desc.kind)
     apply_library_linkage_kind(desc)
     language("C++")
-    location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. desc.name))
+    location(path.join(bb.get_build_output_root(), "build/" .. (_ACTION or "none") .. "/" .. desc.name))
 
     emit_project_files(desc)
     emit_project_pch(desc)

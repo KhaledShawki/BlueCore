@@ -106,7 +106,7 @@ local function emit_format_utility_project(name, mode, description)
 
     project(name)
     kind("Utility")
-    location(path.join(BLUE_ROOT, "out/build/" .. (_ACTION or "none") .. "/" .. name))
+    location(path.join(bb.get_build_output_root(), "build/" .. (_ACTION or "none") .. "/" .. name))
     files(collect_build_system_files())
     postbuildmessage(description)
     postbuildcommands({
