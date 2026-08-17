@@ -1,0 +1,71 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+BLUE_CONTAINER_COPTS = select({
+    "@platforms//os:windows": [
+        "/std:c++20",
+        "/W4",
+        "/permissive-",
+        "/EHs-",
+        "/EHc-",
+        "/GR-",
+    ],
+    "@platforms//os:linux": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+    "@platforms//os:osx": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-pthread",
+    ],
+    "//conditions:default": [],
+})
+
+cc_library(
+    name = "BlueContainer",
+    srcs = [
+        "src/Pch.cpp",
+        "src/SmidString.cpp",
+        "src/BlueContainerPrivate.h",
+        "src/Pch.h",
+    ],
+    hdrs = [
+        "include/Blue/Container.h",
+        "include/Blue/Container/Api.h",
+        "include/Blue/Container/DynamicArray.h",
+        "include/Blue/Container/RingBuffer.h",
+        "include/Blue/Container/SmidString.h",
+        "include/Blue/Container/Span.h",
+        "include/Blue/Container/StringView.h",
+        "include/BlueContainer/BlueContainer.h",
+        "include/BlueContainer/BlueContainerApi.h",
+    ],
+    copts = BLUE_CONTAINER_COPTS,
+    defines = [
+        "BLUE_CONTAINER=1",
+    ],
+    deps = [
+        "//modules/BlueMemory:BlueMemory",
+        "//modules/BlueSystem:BlueSystem",
+    ],
+    linkstatic = True,
+    local_includes = ["src"],
+    strip_include_prefix = "include",
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "@platforms//os:linux": [],
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
