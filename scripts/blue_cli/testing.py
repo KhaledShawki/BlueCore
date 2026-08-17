@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .build import find_visual_studio_solution
+from .context import BuildContext, build_platform_for_linkage
 from .sanitizers import (
     parse_sanitizer_set,
     plan_sanitizer_variants,
@@ -43,14 +44,39 @@ TEST_MANIFEST_RELATIVE_PATH = Path("out/metadata/BlueTests.json")
 
 @dataclass(frozen=True)
 class TestRequest:
-    host: str
-    configuration: str
+    context: BuildContext
     backend: str
-    toolchain: str
-    linkage: str
-    memory_backend: str
-    build_platform: str
-    sanitizer: tuple[str, ...] = ()
+
+    @property
+    def host(self) -> str:
+        return self.context.host
+
+    @property
+    def configuration(self) -> str:
+        return self.context.configuration
+
+    @property
+    def toolchain(self) -> str:
+        return self.context.toolchain
+
+    @property
+    def linkage(self) -> str:
+        return self.context.linkage
+
+    @property
+    def memory_backend(self) -> str:
+        return self.context.memory_backend
+
+    @property
+    def build_platform(self) -> str:
+        return self.context.build_platform
+
+    @property
+    def sanitizer(self) -> tuple[str, ...]:
+        return self.context.sanitizer
+
+    def with_sanitizer(self, sanitizers: Sequence[str]) -> "TestRequest":
+        return replace(self, context=self.context.with_sanitizer(sanitizers))
 
 
 def normalize_test_backend(value: str) -> str:
@@ -175,28 +201,27 @@ def resolve_test_toolchain(host: str, backend: str, requested_toolchain: str | N
 
 
 def build_platform_for(backend: str, linkage: str) -> str:
-    if backend == "ninja":
-        if linkage != "static":
-            raise BlueCliError("Ninja only supports the static x64 Blue build platform.")
-        return "x64"
+    if backend == "ninja" and linkage != "static":
+        raise BlueCliError("Ninja only supports the static x64 Blue build platform.")
 
-    return "x64_DLL" if linkage == "shared" else "x64"
+    return build_platform_for_linkage(linkage)
 
 
 def resolve_test_request(host: str, args: argparse.Namespace) -> TestRequest:
     backend = resolve_test_backend(host, args.linkage, args.backend)
     toolchain = resolve_test_toolchain(host, backend, args.toolchain)
-    build_platform = build_platform_for(backend, args.linkage)
+    build_platform_for(backend, args.linkage)
     validate_sanitizer_request(host, toolchain, args.sanitizer)
     return TestRequest(
-        host=host,
-        configuration=args.config,
+        context=BuildContext(
+            host=host,
+            configuration=args.config,
+            linkage=args.linkage,
+            toolchain=toolchain,
+            memory_backend=args.memory_backend,
+            sanitizer=args.sanitizer,
+        ),
         backend=backend,
-        toolchain=toolchain,
-        linkage=args.linkage,
-        memory_backend=args.memory_backend,
-        build_platform=build_platform,
-        sanitizer=args.sanitizer,
     )
 
 
@@ -485,7 +510,7 @@ def run_tests(root: Path, host: str, args: argparse.Namespace) -> int:
     variants = plan_sanitizer_variants(request.sanitizer)
 
     for variant in variants:
-        variant_request = replace(request, sanitizer=variant)
+        variant_request = request.with_sanitizer(variant)
 
         if len(variants) > 1:
             print(f"[BlueBuild] Sanitizer variant    : {sanitizer_value(variant)}")

@@ -1,6 +1,7 @@
 """BlueCore cross-platform developer tooling."""
 
 from .build import (
+    BuildRequest,
     default_build_backend,
     default_build_toolchain,
     normalize_premake_options,
@@ -10,6 +11,7 @@ from .build import (
     run_build,
     run_regenerate,
 )
+from .context import BuildContext, build_platform_for_linkage, linkage_for_build_platform
 from .cli import dispatch, main
 from .core import (
     BlueCliError,
