@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_shared_library", "cc_test")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -46,6 +46,31 @@ BLUE_COPTS = select({
     ],
 })
 
+BLUE_SHARED_COPTS = select({
+    "//build/bazel/settings:linkage_shared_linux": [
+        "-fvisibility=hidden",
+    ],
+    "//build/bazel/settings:linkage_shared_macos": [
+        "-fvisibility=hidden",
+    ],
+    "//conditions:default": [],
+})
+
+BLUE_LINKAGE_DEFINES = select({
+    "//build/bazel/settings:linkage_shared": [
+        "BLUE_SHARED_LIBRARY=1",
+    ],
+    "//conditions:default": [],
+})
+
+BLUE_SYSTEM_LOCAL_DEFINES = select({
+    "//build/bazel/settings:linkage_shared": [
+        "BLUE_BUILD_BLUE_SYSTEM=1",
+        "BLUE_EXPORT_BlueSystem=1",
+    ],
+    "//conditions:default": [],
+})
+
 BLUE_LINKOPTS = select({
     "@platforms//os:windows": [
         "kernel32.lib",
@@ -62,11 +87,37 @@ BLUE_LINKOPTS = select({
     "//conditions:default": [],
 })
 
+BLUE_SYSTEM_SHARED_CONSUMER_DEPS = select({
+    "//build/bazel/settings:linkage_shared": [
+        ":BlueSystemLinkRequirements",
+    ],
+    "//conditions:default": [],
+})
+
 BLUE_SYSTEM_TEST_DEPS = [
     ":BlueSystem",
     "@googletest//:gtest",
     "@googletest//:gtest_main",
-]
+] + BLUE_SYSTEM_SHARED_CONSUMER_DEPS
+
+BLUE_SYSTEM_TEST_DYNAMIC_DEPS = select({
+    "//build/bazel/settings:linkage_shared": [
+        ":BlueSystemShared",
+    ],
+    "//conditions:default": [],
+})
+
+cc_library(
+    name = "BlueSystemLinkRequirements",
+    linkopts = BLUE_LINKOPTS,
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "@platforms//os:linux": [],
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
 
 cc_library(
     name = "BlueSystem",
@@ -119,17 +170,37 @@ cc_library(
         "include/**/*.h",
         "include/**/*.inl",
     ]),
-    copts = BLUE_COPTS,
+    copts = BLUE_COPTS + BLUE_SHARED_COPTS,
     defines = [
         "BLUE_SYSTEM=1",
-    ] + BLUE_DEBUG_DEFINES + BLUE_PLATFORM_DEFINES,
+    ] + BLUE_DEBUG_DEFINES + BLUE_PLATFORM_DEFINES + BLUE_LINKAGE_DEFINES,
+    local_defines = BLUE_SYSTEM_LOCAL_DEFINES,
     linkopts = BLUE_LINKOPTS,
-    linkstatic = True,
+    linkstatic = select({
+        "//build/bazel/settings:linkage_static": True,
+        "//build/bazel/settings:linkage_shared": False,
+    }),
     strip_include_prefix = "include",
     target_compatible_with = select({
         "@platforms//os:windows": [],
         "@platforms//os:linux": [],
         "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+cc_shared_library(
+    name = "BlueSystemShared",
+    deps = [":BlueSystem"],
+    shared_lib_name = select({
+        "@platforms//os:windows": "BlueSystem.dll",
+        "@platforms//os:linux": "libBlueSystem.so",
+        "@platforms//os:osx": "libBlueSystem.dylib",
+        "//conditions:default": "libBlueSystem.so",
+    }),
+    target_compatible_with = select({
+        "//build/bazel/settings:linkage_shared": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//visibility:public"],
@@ -142,6 +213,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -154,6 +226,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -166,6 +239,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -178,6 +252,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -190,6 +265,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -202,6 +278,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -214,6 +291,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -226,6 +304,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -238,6 +317,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -250,6 +330,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -262,6 +343,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -274,6 +356,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_SYSTEM_TEST_DEPS,
@@ -286,6 +369,7 @@ cc_test(
         "tests/BlueSystemTestWait.h",
     ],
     copts = BLUE_COPTS,
+    dynamic_deps = BLUE_SYSTEM_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "medium",
     timeout = "short",

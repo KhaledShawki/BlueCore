@@ -21,3 +21,46 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
+string_flag(
+    name = "linkage",
+    build_setting_default = "static",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linkage_static",
+    flag_values = {
+        ":linkage": "static",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linkage_shared",
+    flag_values = {
+        ":linkage": "shared",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linkage_shared_linux",
+    constraint_values = [
+        "@platforms//os:linux",
+    ],
+    flag_values = {
+        ":linkage": "shared",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "linkage_shared_macos",
+    constraint_values = [
+        "@platforms//os:osx",
+    ],
+    flag_values = {
+        ":linkage": "shared",
+    },
+    visibility = ["//visibility:public"],
+)
