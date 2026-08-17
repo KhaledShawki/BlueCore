@@ -8,6 +8,9 @@ dist/
 release/
 debug/
 
+# Bazel
+bazel-*
+
 # Premake / generated project files
 *.sln
 *.slnx

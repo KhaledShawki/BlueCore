@@ -1,0 +1,312 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:private"])
+
+BLUE_DEBUG_DEFINES = [
+    "BLUE_DEBUG=1",
+    "BLUE_ENABLE_ASSERTS=1",
+    "BLUE_ENABLE_LOGGING=1",
+    "BLUE_MEMORY_ENABLE_TRACKING=1",
+]
+
+BLUE_PLATFORM_DEFINES = select({
+    "@platforms//os:windows": [
+        "_CRT_SECURE_NO_WARNINGS",
+        "NOMINMAX",
+        "WIN32_LEAN_AND_MEAN",
+    ],
+    "//conditions:default": [],
+})
+
+BLUE_COPTS = select({
+    "@platforms//os:windows": [
+        "/std:c++20",
+        "/W4",
+        "/permissive-",
+        "/EHs-",
+        "/EHc-",
+        "/GR-",
+    ],
+    "@platforms//os:osx": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-pthread",
+    ],
+    "//conditions:default": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+})
+
+BLUE_LINKOPTS = select({
+    "@platforms//os:windows": [
+        "kernel32.lib",
+    ],
+    "@platforms//os:linux": [
+        "-pthread",
+        "-ldl",
+        "-lrt",
+        "-latomic",
+    ],
+    "@platforms//os:osx": [
+        "-pthread",
+    ],
+    "//conditions:default": [],
+})
+
+BLUE_SYSTEM_TEST_DEPS = [
+    ":BlueSystem",
+    "@googletest//:gtest",
+    "@googletest//:gtest_main",
+]
+
+cc_library(
+    name = "BlueSystem",
+    srcs = [
+        "src/Assert.cpp",
+        "src/Log/Logger.cpp",
+        "src/Processor.cpp",
+        "src/Result.cpp",
+        "src/Time.cpp",
+    ] + select({
+        "@platforms//os:windows": [
+            "src/Platform/Windows/Windows_Synchronization.h",
+            "src/Platform/Windows/ConditionVariable_Windows.cpp",
+            "src/Platform/Windows/Debug_Windows.cpp",
+            "src/Platform/Windows/Event_Windows.cpp",
+            "src/Platform/Windows/Mutex_Windows.cpp",
+            "src/Platform/Windows/Processor_Windows.cpp",
+            "src/Platform/Windows/Semaphore_Windows.cpp",
+            "src/Platform/Windows/Thread_Windows.cpp",
+        ],
+        "@platforms//os:linux": [
+            "src/Platform/Linux/Debug_Linux.cpp",
+            "src/Platform/Linux/Processor_Linux.cpp",
+            "src/Platform/Linux/Thread_Linux.cpp",
+            "src/Platform/POSIX/POSIX_Synchronization.h",
+            "src/Platform/POSIX/POSIX_Thread.h",
+            "src/Platform/POSIX/ConditionVariable_POSIX.cpp",
+            "src/Platform/POSIX/Event_POSIX.cpp",
+            "src/Platform/POSIX/Mutex_POSIX.cpp",
+            "src/Platform/POSIX/POSIX_Synchronization.cpp",
+            "src/Platform/POSIX/Semaphore_POSIX.cpp",
+            "src/Platform/POSIX/Thread_POSIX.cpp",
+        ],
+        "@platforms//os:osx": [
+            "src/Platform/MacOS/Debug_MacOS.cpp",
+            "src/Platform/MacOS/Processor_MacOS.cpp",
+            "src/Platform/MacOS/Thread_MacOS.cpp",
+            "src/Platform/POSIX/POSIX_Synchronization.h",
+            "src/Platform/POSIX/POSIX_Thread.h",
+            "src/Platform/POSIX/ConditionVariable_POSIX.cpp",
+            "src/Platform/POSIX/Event_POSIX.cpp",
+            "src/Platform/POSIX/Mutex_POSIX.cpp",
+            "src/Platform/POSIX/POSIX_Synchronization.cpp",
+            "src/Platform/POSIX/Semaphore_POSIX.cpp",
+            "src/Platform/POSIX/Thread_POSIX.cpp",
+        ],
+        "//conditions:default": [],
+    }),
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.inl",
+    ]),
+    copts = BLUE_COPTS,
+    defines = [
+        "BLUE_SYSTEM=1",
+    ] + BLUE_DEBUG_DEFINES + BLUE_PLATFORM_DEFINES,
+    linkopts = BLUE_LINKOPTS,
+    linkstatic = True,
+    strip_include_prefix = "include",
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "@platforms//os:linux": [],
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "BlueSystemBaseContractTests",
+    srcs = [
+        "tests/BlueSystemBaseContractTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemAtomicTests",
+    srcs = [
+        "tests/BlueSystemAtomicTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemPhase2Tests",
+    srcs = [
+        "tests/BlueSystemPhase2Tests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemThreadingTests",
+    srcs = [
+        "tests/BlueSystemThreadingTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemLoggerThreadSafetyTests",
+    srcs = [
+        "tests/BlueSystemLoggerThreadSafetyTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemDiagnosticsTests",
+    srcs = [
+        "tests/BlueSystemDiagnosticsTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemTimeTests",
+    srcs = [
+        "tests/BlueSystemTimeTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemProcessorTests",
+    srcs = [
+        "tests/BlueSystemProcessorTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemMutexTests",
+    srcs = [
+        "tests/BlueSystemMutexTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemSemaphoreTests",
+    srcs = [
+        "tests/BlueSystemSemaphoreTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemEventTests",
+    srcs = [
+        "tests/BlueSystemEventTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemConditionVariableTests",
+    srcs = [
+        "tests/BlueSystemConditionVariableTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueSystemSynchronizationStressTests",
+    srcs = [
+        "tests/BlueSystemSynchronizationStressTests.cpp",
+        "tests/BlueSystemTestWait.h",
+    ],
+    copts = BLUE_COPTS,
+    linkstatic = True,
+    size = "medium",
+    timeout = "short",
+    deps = BLUE_SYSTEM_TEST_DEPS,
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":BlueSystemBaseContractTests",
+        ":BlueSystemAtomicTests",
+        ":BlueSystemPhase2Tests",
+        ":BlueSystemThreadingTests",
+        ":BlueSystemLoggerThreadSafetyTests",
+        ":BlueSystemDiagnosticsTests",
+        ":BlueSystemTimeTests",
+        ":BlueSystemProcessorTests",
+        ":BlueSystemMutexTests",
+        ":BlueSystemSemaphoreTests",
+        ":BlueSystemEventTests",
+        ":BlueSystemConditionVariableTests",
+        ":BlueSystemSynchronizationStressTests",
+    ],
+)

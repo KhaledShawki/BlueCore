@@ -1,0 +1,10 @@
+build --compilation_mode=dbg
+
+build:clang --repo_env=CC=clang
+build:gcc --repo_env=CC=gcc
+build:apple-clang --repo_env=CC=/usr/bin/clang
+build:apple-clang --macos_minimum_os=11.0
+
+build:macos-x86_64 --platforms=//build/bazel/platforms:macos_x86_64
+
+test --test_output=errors
