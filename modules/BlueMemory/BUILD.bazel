@@ -1,4 +1,4 @@
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 package(default_visibility = ["//visibility:private"])
 
@@ -111,6 +111,19 @@ cc_library(
         "//conditions:default": ["@platforms//:incompatible"],
     }),
     visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "BlueMemoryHotPathBenchmarks",
+    srcs = ["benchmarks/BlueMemoryHotPathBenchmarks.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    deps = [
+        ":BlueMemory",
+        "//modules/BlueSystem:BlueSystem",
+        "//third_party/benchmark:benchmark",
+    ],
 )
 
 cc_test(
