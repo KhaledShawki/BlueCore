@@ -182,9 +182,12 @@ TEST( BlueTestRunnerProcessTests, HandlesClosedOutputWithoutBusyPollDependency )
 
 TEST( BlueTestRunnerProcessTests, SustainedOutputStillHonorsTimeout )
 {
+  // Allow enough time for process startup on loaded CI hosts. This test verifies
+  // that sustained output cannot starve timeout enforcement, not that /bin/sh
+  // starts and produces enough output within 50 ms.
   const ProcessResult result = RunShell( "while :; do printf '0123456789abcdef0123456789abcdef\\n'; done",
                                          ProcessOptions{
-                                           .timeout = std::chrono::milliseconds( 50 ),
+                                           .timeout = std::chrono::milliseconds( 500 ),
                                            .maximumOutputBytes = 128,
                                          } );
 
