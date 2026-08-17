@@ -1,58 +1,25 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
+load(
+    "//build/bazel/rules:blue_cc_config.bzl",
+    "BLUE_COPTS",
+    "BLUE_RUNTIME_LINKOPTS",
+    "blue_shared_consumer_deps",
+    "blue_shared_dynamic_deps",
+)
+load("//build/bazel/rules:blue_cc_module.bzl", "blue_cc_module")
 
 package(default_visibility = ["//visibility:private"])
-
-BLUE_MEMORY_COPTS = select({
-    "@platforms//os:windows": [
-        "/std:c++20",
-        "/W4",
-        "/permissive-",
-        "/EHs-",
-        "/EHc-",
-        "/GR-",
-    ],
-    "@platforms//os:osx": [
-        "-std=c++20",
-        "-Wall",
-        "-Wextra",
-        "-Wpedantic",
-        "-fno-exceptions",
-        "-fno-rtti",
-        "-pthread",
-    ],
-    "//conditions:default": [
-        "-std=c++20",
-        "-Wall",
-        "-Wextra",
-        "-Wpedantic",
-        "-fno-exceptions",
-        "-fno-rtti",
-    ],
-})
-
-BLUE_MEMORY_TEST_LINKOPTS = select({
-    "@platforms//os:windows": [
-        "kernel32.lib",
-    ],
-    "@platforms//os:linux": [
-        "-pthread",
-        "-ldl",
-        "-lrt",
-    ],
-    "@platforms//os:osx": [
-        "-pthread",
-    ],
-    "//conditions:default": [],
-})
 
 BLUE_MEMORY_TEST_DEPS = [
     ":BlueMemory",
     "//modules/BlueSystem:BlueSystem",
     "@googletest//:gtest",
     "@googletest//:gtest_main",
-]
+] + blue_shared_consumer_deps(":BlueMemory_link_requirements")
 
-cc_library(
+BLUE_MEMORY_TEST_DYNAMIC_DEPS = blue_shared_dynamic_deps(":BlueMemory_shared")
+
+blue_cc_module(
     name = "BlueMemory",
     srcs = [
         "src/AllocationFailure.cpp",
@@ -82,10 +49,7 @@ cc_library(
         "include/**/*.h",
         "include/**/*.def",
     ]),
-    copts = BLUE_MEMORY_COPTS,
-    defines = [
-        "BLUE_MEMORY=1",
-    ] + select({
+    configured_defines = select({
         "//build/bazel/settings:memory_backend_system": [
             "BLUE_MEMORY_USE_MIMALLOC=0",
         ],
@@ -93,6 +57,9 @@ cc_library(
             "BLUE_MEMORY_USE_MIMALLOC=1",
         ],
     }),
+    defines = [
+        "BLUE_MEMORY=1",
+    ],
     deps = [
         "//modules/BlueSystem:BlueSystem",
     ] + select({
@@ -101,36 +68,39 @@ cc_library(
             "//third_party:mimalloc",
         ],
     }),
-    linkstatic = True,
+    link_requirement_deps = [
+        "//modules/BlueSystem:BlueSystem_link_requirements",
+    ],
+    linkopts = BLUE_RUNTIME_LINKOPTS,
     local_includes = ["src"],
-    strip_include_prefix = "include",
-    target_compatible_with = select({
-        "@platforms//os:windows": [],
-        "@platforms//os:linux": [],
-        "@platforms//os:osx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    shared_dynamic_deps = [
+        "//modules/BlueSystem:BlueSystem_shared",
+    ],
+    shared_local_defines = [
+        "BLUE_BUILD_BLUE_MEMORY=1",
+        "BLUE_EXPORT_BlueMemory=1",
+    ],
     visibility = ["//visibility:public"],
 )
 
 cc_binary(
     name = "BlueMemoryHotPathBenchmarks",
     srcs = ["benchmarks/BlueMemoryHotPathBenchmarks.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     deps = [
         ":BlueMemory",
         "//modules/BlueSystem:BlueSystem",
         "//third_party/benchmark:benchmark",
-    ],
+    ] + blue_shared_consumer_deps(":BlueMemory_link_requirements"),
 )
 
 cc_test(
     name = "BlueMemoryBackendContractTests",
     srcs = ["tests/BlueMemoryBackendContractTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -139,8 +109,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryConfigTests",
     srcs = ["tests/BlueMemoryConfigTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -149,8 +119,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryContractTests",
     srcs = ["tests/BlueMemoryContractTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -159,8 +129,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryLeakDetectionTests",
     srcs = ["tests/BlueMemoryLeakDetectionTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -169,8 +139,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryPoolBudgetSettingsTests",
     srcs = ["tests/BlueMemoryPoolBudgetSettingsTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -179,8 +149,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryPoolResolverTests",
     srcs = ["tests/BlueMemoryPoolResolverTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -189,8 +159,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryInvokerTests",
     srcs = ["tests/BlueMemoryInvokerTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -199,8 +169,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryRuntimeAllocationTests",
     srcs = ["tests/BlueMemoryRuntimeAllocationTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -209,8 +179,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryRuntimeSettingsTests",
     srcs = ["tests/BlueMemoryRuntimeSettingsTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -219,8 +189,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryShippingHotPathTests",
     srcs = ["tests/BlueMemoryShippingHotPathTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -229,8 +199,8 @@ cc_test(
 cc_test(
     name = "BlueMemorySmallBlockAllocatorTests",
     srcs = ["tests/BlueMemorySmallBlockAllocatorTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,
@@ -239,8 +209,8 @@ cc_test(
 cc_test(
     name = "BlueMemoryTrackingTests",
     srcs = ["tests/BlueMemoryTrackingTests.cpp"],
-    copts = BLUE_MEMORY_COPTS,
-    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    copts = BLUE_COPTS,
+    dynamic_deps = BLUE_MEMORY_TEST_DYNAMIC_DEPS,
     linkstatic = True,
     size = "small",
     deps = BLUE_MEMORY_TEST_DEPS,

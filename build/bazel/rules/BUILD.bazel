@@ -1,0 +1,4 @@
+exports_files([
+    "blue_cc_config.bzl",
+    "blue_cc_module.bzl",
+])

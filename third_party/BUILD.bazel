@@ -1,4 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//build/bazel/rules:blue_cc_config.bzl", "BLUE_SHARED_COPTS", "BLUE_TARGET_COMPATIBILITY")
 
 MIMALLOC_SOURCES = [
     "mimalloc/src/alloc.c",
@@ -56,7 +57,7 @@ cc_library(
         ["mimalloc/src/**/*.c"],
         exclude = MIMALLOC_SOURCES,
     ),
-    copts = MIMALLOC_COPTS,
+    copts = MIMALLOC_COPTS + BLUE_SHARED_COPTS,
     linkopts = MIMALLOC_LINKOPTS,
     linkstatic = True,
     local_defines = ["MI_STATIC_LIB=1"],
@@ -65,11 +66,6 @@ cc_library(
         "mimalloc/src",
     ],
     strip_include_prefix = "mimalloc/include",
-    target_compatible_with = select({
-        "@platforms//os:windows": [],
-        "@platforms//os:linux": [],
-        "@platforms//os:osx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    target_compatible_with = BLUE_TARGET_COMPATIBILITY,
     visibility = ["//modules/BlueMemory:__pkg__"],
 )

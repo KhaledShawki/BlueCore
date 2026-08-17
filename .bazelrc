@@ -1,16 +1,36 @@
 build --compilation_mode=dbg
 
+build:debug --compilation_mode=dbg
+build:debug --strip=never
+build:debug --//build/bazel/settings:build_profile=debug
+
+build:release --compilation_mode=opt
+build:release --strip=never
+build:release --//build/bazel/settings:build_profile=release
+
+build:profile --compilation_mode=opt
+build:profile --strip=never
+build:profile --//build/bazel/settings:build_profile=profile
+
+build:shipping --compilation_mode=opt
+build:shipping --strip=always
+build:shipping --//build/bazel/settings:build_profile=shipping
+
 build:clang --repo_env=CC=clang
 build:gcc --repo_env=CC=gcc
 build:apple-clang --repo_env=CC=/usr/bin/clang
 build:apple-clang --macos_minimum_os=11.0
 
+build:linux-x86_64 --platforms=//build/bazel/platforms:linux_x86_64
 build:macos-x86_64 --platforms=//build/bazel/platforms:macos_x86_64
+build:windows-x86_64 --platforms=//build/bazel/platforms:windows_x86_64
 
 build:memory-system --//build/bazel/settings:memory_backend=system
 build:memory-mimalloc --//build/bazel/settings:memory_backend=mimalloc
 
-build:linkage-static --//build/bazel/settings:linkage=static
-build:linkage-shared --//build/bazel/settings:linkage=shared
+build:static --//build/bazel/settings:linkage=static
+build:shared --//build/bazel/settings:linkage=shared
+build:linkage-static --config=static
+build:linkage-shared --config=shared
 
 test --test_output=errors

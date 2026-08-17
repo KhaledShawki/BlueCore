@@ -1,37 +1,8 @@
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//build/bazel/rules:blue_cc_module.bzl", "blue_cc_module")
 
 package(default_visibility = ["//visibility:private"])
 
-BLUE_JOB_SYSTEM_COPTS = select({
-    "@platforms//os:windows": [
-        "/std:c++20",
-        "/W4",
-        "/permissive-",
-        "/EHs-",
-        "/EHc-",
-        "/GR-",
-    ],
-    "@platforms//os:linux": [
-        "-std=c++20",
-        "-Wall",
-        "-Wextra",
-        "-Wpedantic",
-        "-fno-exceptions",
-        "-fno-rtti",
-    ],
-    "@platforms//os:osx": [
-        "-std=c++20",
-        "-Wall",
-        "-Wextra",
-        "-Wpedantic",
-        "-fno-exceptions",
-        "-fno-rtti",
-        "-pthread",
-    ],
-    "//conditions:default": [],
-})
-
-cc_library(
+blue_cc_module(
     name = "BlueJobSystem",
     srcs = [
         "src/JobSystem.cpp",
@@ -46,7 +17,6 @@ cc_library(
         "include/BlueJobSystem/BlueJobSystem.h",
         "include/BlueJobSystem/BlueJobSystemApi.h",
     ],
-    copts = BLUE_JOB_SYSTEM_COPTS,
     defines = [
         "BLUE_JOB_SYSTEM=1",
     ],
@@ -55,14 +25,16 @@ cc_library(
         "//modules/BlueMemory:BlueMemory",
         "//modules/BlueSystem:BlueSystem",
     ],
-    linkstatic = True,
+    link_requirement_deps = [
+        "//modules/BlueContainer:BlueContainer_link_requirements",
+    ],
     local_includes = ["src"],
-    strip_include_prefix = "include",
-    target_compatible_with = select({
-        "@platforms//os:windows": [],
-        "@platforms//os:linux": [],
-        "@platforms//os:osx": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
+    shared_dynamic_deps = [
+        "//modules/BlueContainer:BlueContainer_shared",
+    ],
+    shared_local_defines = [
+        "BLUE_BUILD_BLUE_JOB_SYSTEM=1",
+        "BLUE_EXPORT_BlueJobSystem=1",
+    ],
     visibility = ["//visibility:public"],
 )
