@@ -114,6 +114,67 @@ class BlueCliTests(unittest.TestCase):
         with self.assertRaisesRegex(blue.BlueCliError, "Ninja only supports"):
             blue.build_platform_for("ninja", "shared")
 
+    def test_build_context_derives_native_platform_from_semantic_linkage(self) -> None:
+        static_context = blue.BuildContext(
+            host="linux",
+            configuration="Debug",
+            linkage="static",
+            toolchain="clang",
+            memory_backend="system",
+        )
+        shared_context = blue.BuildContext(
+            host="linux",
+            configuration="Debug",
+            linkage="shared",
+            toolchain="clang",
+            memory_backend="system",
+        )
+
+        self.assertEqual(static_context.build_platform, "x64")
+        self.assertEqual(shared_context.build_platform, "x64_DLL")
+
+    def test_equivalent_build_and_test_requests_share_build_context(self) -> None:
+        build_args = blue.parse_build_args(
+            [
+                "BlueSystem",
+                "--config=Release",
+                "--platform=x64_DLL",
+                "--backend=gmake",
+                "--toolchain=clang",
+                "--memory-backend=mimalloc",
+                "--sanitizer=asan",
+            ],
+            command="build",
+        )
+        test_args = blue.parse_test_args(
+            [
+                "--config=Release",
+                "--linkage=shared",
+                "--backend=gmake",
+                "--toolchain=clang",
+                "--memory-backend=mimalloc",
+                "--sanitizer=asan",
+            ]
+        )
+
+        build_request = blue.resolve_build_request("linux", build_args)
+        test_request = blue.resolve_test_request("linux", test_args)
+
+        self.assertEqual(build_request.context, test_request.context)
+        self.assertEqual(build_request.backend, test_request.backend)
+
+    def test_resolve_build_request_does_not_mutate_parser_arguments(self) -> None:
+        args = blue.parse_build_args(["BlueSystem"], command="build")
+
+        with mock.patch.dict(os.environ, {}, clear=True):
+            request = blue.resolve_build_request("linux", args)
+
+        self.assertIsNone(args.backend)
+        self.assertIsNone(args.toolchain)
+        self.assertEqual(request.backend, "gmake")
+        self.assertEqual(request.context.toolchain, "clang")
+        self.assertEqual(request.context.linkage, "static")
+
     def test_dispatch_maps_public_command_to_existing_premake_action(self) -> None:
         root = Path("/repo")
 
@@ -243,13 +304,14 @@ class BlueCliTests(unittest.TestCase):
                 mock.patch("builtins.print"),
             ):
                 request = blue.TestRequest(
-                    host="linux",
-                    configuration="Debug",
+                    context=blue.BuildContext(
+                        host="linux",
+                        configuration="Debug",
+                        linkage="shared",
+                        toolchain="clang",
+                        memory_backend="system",
+                    ),
                     backend="gmake",
-                    toolchain="clang",
-                    linkage="shared",
-                    memory_backend="system",
-                    build_platform="x64_DLL",
                 )
                 result = blue.run_gmake_tests(root, request)
 
@@ -363,13 +425,14 @@ class BlueCliTests(unittest.TestCase):
                     test_executable.write_text("", encoding="utf-8")
 
                     request = blue.TestRequest(
-                        host="windows",
-                        configuration="Debug",
+                        context=blue.BuildContext(
+                            host="windows",
+                            configuration="Debug",
+                            linkage=linkage,
+                            toolchain="msvc",
+                            memory_backend="system",
+                        ),
                         backend="vs2026",
-                        toolchain="msvc",
-                        linkage=linkage,
-                        memory_backend="system",
-                        build_platform=build_platform,
                     )
                     with (
                         mock.patch.object(testing_module, "find_msbuild", return_value=r"C:\VS\MSBuild.exe"),
@@ -415,13 +478,14 @@ class BlueCliTests(unittest.TestCase):
     def test_test_orchestration_stops_when_native_build_fails(self) -> None:
         root = Path("/repo")
         request = blue.TestRequest(
-            host="linux",
-            configuration="Debug",
+            context=blue.BuildContext(
+                host="linux",
+                configuration="Debug",
+                linkage="static",
+                toolchain="clang",
+                memory_backend="system",
+            ),
             backend="ninja",
-            toolchain="clang",
-            linkage="static",
-            memory_backend="system",
-            build_platform="x64",
         )
         with (
             mock.patch.object(testing_module, "require_command", return_value="/usr/bin/ninja"),
@@ -848,11 +912,11 @@ class BlueCliTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(run_variant.call_count, 2)
 
-        first_request = run_variant.call_args_list[0].args[2]
-        second_request = run_variant.call_args_list[1].args[2]
+        first_request = run_variant.call_args_list[0].args[1]
+        second_request = run_variant.call_args_list[1].args[1]
 
-        self.assertEqual(first_request.sanitizer, ("asan",))
-        self.assertEqual(second_request.sanitizer, ("tsan",))
+        self.assertEqual(first_request.context.sanitizer, ("asan",))
+        self.assertEqual(second_request.context.sanitizer, ("tsan",))
 
     def test_windows_rejects_unsupported_sanitizers_before_building(self) -> None:
         root = Path("/repo")
@@ -938,14 +1002,15 @@ class BlueCliTests(unittest.TestCase):
             )
 
             request = blue.TestRequest(
-                host="windows",
-                configuration="Debug",
+                context=blue.BuildContext(
+                    host="windows",
+                    configuration="Debug",
+                    linkage="static",
+                    toolchain="msvc",
+                    memory_backend="system",
+                    sanitizer=("asan",),
+                ),
                 backend="vs2026",
-                toolchain="msvc",
-                linkage="static",
-                memory_backend="system",
-                build_platform="x64",
-                sanitizer=("asan",),
             )
             runtime_env = {"PATH": r"C:\VS\ASan"}
 
