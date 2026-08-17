@@ -1,0 +1,241 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+
+package(default_visibility = ["//visibility:private"])
+
+BLUE_MEMORY_COPTS = select({
+    "@platforms//os:windows": [
+        "/std:c++20",
+        "/W4",
+        "/permissive-",
+        "/EHs-",
+        "/EHc-",
+        "/GR-",
+    ],
+    "@platforms//os:osx": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-pthread",
+    ],
+    "//conditions:default": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+})
+
+BLUE_MEMORY_TEST_LINKOPTS = select({
+    "@platforms//os:windows": [
+        "kernel32.lib",
+    ],
+    "@platforms//os:linux": [
+        "-pthread",
+        "-ldl",
+        "-lrt",
+    ],
+    "@platforms//os:osx": [
+        "-pthread",
+    ],
+    "//conditions:default": [],
+})
+
+BLUE_MEMORY_TEST_DEPS = [
+    ":BlueMemory",
+    "//modules/BlueSystem:BlueSystem",
+    "@googletest//:gtest",
+    "@googletest//:gtest_main",
+]
+
+cc_library(
+    name = "BlueMemory",
+    srcs = [
+        "src/AllocationFailure.cpp",
+        "src/Allocator/SmallBlockAllocator.cpp",
+        "src/AllocatorKind.cpp",
+        "src/Backend/MemoryBackend.cpp",
+        "src/Backend/MimallocMemoryBackend.cpp",
+        "src/Backend/SystemMemoryBackend.cpp",
+        "src/Config/BlueMemorySettings.cpp",
+        "src/HeapAllocator.cpp",
+        "src/Invoker/RuntimeAllocationInvoker.cpp",
+        "src/LinearAllocator.cpp",
+        "src/MemoryMetrics.cpp",
+        "src/MemorySystem.cpp",
+        "src/Metrics/MemoryThreadContext.cpp",
+        "src/Oom/OomReporter.cpp",
+        "src/Pch.cpp",
+        "src/Pool/MemoryPoolRegistry.cpp",
+        "src/PoolAllocator.cpp",
+        "src/Proxy/RuntimeAllocationProxy.cpp",
+        "src/Tracking/MemoryAllocationTracker.cpp",
+        "src/VirtualMemoryBlock.cpp",
+    ] + glob([
+        "src/**/*.h",
+    ]),
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.def",
+    ]),
+    copts = BLUE_MEMORY_COPTS,
+    defines = [
+        "BLUE_MEMORY=1",
+        "BLUE_MEMORY_USE_MIMALLOC=0",
+    ],
+    deps = [
+        "//modules/BlueSystem:BlueSystem",
+    ],
+    linkstatic = True,
+    local_includes = ["src"],
+    strip_include_prefix = "include",
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "@platforms//os:linux": [],
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "BlueMemoryBackendContractTests",
+    srcs = ["tests/BlueMemoryBackendContractTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryConfigTests",
+    srcs = ["tests/BlueMemoryConfigTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryContractTests",
+    srcs = ["tests/BlueMemoryContractTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryLeakDetectionTests",
+    srcs = ["tests/BlueMemoryLeakDetectionTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryPoolBudgetSettingsTests",
+    srcs = ["tests/BlueMemoryPoolBudgetSettingsTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryPoolResolverTests",
+    srcs = ["tests/BlueMemoryPoolResolverTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryInvokerTests",
+    srcs = ["tests/BlueMemoryInvokerTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryRuntimeAllocationTests",
+    srcs = ["tests/BlueMemoryRuntimeAllocationTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryRuntimeSettingsTests",
+    srcs = ["tests/BlueMemoryRuntimeSettingsTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryShippingHotPathTests",
+    srcs = ["tests/BlueMemoryShippingHotPathTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemorySmallBlockAllocatorTests",
+    srcs = ["tests/BlueMemorySmallBlockAllocatorTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+cc_test(
+    name = "BlueMemoryTrackingTests",
+    srcs = ["tests/BlueMemoryTrackingTests.cpp"],
+    copts = BLUE_MEMORY_COPTS,
+    linkopts = BLUE_MEMORY_TEST_LINKOPTS,
+    linkstatic = True,
+    size = "small",
+    deps = BLUE_MEMORY_TEST_DEPS,
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":BlueMemoryBackendContractTests",
+        ":BlueMemoryConfigTests",
+        ":BlueMemoryContractTests",
+        ":BlueMemoryLeakDetectionTests",
+        ":BlueMemoryPoolBudgetSettingsTests",
+        ":BlueMemoryPoolResolverTests",
+        ":BlueMemoryInvokerTests",
+        ":BlueMemoryRuntimeAllocationTests",
+        ":BlueMemoryRuntimeSettingsTests",
+        ":BlueMemoryShippingHotPathTests",
+        ":BlueMemorySmallBlockAllocatorTests",
+        ":BlueMemoryTrackingTests",
+    ],
+)
