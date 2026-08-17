@@ -1,0 +1,68 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:private"])
+
+BLUE_JOB_SYSTEM_COPTS = select({
+    "@platforms//os:windows": [
+        "/std:c++20",
+        "/W4",
+        "/permissive-",
+        "/EHs-",
+        "/EHc-",
+        "/GR-",
+    ],
+    "@platforms//os:linux": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+    ],
+    "@platforms//os:osx": [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-pthread",
+    ],
+    "//conditions:default": [],
+})
+
+cc_library(
+    name = "BlueJobSystem",
+    srcs = [
+        "src/JobSystem.cpp",
+        "src/Pch.cpp",
+        "src/BlueJobSystemPrivate.h",
+        "src/Pch.h",
+    ],
+    hdrs = [
+        "include/Blue/JobSystem.h",
+        "include/Blue/JobSystem/Api.h",
+        "include/Blue/JobSystem/JobSystem.h",
+        "include/BlueJobSystem/BlueJobSystem.h",
+        "include/BlueJobSystem/BlueJobSystemApi.h",
+    ],
+    copts = BLUE_JOB_SYSTEM_COPTS,
+    defines = [
+        "BLUE_JOB_SYSTEM=1",
+    ],
+    deps = [
+        "//modules/BlueContainer:BlueContainer",
+        "//modules/BlueMemory:BlueMemory",
+        "//modules/BlueSystem:BlueSystem",
+    ],
+    linkstatic = True,
+    local_includes = ["src"],
+    strip_include_prefix = "include",
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "@platforms//os:linux": [],
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//visibility:public"],
+)
