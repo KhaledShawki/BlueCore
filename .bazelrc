@@ -7,4 +7,7 @@ build:apple-clang --macos_minimum_os=11.0
 
 build:macos-x86_64 --platforms=//build/bazel/platforms:macos_x86_64
 
+build:memory-system --//build/bazel/settings:memory_backend=system
+build:memory-mimalloc --//build/bazel/settings:memory_backend=mimalloc
+
 test --test_output=errors

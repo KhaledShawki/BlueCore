@@ -1,0 +1,23 @@
+load(":build_settings.bzl", "string_flag")
+
+string_flag(
+    name = "memory_backend",
+    build_setting_default = "system",
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "memory_backend_system",
+    flag_values = {
+        ":memory_backend": "system",
+    },
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "memory_backend_mimalloc",
+    flag_values = {
+        ":memory_backend": "mimalloc",
+    },
+    visibility = ["//visibility:public"],
+)

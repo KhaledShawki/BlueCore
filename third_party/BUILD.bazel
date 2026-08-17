@@ -1,0 +1,75 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+MIMALLOC_SOURCES = [
+    "mimalloc/src/alloc.c",
+    "mimalloc/src/alloc-aligned.c",
+    "mimalloc/src/alloc-posix.c",
+    "mimalloc/src/arena.c",
+    "mimalloc/src/arena-meta.c",
+    "mimalloc/src/bitmap.c",
+    "mimalloc/src/heap.c",
+    "mimalloc/src/init.c",
+    "mimalloc/src/libc.c",
+    "mimalloc/src/options.c",
+    "mimalloc/src/os.c",
+    "mimalloc/src/page.c",
+    "mimalloc/src/page-map.c",
+    "mimalloc/src/random.c",
+    "mimalloc/src/stats.c",
+    "mimalloc/src/theap.c",
+    "mimalloc/src/threadlocal.c",
+    "mimalloc/src/prim/prim.c",
+]
+
+MIMALLOC_COPTS = select({
+    "@platforms//os:windows": ["/w"],
+    "//conditions:default": ["-w"],
+})
+
+MIMALLOC_LINKOPTS = select({
+    "@platforms//os:windows": [
+        "psapi.lib",
+        "shell32.lib",
+        "user32.lib",
+        "advapi32.lib",
+        "bcrypt.lib",
+    ],
+    "@platforms//os:linux": [
+        "-lpthread",
+        "-lrt",
+    ],
+    "@platforms//os:osx": [
+        "-pthread",
+    ],
+    "//conditions:default": [],
+})
+
+cc_library(
+    name = "mimalloc",
+    srcs = MIMALLOC_SOURCES + glob([
+        "mimalloc/src/**/*.h",
+    ]),
+    hdrs = glob([
+        "mimalloc/include/**/*.h",
+    ]),
+    textual_hdrs = glob(
+        ["mimalloc/src/**/*.c"],
+        exclude = MIMALLOC_SOURCES,
+    ),
+    copts = MIMALLOC_COPTS,
+    linkopts = MIMALLOC_LINKOPTS,
+    linkstatic = True,
+    local_defines = ["MI_STATIC_LIB=1"],
+    local_includes = [
+        "mimalloc/include",
+        "mimalloc/src",
+    ],
+    strip_include_prefix = "mimalloc/include",
+    target_compatible_with = select({
+        "@platforms//os:windows": [],
+        "@platforms//os:linux": [],
+        "@platforms//os:osx": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+    visibility = ["//modules/BlueMemory:__pkg__"],
+)
