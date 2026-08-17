@@ -196,6 +196,71 @@ function bb.generate_test_manifest(filename)
     bb.fs.write_file(path.join(BLUE_ROOT, filename), table.concat(lines, "\n"))
 end
 
+local function emit_test_runner_core_project()
+    bb.static_library({
+        name = "BlueTestRunnerCore",
+        root = "tools/BlueTestRunner",
+        group = "Tests/Runner",
+        default_files = false,
+        pch = false,
+        files = {
+            "tools/BlueTestRunner/BoundedOutputBuffer.cpp",
+            "tools/BlueTestRunner/BoundedOutputBuffer.h",
+            "tools/BlueTestRunner/ProcessRunner.h",
+            "tools/BlueTestRunner/RunnerOptions.cpp",
+            "tools/BlueTestRunner/RunnerOptions.h",
+            "tools/BlueTestRunner/RunnerTypes.h",
+            "tools/BlueTestRunner/TestReporter.cpp",
+            "tools/BlueTestRunner/TestReporter.h",
+            "tools/BlueTestRunner/TestScheduler.cpp",
+            "tools/BlueTestRunner/TestScheduler.h",
+        },
+        public_include_dirs = {
+            "tools/BlueTestRunner",
+        },
+        private_include_dirs = {
+            "modules/BlueSystem/include",
+        },
+        platform = {
+            windows = {
+                files = {
+                    "tools/BlueTestRunner/ProcessRunner_Windows.cpp",
+                },
+            },
+            linux = {
+                files = {
+                    "tools/BlueTestRunner/ProcessRunner_Posix.cpp",
+                },
+            },
+            macosx = {
+                files = {
+                    "tools/BlueTestRunner/ProcessRunner_Posix.cpp",
+                },
+            },
+        },
+    })
+end
+
+local function emit_test_runner_self_tests()
+    bb.test_executable({
+        name = "BlueTestRunnerTests",
+        module = "BlueTestRunner",
+        root = "tools/BlueTestRunner",
+        group = "Tests/Runner",
+        pch = false,
+        files = {
+            "tools/BlueTestRunner/tests/BlueTestRunnerTests.cpp",
+        },
+        deps = {
+            private = {
+                "BlueTestRunnerCore",
+                "gtest",
+                "gtest_main",
+            },
+        },
+    })
+end
+
 function bb.emit_test_runner_project()
     if bb.registry.test_runner_emitted then
         return
@@ -203,12 +268,18 @@ function bb.emit_test_runner_project()
 
     bb.registry.test_runner_emitted = true
 
+    local hadRegisteredTests = #bb.registry.tests > 0
+    if hadRegisteredTests then
+        emit_test_runner_core_project()
+        emit_test_runner_self_tests()
+    end
+
     local requestedManifest = _OPTIONS["blue-test-manifest"]
     if requestedManifest and requestedManifest ~= "" then
         bb.generate_test_manifest(requestedManifest)
     end
 
-    if #bb.registry.tests == 0 then
+    if not hadRegisteredTests then
         return
     end
 
@@ -241,11 +312,14 @@ function bb.emit_test_runner_project()
         root = "tools/BlueTestRunner",
         group = "Tests/Runner",
         default_files = false,
+        pch = false,
         files = {
             "tools/BlueTestRunner/BlueTestRunner.cpp",
         },
-        private_include_dirs = {
-            "modules/BlueSystem/include",
+        deps = {
+            private = {
+                "BlueTestRunnerCore",
+            },
         },
         dependson = testNames,
         debugdir = BLUE_ROOT,
